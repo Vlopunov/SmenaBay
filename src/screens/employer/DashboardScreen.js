@@ -15,6 +15,8 @@ export default function DashboardScreen({ navigation }) {
   const stats = getCompanyStats();
   const companyShifts = getCompanyShifts();
   const applications = useStore(s => s.applications);
+  const shifts = useStore(s => s.shifts); // subscribe for re-render on shift changes
+  const notifications = useStore(s => s.notifications); // subscribe for unread count
   const getUnreadCount = useStore(s => s.getUnreadCount);
 
   const activeShifts = companyShifts.filter(s => ['active', 'in_progress', 'filled'].includes(s.status)).slice(0, 5);

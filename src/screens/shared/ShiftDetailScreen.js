@@ -21,6 +21,8 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const location = getLocationById(shift?.locationId);
   const currentUser = useStore(s => s.currentUser);
   const applyToShift = useStore(s => s.applyToShift);
+  const applications = useStore(s => s.applications); // subscribe to trigger re-render
+  const shifts = useStore(s => s.shifts); // subscribe for spotsTaken updates
   const existingApp = getApplicationForShiftAndWorker(shiftId);
   const companyReviews = getReviewsFor(shift?.companyId).slice(0, 3);
   const workers = useStore(s => s.workers);

@@ -15,6 +15,8 @@ export default function ManageApplicationsScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
   const getShiftById = useStore(s => s.getShiftById);
   const getApplicationsForShift = useStore(s => s.getApplicationsForShift);
+  const allApplications = useStore(s => s.applications); // subscribe for reactivity
+  const allShifts = useStore(s => s.shifts); // subscribe for reactivity
   const shift = getShiftById(shiftId);
   const apps = getApplicationsForShift(shiftId);
   const workers = useStore(s => s.workers);
@@ -40,7 +42,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
   const renderApp = ({ item: app }) => {
     const worker = workers.find(w => w.id === app.workerId);
     if (!worker) return null;
-    const hasReview = !!getReviewForShift(shiftId, currentUser?.id);
+    const hasReview = !!getReviewForShift(shiftId, currentUser?.id, worker.id);
 
     return (
       <View style={styles.card}>

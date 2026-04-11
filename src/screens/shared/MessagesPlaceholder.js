@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
   title: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+  placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: SIZES.tabBarHeight },
   pTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
   pText: { fontSize: SIZES.body, color: COLORS.textSecondary, textAlign: 'center', marginTop: SIZES.sm, lineHeight: 22 },
 });

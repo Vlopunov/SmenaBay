@@ -66,15 +66,21 @@ const useStore = create((set, get) => ({
   },
 
   logout: () => set({ currentUser: null, isAuthenticated: false }),
+  // Note: favorites are not cleared on logout — they persist per-user
 
   updateProfile: (updates) => {
     const user = get().currentUser;
     const updated = { ...user, ...updates };
-    set({ currentUser: updated });
     if (user.role === 'worker') {
-      set(s => ({ workers: s.workers.map(w => w.id === user.id ? updated : w) }));
+      set(s => ({
+        currentUser: updated,
+        workers: s.workers.map(w => w.id === user.id ? updated : w),
+      }));
     } else {
-      set(s => ({ companies: s.companies.map(c => c.id === user.id ? updated : c) }));
+      set(s => ({
+        currentUser: updated,
+        companies: s.companies.map(c => c.id === user.id ? updated : c),
+      }));
     }
   },
 
@@ -122,7 +128,7 @@ const useStore = create((set, get) => ({
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const monthShifts = get().shifts.filter(
-      s => s.companyId === user.id && s.createdAt >= monthStart
+      s => s.companyId === user.id && s.createdAt >= monthStart && s.status !== 'cancelled'
     ).length;
     const limits = { free: 3, business: 30, premium: Infinity };
     if (monthShifts >= (limits[user.plan] || 3)) {
@@ -158,6 +164,13 @@ const useStore = create((set, get) => ({
   },
 
   cancelShift: (shiftId) => {
+    // Capture affected workers (pending/approved) before updating statuses
+    const affectedApps = get().applications.filter(
+      a => a.shiftId === shiftId && (a.status === 'pending' || a.status === 'approved')
+    );
+    const affectedWorkerIds = affectedApps.map(a => a.workerId);
+    const shift = get().getShiftById(shiftId);
+
     set(s => ({
       shifts: s.shifts.map(sh =>
         sh.id === shiftId ? { ...sh, status: 'cancelled' } : sh
@@ -168,19 +181,33 @@ const useStore = create((set, get) => ({
           : a
       ),
     }));
-    // Notify affected workers
-    const apps = get().applications.filter(a => a.shiftId === shiftId);
-    const shift = get().getShiftById(shiftId);
-    apps.forEach(a => {
-      get().addNotification(a.workerId, 'shift_cancelled',
+
+    // Notify only affected workers
+    affectedWorkerIds.forEach(workerId => {
+      get().addNotification(workerId, 'shift_cancelled',
         'Смена отменена', `Смена «${shift?.title}» отменена заказчиком`, shiftId);
     });
   },
 
   completeShift: (shiftId) => {
+    const shift = get().getShiftById(shiftId);
+    const approvedApps = get().applications.filter(
+      a => a.shiftId === shiftId && a.status === 'approved'
+    );
+    const approvedWorkerIds = approvedApps.map(a => a.workerId);
+
     set(s => ({
       shifts: s.shifts.map(sh =>
         sh.id === shiftId ? { ...sh, status: 'completed' } : sh
+      ),
+      workers: s.workers.map(w =>
+        approvedWorkerIds.includes(w.id)
+          ? {
+              ...w,
+              shiftsCompleted: w.shiftsCompleted + 1,
+              totalEarned: w.totalEarned + (shift?.pay || 0),
+            }
+          : w
       ),
     }));
   },
@@ -202,6 +229,10 @@ const useStore = create((set, get) => ({
 
   // ===== APPLICATIONS =====
   applyToShift: (shiftId) => {
+    const shiftCheck = get().getShiftById(shiftId);
+    if (shiftCheck && shiftCheck.status !== 'active') return { error: 'shift_not_active' };
+    if (shiftCheck && shiftCheck.spotsTaken >= shiftCheck.spotsTotal) return { error: 'shift_full' };
+
     const user = get().currentUser;
     const existing = get().applications.find(
       a => a.shiftId === shiftId && a.workerId === user.id && a.status !== 'cancelled_by_worker'
@@ -257,6 +288,11 @@ const useStore = create((set, get) => ({
     // Check if shift is now filled
     const updatedShift = get().getShiftById(app.shiftId);
     if (updatedShift && updatedShift.spotsTaken >= updatedShift.spotsTotal) {
+      // Capture pending applications before rejecting them
+      const pendingApps = get().applications.filter(
+        a => a.shiftId === app.shiftId && a.status === 'pending'
+      );
+
       set(s => ({
         shifts: s.shifts.map(sh =>
           sh.id === app.shiftId ? { ...sh, status: 'filled' } : sh
@@ -267,6 +303,12 @@ const useStore = create((set, get) => ({
             : a
         ),
       }));
+
+      // Notify each auto-rejected worker
+      pendingApps.forEach(a => {
+        get().addNotification(a.workerId, 'application_rejected',
+          'Отклик отклонён', `Смена "${updatedShift.title}" уже заполнена`, app.shiftId);
+      });
     }
   },
 
@@ -300,10 +342,18 @@ const useStore = create((set, get) => ({
   getReviewsFor: (targetId) =>
     get().reviews.filter(r => r.targetId === targetId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
 
-  getReviewForShift: (shiftId, authorId) =>
-    get().reviews.find(r => r.shiftId === shiftId && r.authorId === authorId),
+  getReviewForShift: (shiftId, authorId, targetId) =>
+    get().reviews.find(r =>
+      r.shiftId === shiftId && r.authorId === authorId && (targetId ? r.targetId === targetId : true)
+    ),
 
   addReview: (review) => {
+    // Duplicate prevention
+    const duplicate = get().reviews.find(
+      r => r.shiftId === review.shiftId && r.authorId === review.authorId && r.targetId === review.targetId
+    );
+    if (duplicate) return;
+
     const newReview = {
       id: 'r_' + Date.now(),
       createdAt: new Date().toISOString().split('T')[0],
@@ -323,12 +373,18 @@ const useStore = create((set, get) => ({
             ? { ...c, rating: rounded, reviewsCount: allReviews.length }
             : c
         ),
+        currentUser: s.currentUser?.id === review.targetId
+          ? { ...s.currentUser, rating: rounded, reviewsCount: allReviews.length }
+          : s.currentUser,
       }));
     } else {
       set(s => ({
         workers: s.workers.map(w =>
           w.id === review.targetId ? { ...w, rating: rounded } : w
         ),
+        currentUser: s.currentUser?.id === review.targetId
+          ? { ...s.currentUser, rating: rounded }
+          : s.currentUser,
       }));
     }
 
@@ -417,18 +473,30 @@ const useStore = create((set, get) => ({
   },
 
   // ===== FAVORITES =====
-  favorites: [],
+  favorites: {},
   toggleFavorite: (workerId) => {
-    set(s => ({
-      favorites: s.favorites.includes(workerId)
-        ? s.favorites.filter(id => id !== workerId)
-        : [...s.favorites, workerId],
-    }));
+    const userId = get().currentUser?.id;
+    if (!userId) return;
+    set(s => {
+      const userFavs = s.favorites[userId] || [];
+      return {
+        favorites: {
+          ...s.favorites,
+          [userId]: userFavs.includes(workerId)
+            ? userFavs.filter(id => id !== workerId)
+            : [...userFavs, workerId],
+        },
+      };
+    });
   },
-  isFavorite: (workerId) => get().favorites.includes(workerId),
+  isFavorite: (workerId) => {
+    const userId = get().currentUser?.id;
+    return userId ? (get().favorites[userId] || []).includes(workerId) : false;
+  },
 
   // ===== PLANS =====
   changePlan: (plan) => {
+    if (!['free', 'business', 'premium'].includes(plan)) return;
     const expires = plan === 'free' ? null : (() => {
       const d = new Date();
       d.setMonth(d.getMonth() + 1);

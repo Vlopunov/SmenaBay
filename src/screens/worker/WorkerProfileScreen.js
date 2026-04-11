@@ -68,7 +68,7 @@ export default function WorkerProfileScreen({ navigation }) {
           <View style={styles.statsRow}>
             {STATS_CONFIG.map((stat, i) => {
               let value = currentUser[stat.key];
-              if (stat.key === 'totalEarned') value = `${value} ₽`;
+              if (stat.key === 'totalEarned') value = `${value} BYN`;
               if (stat.key === 'rating') value = value > 0 ? value.toFixed(1) : '—';
               return (
                 <View key={stat.key} style={styles.statItem}>

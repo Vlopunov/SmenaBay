@@ -10,12 +10,14 @@ import useStore from '../../store/useStore';
 export default function FavoritesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const favorites = useStore(s => s.favorites);
+  const currentUser = useStore(s => s.currentUser);
   const workers = useStore(s => s.workers);
   const toggleFavorite = useStore(s => s.toggleFavorite);
 
+  const userFavorites = favorites[currentUser?.id] || [];
   const favoriteWorkers = useMemo(
-    () => workers.filter(w => favorites.includes(w.id)),
-    [workers, favorites],
+    () => workers.filter(w => userFavorites.includes(w.id)),
+    [workers, userFavorites],
   );
 
   const renderStars = (rating) => {

@@ -77,8 +77,6 @@ export default function EmployerProfileScreen({ navigation }) {
               onPress={() => {
                 if (item.screen === 'CompanyReviews') {
                   navigation.navigate('PublicCompanyProfile', { companyId: currentUser.id });
-                } else if (item.screen === 'Favorites') {
-                  // TODO: Favorites screen
                 } else if (item.screen) {
                   navigation.navigate(item.screen);
                 }

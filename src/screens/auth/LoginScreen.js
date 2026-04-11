@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, StatusBar, Alert,
+  View, Text, StyleSheet, TextInput, TouchableOpacity, StatusBar,
+  ScrollView, KeyboardAvoidingView, Platform, Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,19 +35,26 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  // Quick login buttons for demo
-  const quickLogin = (phone) => {
-    const user = login(phone);
+  const quickLogin = (ph) => {
+    Keyboard.dismiss();
+    login(ph);
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar barStyle="dark-content" />
       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
       </TouchableOpacity>
 
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Вход</Text>
         <Text style={styles.subtitle}>Введите номер телефона</Text>
 
@@ -59,7 +67,6 @@ export default function LoginScreen({ navigation }) {
               placeholder="+375XXXXXXXXX"
               placeholderTextColor={COLORS.textTertiary}
               keyboardType="phone-pad"
-              autoFocus
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -126,15 +133,15 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.demoBtnText}>Склад-Логистик — Заказчик (Premium)</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center', marginLeft: SIZES.sm },
-  content: { paddingHorizontal: SIZES.lg, paddingTop: SIZES.lg },
+  scroll: { paddingHorizontal: SIZES.lg, paddingTop: SIZES.lg },
   title: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
   subtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs, marginBottom: SIZES.xl },
   input: {

@@ -106,12 +106,17 @@ export default function EmployerShiftsScreen({ navigation }) {
         data={filtered}
         renderItem={renderShift}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, filtered.length === 0 && { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color={COLORS.textTertiary} />
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="document-text-outline" size={48} color={COLORS.textTertiary} />
+            </View>
             <Text style={styles.emptyTitle}>Нет смен</Text>
+            <Text style={styles.emptySubtitle}>
+              {filter === 'Все' ? 'Создайте первую смену' : 'Нет смен с таким статусом'}
+            </Text>
           </View>
         }
       />
@@ -121,7 +126,7 @@ export default function EmployerShiftsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
+  header: { paddingHorizontal: SIZES.lg, paddingTop: SIZES.sm, paddingBottom: SIZES.xs },
   headerTitle: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
   filters: { paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginBottom: SIZES.md, alignItems: 'center' },
   filterChip: { paddingHorizontal: SIZES.md, height: 34, justifyContent: 'center', borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
@@ -139,6 +144,8 @@ const styles = StyleSheet.create({
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SIZES.md, paddingTop: SIZES.md, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
   cardStats: { fontSize: SIZES.small, color: COLORS.textSecondary },
   dupBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center' },
-  empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
-  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', marginBottom: SIZES.base },
+  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary },
+  emptySubtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
 });

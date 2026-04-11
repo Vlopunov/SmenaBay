@@ -26,6 +26,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ec9c0ac8-1eb1-4cbf-9bf9-ed3293f23607"
+      }
+    },
+    "owner": "lopunow"
   }
 }

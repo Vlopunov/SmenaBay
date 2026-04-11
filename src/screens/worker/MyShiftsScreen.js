@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
   tabs: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.xs, marginBottom: SIZES.md },
   tab: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, height: 36,
     borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, gap: SIZES.xs,
   },
   tabActive: { backgroundColor: COLORS.textPrimary },

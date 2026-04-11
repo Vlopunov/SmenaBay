@@ -84,7 +84,7 @@ export const SIZES = {
   radiusMd: 12,
   radiusLg: 16,
   radiusXl: 20,
-  radiusFull: 999,
+  radiusFull: 50,
 
   // Component sizes
   buttonHeight: 52,

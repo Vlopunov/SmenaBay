@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
     borderRadius: SIZES.radiusMd, paddingHorizontal: SIZES.md, height: 44, ...SHADOWS.sm,
   },
-  searchInput: { flex: 1, fontSize: SIZES.body, color: COLORS.textPrimary, marginLeft: SIZES.sm },
+  searchInput: { flex: 1, fontSize: SIZES.body, color: COLORS.textPrimary, marginLeft: SIZES.sm, letterSpacing: 0 },
   filterBtn: {
     width: 44, height: 44, borderRadius: SIZES.radiusMd,
     backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center',
@@ -344,9 +344,9 @@ const styles = StyleSheet.create({
   advToggleTextActive: { color: COLORS.white },
 
   // Quick Filters
-  quickFilters: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, gap: SIZES.sm },
+  quickFilters: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, gap: SIZES.sm, alignItems: 'center' },
   quickChip: {
-    paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull,
+    paddingHorizontal: SIZES.md, height: 34, justifyContent: 'center', borderRadius: SIZES.radiusFull,
     backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border,
   },
   quickChipActive: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },

@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   cancelShiftText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
 
   tabs: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.xs, marginBottom: SIZES.md },
-  tab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, gap: SIZES.xs },
+  tab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, height: 36, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, gap: SIZES.xs },
   tabActive: { backgroundColor: COLORS.textPrimary },
   tabText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.white },

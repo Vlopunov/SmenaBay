@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { SHIFT_TEMPLATES } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import VerifyPhoneModal from '../../components/VerifyPhoneModal';
 
 const TIME_OPTIONS = [];
 for (let h = 0; h < 24; h++) {
@@ -27,7 +28,7 @@ export default function CreateShiftScreen({ navigation, route }) {
     title: template?.title || '',
     description: template?.description || '',
     locationId: template?.locationId || (currentUser?.locations?.[0]?.id || ''),
-    date: '',
+    date: [],
     timeStart: template?.timeStart || '09:00',
     timeEnd: template?.timeEnd || '18:00',
     pay: template?.pay?.toString() || '',
@@ -44,6 +45,7 @@ export default function CreateShiftScreen({ navigation, route }) {
   const [showLocations, setShowLocations] = useState(false);
   const [showTimeStart, setShowTimeStart] = useState(false);
   const [showTimeEnd, setShowTimeEnd] = useState(false);
+  const [showVerify, setShowVerify] = useState(false);
 
   const locations = currentUser?.locations || [];
   const selectedLoc = locations.find(l => l.id === form.locationId);
@@ -63,7 +65,7 @@ export default function CreateShiftScreen({ navigation, route }) {
     if (!form.title.trim()) e.title = 'Укажите название';
     if (form.description.length < 20) e.description = 'Минимум 20 символов';
     if (!form.locationId) e.locationId = 'Выберите локацию';
-    if (!form.date) e.date = 'Выберите дату';
+    if (!form.date || form.date.length === 0) e.date = 'Выберите дату';
     if (!form.pay || Number(form.pay) <= 0) e.pay = 'Укажите оплату';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -76,6 +78,10 @@ export default function CreateShiftScreen({ navigation, route }) {
       pay: Number(form.pay),
       spotsTotal: form.spotsTotal,
     });
+    if (result.error === 'phone_not_verified') {
+      setShowVerify(true);
+      return;
+    }
     if (result.error === 'limit') {
       Alert.alert('Лимит исчерпан', 'Лимит бесплатного тарифа исчерпан. Обновите тариф для публикации новых смен.', [
         { text: 'Тарифы', onPress: () => navigation.navigate('Plans') },
@@ -181,20 +187,53 @@ export default function CreateShiftScreen({ navigation, route }) {
         )}
 
         {/* Date */}
-        <Text style={styles.label}>Дата *</Text>
+        <Text style={styles.label}>Даты * (можно выбрать несколько)</Text>
+        <View style={styles.dateActions}>
+          <TouchableOpacity
+            style={styles.dateQuickBtn}
+            onPress={() => {
+              const weekdays = dateOptions.filter(d => {
+                const day = new Date(d).getDay();
+                return day >= 1 && day <= 5;
+              });
+              setForm(f => ({ ...f, date: weekdays }));
+            }}
+          >
+            <Text style={styles.dateQuickText}>Все будни</Text>
+          </TouchableOpacity>
+          {form.date.length > 0 && (
+            <TouchableOpacity
+              style={styles.dateQuickBtn}
+              onPress={() => setForm(f => ({ ...f, date: [] }))}
+            >
+              <Text style={styles.dateQuickText}>Очистить</Text>
+            </TouchableOpacity>
+          )}
+          {form.date.length > 1 && (
+            <Text style={styles.dateCountText}>Выбрано: {form.date.length}</Text>
+          )}
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateScroll}>
           <View style={styles.dateRow}>
-            {dateOptions.map(d => (
-              <TouchableOpacity
-                key={d}
-                style={[styles.dateChip, form.date === d && styles.dateChipActive]}
-                onPress={() => setForm(f => ({ ...f, date: d }))}
-              >
-                <Text style={[styles.dateChipText, form.date === d && styles.dateChipTextActive]}>
-                  {formatDateOption(d)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {dateOptions.map(d => {
+              const isSelected = form.date.includes(d);
+              return (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.dateChip, isSelected && styles.dateChipActive]}
+                  onPress={() => setForm(f => ({
+                    ...f,
+                    date: isSelected
+                      ? f.date.filter(dd => dd !== d)
+                      : [...f.date, d].sort(),
+                  }))}
+                >
+                  <Text style={[styles.dateChipText, isSelected && styles.dateChipTextActive]}>
+                    {formatDateOption(d)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
         {errors.date && <Text style={styles.error}>{errors.date}</Text>}
@@ -313,6 +352,12 @@ export default function CreateShiftScreen({ navigation, route }) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <VerifyPhoneModal
+        visible={showVerify}
+        onClose={() => setShowVerify(false)}
+        onVerified={() => {}}
+      />
     </View>
   );
 }
@@ -360,6 +405,10 @@ const styles = StyleSheet.create({
   dateChipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
   dateChipText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
   dateChipTextActive: { color: COLORS.white },
+  dateActions: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginBottom: SIZES.sm },
+  dateQuickBtn: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.xs, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.accentSoft },
+  dateQuickText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
+  dateCountText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
 
   timeRow: { flexDirection: 'row', gap: SIZES.md },
   timeDropdown: { maxHeight: 150, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, marginTop: SIZES.xs, ...SHADOWS.md },

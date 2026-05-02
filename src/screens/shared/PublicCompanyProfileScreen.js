@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import { formatDateShort } from '../../utils/formatDate';
+import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
+import Avatar from '../../components/Avatar';
 
 const RATING_LABELS = {
   conditions: 'Условия', descriptionMatch: 'Описание',
@@ -55,8 +58,14 @@ export default function PublicCompanyProfileScreen({ route, navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.profileCard}>
-          <Image source={{ uri: company.logo || 'https://i.pravatar.cc/200?img=60' }} style={styles.logo} />
+          <View style={{ alignSelf: 'center' }}>
+            <Avatar uri={company.logo} name={company.companyName} size={80} style={{ borderRadius: 20 }} />
+            <OnlineDot lastSeen={company.lastSeen} size={16} />
+          </View>
           <Text style={styles.name}>{company.companyName}</Text>
+          {formatLastSeen(company.lastSeen) ? (
+            <Text style={styles.lastSeen}>{formatLastSeen(company.lastSeen)}</Text>
+          ) : null}
           <Text style={styles.category}>{company.businessCategory} · {company.city}</Text>
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={18} color={COLORS.star} />
@@ -68,6 +77,16 @@ export default function PublicCompanyProfileScreen({ route, navigation }) {
             <Text style={styles.metaDot}>·</Text>
             <Text style={styles.metaText}>{company.totalShiftsPublished} смен</Text>
           </View>
+          {company.phoneVisible !== false && company.phone && (
+            <TouchableOpacity
+              style={styles.phoneBtn}
+              onPress={() => Linking.openURL(`tel:${company.phone}`)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="call-outline" size={16} color={COLORS.accent} />
+              <Text style={styles.phoneBtnText}>{company.phone}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Category Ratings */}
@@ -95,7 +114,7 @@ export default function PublicCompanyProfileScreen({ route, navigation }) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.shiftMiniTitle}>{s.title}</Text>
-                  <Text style={styles.shiftMiniDate}>{s.date}, {s.timeStart}–{s.timeEnd}</Text>
+                  <Text style={styles.shiftMiniDate}>{formatDateShort(s.date)}, {s.timeStart}–{s.timeEnd}</Text>
                 </View>
                 <Text style={styles.shiftMiniPay}>{s.pay} BYN</Text>
               </TouchableOpacity>
@@ -142,7 +161,7 @@ export default function PublicCompanyProfileScreen({ route, navigation }) {
                   </View>
                 </View>
                 {r.text && <Text style={styles.reviewText}>{r.text}</Text>}
-                <Text style={styles.reviewDate}>{r.createdAt}</Text>
+                <Text style={styles.reviewDate}>{formatDateShort(r.createdAt)}</Text>
               </View>
             );
           })}
@@ -168,6 +187,7 @@ const styles = StyleSheet.create({
   profileCard: { alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.xl, ...SHADOWS.md },
   logo: { width: 72, height: 72, borderRadius: 20, backgroundColor: COLORS.skeleton },
   name: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, marginTop: SIZES.md, textAlign: 'center' },
+  lastSeen: { fontSize: SIZES.small, color: '#22C55E', textAlign: 'center', marginTop: 2 },
   category: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.xs, marginTop: SIZES.md },
   ratingValue: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
@@ -175,6 +195,12 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginTop: SIZES.sm },
   metaText: { fontSize: SIZES.small, color: COLORS.textTertiary },
   metaDot: { color: COLORS.textTertiary },
+  phoneBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: SIZES.sm,
+    marginTop: SIZES.md, paddingVertical: SIZES.sm, paddingHorizontal: SIZES.md,
+    backgroundColor: COLORS.accentSoft, borderRadius: SIZES.radiusFull, alignSelf: 'center',
+  },
+  phoneBtnText: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.accent },
 
   catRatings: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base, marginTop: SIZES.md, ...SHADOWS.sm, gap: SIZES.md },
   catRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },

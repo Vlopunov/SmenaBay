@@ -12,9 +12,12 @@ import NotificationsScreen from '../screens/shared/NotificationsScreen';
 import WriteReviewScreen from '../screens/shared/WriteReviewScreen';
 import PublicCompanyProfileScreen from '../screens/shared/PublicCompanyProfileScreen';
 import PublicWorkerProfileScreen from '../screens/shared/PublicWorkerProfileScreen';
+import ChatScreen from '../screens/shared/ChatScreen';
+import FAQScreen from '../screens/shared/FAQScreen';
 
 // Worker screens
 import WorkerSettingsScreen from '../screens/worker/WorkerSettingsScreen';
+import SavedShiftsScreen from '../screens/worker/SavedShiftsScreen';
 
 // Employer screens
 import ManageApplicationsScreen from '../screens/employer/ManageApplicationsScreen';
@@ -22,6 +25,7 @@ import EmployerSettingsScreen from '../screens/employer/EmployerSettingsScreen';
 import PlansScreen from '../screens/employer/PlansScreen';
 import LocationsScreen from '../screens/employer/LocationsScreen';
 import FavoritesScreen from '../screens/employer/FavoritesScreen';
+import WorkerDirectoryScreen from '../screens/employer/WorkerDirectoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,13 +50,17 @@ export default function AppNavigator() {
       <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
       <Stack.Screen name="PublicCompanyProfile" component={PublicCompanyProfileScreen} />
       <Stack.Screen name="PublicWorkerProfile" component={PublicWorkerProfileScreen} />
+      <Stack.Screen name="ChatConversation" component={ChatScreen} />
+      <Stack.Screen name="FAQ" component={FAQScreen} />
       {/* Worker */}
       <Stack.Screen name="Settings" component={isEmployer ? EmployerSettingsScreen : WorkerSettingsScreen} />
+      <Stack.Screen name="SavedShifts" component={SavedShiftsScreen} />
       {/* Employer */}
       <Stack.Screen name="ManageApplications" component={ManageApplicationsScreen} />
       <Stack.Screen name="Plans" component={PlansScreen} />
       <Stack.Screen name="Locations" component={LocationsScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
+      <Stack.Screen name="WorkerDirectory" component={WorkerDirectoryScreen} />
     </Stack.Navigator>
   );
 }

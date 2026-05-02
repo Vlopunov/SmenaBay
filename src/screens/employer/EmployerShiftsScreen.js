@@ -126,9 +126,12 @@ export default function EmployerShiftsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: SIZES.lg, paddingTop: SIZES.sm, paddingBottom: SIZES.xs },
+  header: {
+    paddingHorizontal: SIZES.lg, paddingTop: SIZES.sm, paddingBottom: SIZES.md,
+    backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+  },
   headerTitle: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  filters: { paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginBottom: SIZES.md, alignItems: 'center' },
+  filters: { paddingHorizontal: SIZES.lg, gap: SIZES.sm, paddingVertical: SIZES.md, alignItems: 'center' },
   filterChip: { paddingHorizontal: SIZES.md, height: 34, justifyContent: 'center', borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
   filterChipActive: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },
   filterText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },

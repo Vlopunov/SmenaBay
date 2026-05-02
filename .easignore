@@ -1,0 +1,10 @@
+.git
+.expo
+node_modules
+dist
+web-build
+scripts
+FIREBASE_SETUP.md
+README.md
+.DS_Store
+*.log

@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Modal, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
+import { formatDate } from '../../utils/formatDate';
 
 export default function FavoritesScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -13,8 +15,26 @@ export default function FavoritesScreen({ navigation }) {
   const currentUser = useStore(s => s.currentUser);
   const workers = useStore(s => s.workers);
   const toggleFavorite = useStore(s => s.toggleFavorite);
+  const shifts = useStore(s => s.shifts);
+  const inviteWorkerToShift = useStore(s => s.inviteWorkerToShift);
+  const [inviteWorkerId, setInviteWorkerId] = useState(null);
+
+  const activeShifts = useMemo(
+    () => shifts.filter(s => s.companyId === currentUser?.id && s.status === 'active'),
+    [shifts, currentUser],
+  );
 
   const userFavorites = favorites[currentUser?.id] || [];
+
+  const handleInvite = (shiftId) => {
+    const result = inviteWorkerToShift(inviteWorkerId, shiftId);
+    setInviteWorkerId(null);
+    if (result?.error === 'already_invited') {
+      Alert.alert('', 'Приглашение уже отправлено');
+    } else {
+      Alert.alert('', 'Приглашение отправлено!');
+    }
+  };
   const favoriteWorkers = useMemo(
     () => workers.filter(w => userFavorites.includes(w.id)),
     [workers, userFavorites],
@@ -42,10 +62,7 @@ export default function FavoritesScreen({ navigation }) {
       activeOpacity={0.7}
       onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
     >
-      <Image
-        source={{ uri: worker.avatar || 'https://i.pravatar.cc/200?img=0' }}
-        style={styles.avatar}
-      />
+      <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={52} />
       <View style={styles.workerInfo}>
         <Text style={styles.workerName} numberOfLines={1}>
           {worker.firstName} {worker.lastName}
@@ -65,13 +82,23 @@ export default function FavoritesScreen({ navigation }) {
         </View>
         <Text style={styles.shiftsText}>{worker.shiftsCompleted} смен выполнено</Text>
       </View>
-      <TouchableOpacity
-        style={styles.heartBtn}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        onPress={() => toggleFavorite(worker.id)}
-      >
-        <Ionicons name="heart" size={22} color={COLORS.error} />
-      </TouchableOpacity>
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <TouchableOpacity
+          style={styles.heartBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={() => toggleFavorite(worker.id)}
+        >
+          <Ionicons name="heart" size={22} color={COLORS.error} />
+        </TouchableOpacity>
+        {activeShifts.length > 0 && (
+          <TouchableOpacity
+            style={styles.inviteSmBtn}
+            onPress={() => setInviteWorkerId(worker.id)}
+          >
+            <Ionicons name="paper-plane-outline" size={14} color={COLORS.accent} />
+          </TouchableOpacity>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -87,6 +114,27 @@ export default function FavoritesScreen({ navigation }) {
         <Text style={styles.navTitle}>Избранные исполнители</Text>
         <View style={{ width: 44 }} />
       </View>
+
+      {/* Invite modal */}
+      <Modal visible={!!inviteWorkerId} transparent animationType="fade">
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInviteWorkerId(null)}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Выберите смену</Text>
+            {activeShifts.map(shift => (
+              <TouchableOpacity key={shift.id} style={styles.modalItem} onPress={() => handleInvite(shift.id)}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalItemTitle}>{shift.title}</Text>
+                  <Text style={styles.modalItemSub}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.modalCancel} onPress={() => setInviteWorkerId(null)}>
+              <Text style={styles.modalCancelText}>Отмена</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* List */}
       <FlatList
@@ -213,4 +261,18 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: SIZES.sm,
   },
+
+  inviteSmBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center',
+  },
+
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modal: { backgroundColor: COLORS.white, borderTopLeftRadius: SIZES.radiusXl, borderTopRightRadius: SIZES.radiusXl, padding: SIZES.lg, paddingBottom: SIZES['3xl'] },
+  modalTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginBottom: SIZES.md },
+  modalItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SIZES.md, borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight },
+  modalItemTitle: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
+  modalItemSub: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2 },
+  modalCancel: { marginTop: SIZES.lg, alignItems: 'center', paddingVertical: SIZES.md },
+  modalCancelText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.textSecondary },
 });

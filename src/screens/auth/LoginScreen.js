@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, StatusBar,
-  ScrollView, KeyboardAvoidingView, Platform, Keyboard,
+  ScrollView, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
+import { sendVerificationCode, verifyCode, isMockAuth, signInWithGoogle, signInWithApple } from '../../services/auth';
 
 export default function LoginScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -16,22 +17,101 @@ export default function LoginScreen({ navigation }) {
   const [step, setStep] = useState(1);
   const [smsCode, setSmsCode] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [verification, setVerification] = useState(null);
+  const [resendTimer, setResendTimer] = useState(0);
+  const timerRef = useRef(null);
 
-  const handleSendCode = () => {
+  useEffect(() => {
+    if (resendTimer > 0) {
+      timerRef.current = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timerRef.current);
+    }
+  }, [resendTimer]);
+
+  const handleSendCode = async () => {
     if (phone.length < 13) {
       setError('Введите корректный номер');
       return;
     }
     setError('');
-    setStep(2);
+    setLoading(true);
+    try {
+      const result = await sendVerificationCode(phone);
+      setVerification(result);
+      setStep(2);
+      setResendTimer(60);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerify = () => {
-    if (smsCode.length < 4) return;
-    const user = login(phone);
-    if (!user) {
-      setError('Пользователь не найден. Зарегистрируйтесь.');
-      setStep(1);
+  const handleVerify = async () => {
+    if (smsCode.length < 6) return;
+    setError('');
+    setLoading(true);
+    try {
+      await verifyCode(verification, smsCode);
+      const user = login(phone);
+      if (!user) {
+        setError('Пользователь не найден. Зарегистрируйтесь.');
+        setStep(1);
+        setSmsCode('');
+        setVerification(null);
+      }
+    } catch (e) {
+      setError(e.message);
+      setSmsCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await sendVerificationCode(phone);
+      setVerification(result);
+      setResendTimer(60);
+      setSmsCode('');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signInWithGoogle();
+      if (result.cancelled) { setLoading(false); return; }
+      // Try to find user by email or create placeholder
+      // For now, show info that account needs to be linked
+      Alert.alert('Google Sign-In', `Вошли как ${result.displayName || result.email}.\n\nДля полной интеграции необходим бэкенд.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signInWithApple();
+      if (result.cancelled) { setLoading(false); return; }
+      Alert.alert('Apple Sign-In', `Вошли как ${result.displayName || result.email}.\n\nДля полной интеграции необходим бэкенд.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,7 +136,9 @@ export default function LoginScreen({ navigation }) {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>Вход</Text>
-        <Text style={styles.subtitle}>Введите номер телефона</Text>
+        <Text style={styles.subtitle}>
+          {step === 1 ? 'Введите номер телефона' : `Код отправлен на ${phone}`}
+        </Text>
 
         {step === 1 ? (
           <>
@@ -67,11 +149,21 @@ export default function LoginScreen({ navigation }) {
               placeholder="+375XXXXXXXXX"
               placeholderTextColor={COLORS.textTertiary}
               keyboardType="phone-pad"
+              editable={!loading}
             />
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <TouchableOpacity style={styles.submitBtn} onPress={handleSendCode} activeOpacity={0.7}>
-              <Text style={styles.submitBtnText}>Получить код</Text>
+            <TouchableOpacity
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+              onPress={handleSendCode}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.submitBtnText}>Получить код</Text>
+              )}
             </TouchableOpacity>
           </>
         ) : (
@@ -81,26 +173,69 @@ export default function LoginScreen({ navigation }) {
               value={smsCode}
               onChangeText={setSmsCode}
               keyboardType="number-pad"
-              maxLength={4}
+              maxLength={6}
               placeholder="0000"
               placeholderTextColor={COLORS.textTertiary}
               autoFocus
+              editable={!loading}
             />
-            <Text style={styles.smsHint}>В прототипе подойдёт любой код</Text>
+            {isMockAuth() && (
+              <Text style={styles.smsHint}>Режим разработки — подойдёт любой код</Text>
+            )}
+            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <TouchableOpacity
-              style={[styles.submitBtn, smsCode.length < 4 && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, (smsCode.length < 6 || loading) && styles.submitBtnDisabled]}
               onPress={handleVerify}
-              disabled={smsCode.length < 4}
+              disabled={smsCode.length < 6 || loading}
               activeOpacity={0.7}
             >
-              <Text style={styles.submitBtnText}>Войти</Text>
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text style={styles.submitBtnText}>Войти</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.resendBtn}
+              onPress={resendTimer > 0 ? undefined : handleResend}
+              disabled={resendTimer > 0}
+            >
+              <Text style={[styles.resendText, resendTimer > 0 && styles.resendTextDisabled]}>
+                {resendTimer > 0 ? `Отправить повторно (${resendTimer}с)` : 'Отправить код повторно'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.changePhoneBtn} onPress={() => { setStep(1); setSmsCode(''); setError(''); }}>
+              <Text style={styles.changePhoneText}>Изменить номер</Text>
             </TouchableOpacity>
           </>
         )}
 
-        {/* Quick Demo Access */}
-        <View style={styles.demoSection}>
+        {/* Social Login */}
+        <View style={styles.socialSection}>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>или войдите через</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin} activeOpacity={0.7} disabled={loading}>
+            <Ionicons name="logo-google" size={20} color="#DB4437" />
+            <Text style={styles.socialBtnText}>Продолжить с Google</Text>
+          </TouchableOpacity>
+
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity style={styles.appleBtn} onPress={handleAppleLogin} activeOpacity={0.7} disabled={loading}>
+              <Ionicons name="logo-apple" size={22} color={COLORS.white} />
+              <Text style={styles.appleBtnText}>Продолжить с Apple</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Quick Demo Access — only in dev */}
+        {__DEV__ && <View style={styles.demoSection}>
           <Text style={styles.demoTitle}>Быстрый вход (демо)</Text>
 
           <TouchableOpacity style={styles.demoBtn} onPress={() => quickLogin('+375291234567')} activeOpacity={0.7}>
@@ -132,7 +267,7 @@ export default function LoginScreen({ navigation }) {
             <Ionicons name="business" size={18} color="#D97706" />
             <Text style={styles.demoBtnText}>Склад-Логистик — Заказчик (Premium)</Text>
           </TouchableOpacity>
-        </View>
+        </View>}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -150,7 +285,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...FONTS.regular,
   },
   inputError: { borderColor: COLORS.error },
-  error: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.sm },
+  error: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.sm, textAlign: 'center' },
   submitBtn: {
     backgroundColor: COLORS.accent, borderRadius: SIZES.radiusMd, height: SIZES.buttonHeight,
     justifyContent: 'center', alignItems: 'center', marginTop: SIZES.lg,
@@ -158,11 +293,32 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.white },
   smsInput: {
-    width: 160, height: 64, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    fontSize: 32, textAlign: 'center', ...FONTS.bold, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, letterSpacing: 12, alignSelf: 'center',
+    width: 180, height: 64, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
+    fontSize: 28, textAlign: 'center', ...FONTS.bold, color: COLORS.textPrimary,
+    borderWidth: 1, borderColor: COLORS.border, letterSpacing: 10, alignSelf: 'center',
   },
   smsHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: SIZES.md, textAlign: 'center' },
+  resendBtn: { marginTop: SIZES.lg, alignItems: 'center' },
+  resendText: { fontSize: SIZES.body, color: COLORS.accent, ...FONTS.medium },
+  resendTextDisabled: { color: COLORS.textTertiary },
+  changePhoneBtn: { marginTop: SIZES.sm, alignItems: 'center' },
+  changePhoneText: { fontSize: SIZES.small, color: COLORS.textSecondary },
+  socialSection: { marginTop: SIZES.xl },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SIZES.lg },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: { fontSize: SIZES.small, color: COLORS.textTertiary, marginHorizontal: SIZES.md },
+  googleBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm,
+    height: SIZES.buttonHeight, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
+    borderWidth: 1, borderColor: COLORS.border, marginBottom: SIZES.sm,
+  },
+  socialBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.textPrimary },
+  appleBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm,
+    height: SIZES.buttonHeight, backgroundColor: '#000000', borderRadius: SIZES.radiusMd,
+    marginBottom: SIZES.sm,
+  },
+  appleBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.white },
   demoSection: {
     marginTop: SIZES['3xl'], paddingTop: SIZES.xl,
     borderTopWidth: 1, borderTopColor: COLORS.border,

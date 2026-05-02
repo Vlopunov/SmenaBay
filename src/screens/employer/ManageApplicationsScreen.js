@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Linking,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Linking, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
+import { formatDate } from '../../utils/formatDate';
 
 const TABS = ['Новые', 'Подтверждённые', 'Отклонённые'];
 
@@ -26,6 +28,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
   const cancelShift = useStore(s => s.cancelShift);
   const getReviewForShift = useStore(s => s.getReviewForShift);
   const currentUser = useStore(s => s.currentUser);
+  const getOrCreateConversation = useStore(s => s.getOrCreateConversation);
 
   const [tab, setTab] = useState(0);
 
@@ -50,7 +53,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
           style={styles.workerRow}
           onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
         >
-          <Image source={{ uri: worker.avatar || 'https://i.pravatar.cc/200' }} style={styles.avatar} />
+          <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={52} />
           <View style={styles.workerInfo}>
             <Text style={styles.workerName}>{worker.firstName} {worker.lastName}</Text>
             <View style={styles.workerMeta}>
@@ -94,10 +97,22 @@ export default function ManageApplicationsScreen({ route, navigation }) {
           )}
           {tab === 1 && (
             <>
-              <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${worker.phone}`)}>
-                <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-                <Text style={styles.callText}>Позвонить</Text>
+              <TouchableOpacity
+                style={styles.callBtn}
+                onPress={() => {
+                  const conv = getOrCreateConversation(shiftId, worker.id, currentUser.id);
+                  navigation.navigate('ChatConversation', { conversationId: conv.id });
+                }}
+              >
+                <Ionicons name="chatbubble-outline" size={16} color={COLORS.accent} />
+                <Text style={styles.callText}>Написать</Text>
               </TouchableOpacity>
+              {worker.phoneVisible !== false && (
+                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${worker.phone}`)}>
+                  <Ionicons name="call-outline" size={16} color={COLORS.accent} />
+                  <Text style={styles.callText}>Позвонить</Text>
+                </TouchableOpacity>
+              )}
               {isCompleted && !hasReview && (
                 <TouchableOpacity
                   style={styles.reviewBtn}
@@ -130,7 +145,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
         </TouchableOpacity>
         <View style={styles.navCenter}>
           <Text style={styles.navTitle}>{shift.title}</Text>
-          <Text style={styles.navSub}>{shift.date}, {shift.timeStart}–{shift.timeEnd}</Text>
+          <Text style={styles.navSub}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
         </View>
         <View style={{ width: 44 }} />
       </View>
@@ -143,11 +158,52 @@ export default function ManageApplicationsScreen({ route, navigation }) {
           </TouchableOpacity>
         )}
         {shift.status === 'active' && (
-          <TouchableOpacity style={styles.cancelShiftBtn} onPress={() => cancelShift(shiftId)}>
+          <TouchableOpacity
+            style={styles.cancelShiftBtn}
+            onPress={() => {
+              Alert.alert('Причина отмены', 'Выберите причину:', [
+                { text: 'Нет исполнителей', onPress: () => cancelShift(shiftId) },
+                { text: 'Изменение графика', onPress: () => cancelShift(shiftId) },
+                { text: 'Погодные условия', onPress: () => cancelShift(shiftId) },
+                { text: 'Другое', onPress: () => cancelShift(shiftId) },
+                { text: 'Не отменять', style: 'cancel' },
+              ]);
+            }}
+          >
             <Text style={styles.cancelShiftText}>Отменить</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Bulk actions for pending */}
+      {tab === 0 && pending.length > 1 && (
+        <View style={styles.bulkActions}>
+          <TouchableOpacity
+            style={styles.bulkApproveBtn}
+            onPress={() => {
+              Alert.alert('Подтвердить всех?', `Подтвердить ${pending.length} исполнителей?`, [
+                { text: 'Отмена', style: 'cancel' },
+                { text: 'Подтвердить', onPress: () => pending.forEach(a => approve(a.id)) },
+              ]);
+            }}
+          >
+            <Ionicons name="checkmark-done" size={16} color={COLORS.white} />
+            <Text style={styles.bulkBtnText}>Принять всех</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.bulkRejectBtn}
+            onPress={() => {
+              Alert.alert('Отклонить всех?', `Отклонить ${pending.length} исполнителей?`, [
+                { text: 'Отмена', style: 'cancel' },
+                { text: 'Отклонить', style: 'destructive', onPress: () => pending.forEach(a => reject(a.id)) },
+              ]);
+            }}
+          >
+            <Ionicons name="close" size={16} color={COLORS.error} />
+            <Text style={styles.bulkRejectText}>Отклонить всех</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Tabs */}
       <View style={styles.tabs}>
@@ -237,6 +293,12 @@ const styles = StyleSheet.create({
   reviewBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.accent },
   reviewBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
   rejectedStatus: { fontSize: SIZES.small, color: COLORS.textTertiary },
+
+  bulkActions: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginBottom: SIZES.sm },
+  bulkApproveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.success },
+  bulkBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
+  bulkRejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, borderWidth: 1, borderColor: COLORS.error },
+  bulkRejectText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
 
   empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
   emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
   Image, StatusBar, RefreshControl,
@@ -8,22 +8,56 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
 
-const QUICK_FILTERS = ['Все', 'Сегодня', 'Завтра', 'ПВЗ', 'HoReCa', 'Склад', 'Высокая оплата'];
+const DATE_FILTERS = ['Все', 'Сегодня', 'Завтра', 'Эта неделя'];
 
-export default function FeedScreen({ navigation }) {
+const CATEGORY_FILTERS = [
+  { key: 'all', label: 'Все категории', icon: 'apps-outline' },
+  { key: 'pvz', label: 'ПВЗ', icon: 'cube-outline' },
+  { key: 'horeca', label: 'HoReCa', icon: 'restaurant-outline' },
+  { key: 'warehouse', label: 'Склад', icon: 'file-tray-stacked-outline' },
+  { key: 'retail', label: 'Ритейл', icon: 'storefront-outline' },
+  { key: 'cleaning', label: 'Клининг', icon: 'sparkles-outline' },
+  { key: 'coffee', label: 'Кофейни', icon: 'cafe-outline' },
+  { key: 'courier', label: 'Курьеры', icon: 'bicycle-outline' },
+  { key: 'promo', label: 'Промо', icon: 'megaphone-outline' },
+  { key: 'events', label: 'Ивенты', icon: 'musical-notes-outline' },
+  { key: 'production', label: 'Производство', icon: 'construct-outline' },
+];
+
+export default function FeedScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const currentUser = useStore(s => s.currentUser);
   const shifts = useStore(s => s.shifts);
   const companies = useStore(s => s.companies);
   const getUnreadCount = useStore(s => s.getUnreadCount);
+  const toggleSavedShift = useStore(s => s.toggleSavedShift);
+  const savedShifts = useStore(s => s.savedShifts);
+  const userSaved = savedShifts[currentUser?.id] || [];
 
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Все');
+
+  // Accept initial search from navigation params (e.g. "Find similar" from MyShifts)
+  useEffect(() => {
+    if (route?.params?.initialSearch) {
+      setSearch(route.params.initialSearch);
+    }
+  }, [route?.params?.initialSearch]);
+  const [dateFilter, setDateFilter] = useState('Все');
   const [refreshing, setRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [payMin, setPayMin] = useState('');
   const [noExpOnly, setNoExpOnly] = useState(false);
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [noMedBook, setNoMedBook] = useState(false);
+
+  const activeFilterCount = [
+    categoryFilter !== 'all',
+    !!payMin,
+    noExpOnly,
+    urgentOnly,
+    noMedBook,
+  ].filter(Boolean).length;
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
@@ -52,18 +86,42 @@ export default function FeedScreen({ navigation }) {
       });
     }
 
-    // Quick filters
-    if (activeFilter === 'Сегодня') result = result.filter(s => s.date === today);
-    else if (activeFilter === 'Завтра') result = result.filter(s => s.date === tomorrow);
-    else if (activeFilter === 'ПВЗ') result = result.filter(s => s.title.toLowerCase().includes('пвз') || companies.find(c => c.id === s.companyId)?.businessCategory === 'ПВЗ');
-    else if (activeFilter === 'HoReCa') result = result.filter(s => companies.find(c => c.id === s.companyId)?.businessCategory === 'HoReCa');
-    else if (activeFilter === 'Склад') result = result.filter(s => s.title.toLowerCase().includes('склад') || s.title.toLowerCase().includes('грузчик') || s.title.toLowerCase().includes('комплектовщик') || s.title.toLowerCase().includes('сборщик'));
-    else if (activeFilter === 'Высокая оплата') result = result.filter(s => s.pay >= 70);
+    // Date filter
+    if (dateFilter === 'Сегодня') result = result.filter(s => s.date === today);
+    else if (dateFilter === 'Завтра') result = result.filter(s => s.date === tomorrow);
+    else if (dateFilter === 'Эта неделя') {
+      const weekEnd = new Date();
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekEndStr = weekEnd.toISOString().split('T')[0];
+      result = result.filter(s => s.date >= today && s.date <= weekEndStr);
+    }
+
+    // Category filter
+    if (categoryFilter !== 'all') {
+      result = result.filter(s => {
+        const title = s.title.toLowerCase();
+        const bcat = companies.find(c => c.id === s.companyId)?.businessCategory || '';
+        switch (categoryFilter) {
+          case 'pvz': return title.includes('пвз') || bcat === 'ПВЗ';
+          case 'horeca': return bcat === 'HoReCa' || title.includes('официант') || title.includes('повар') || title.includes('бармен');
+          case 'warehouse': return bcat === 'Склад/Логистика' || title.includes('склад') || title.includes('грузчик') || title.includes('комплектовщик') || title.includes('сборщик');
+          case 'retail': return bcat === 'Ритейл' || title.includes('продавец') || title.includes('кассир');
+          case 'cleaning': return bcat === 'Клининг' || title.includes('уборщик') || title.includes('клининг');
+          case 'coffee': return title.includes('бариста') || title.includes('кофейн') || title.includes('кофе');
+          case 'courier': return title.includes('курьер') || title.includes('доставк');
+          case 'promo': return title.includes('промоутер') || title.includes('промо') || title.includes('раздач');
+          case 'events': return bcat === 'Ивенты' || title.includes('ивент') || title.includes('мероприят');
+          case 'production': return bcat === 'Производство' || title.includes('производств') || title.includes('разнорабоч');
+          default: return true;
+        }
+      });
+    }
 
     // Advanced filters
     if (payMin && !isNaN(payMin)) result = result.filter(s => s.pay >= Number(payMin));
     if (noExpOnly) result = result.filter(s => s.requirements.noExperienceOk);
     if (urgentOnly) result = result.filter(s => s.urgent);
+    if (noMedBook) result = result.filter(s => !s.requirements.medicalBookRequired);
 
     // Sort: urgent first, then by date
     return result.sort((a, b) => {
@@ -71,7 +129,7 @@ export default function FeedScreen({ navigation }) {
       if (!a.urgent && b.urgent) return 1;
       return new Date(a.date) - new Date(b.date);
     });
-  }, [shifts, search, activeFilter, payMin, noExpOnly, urgentOnly, currentUser]);
+  }, [shifts, search, dateFilter, categoryFilter, payMin, noExpOnly, urgentOnly, noMedBook, currentUser, companies]);
 
   const getCompany = useCallback((id) => companies.find(c => c.id === id), [companies]);
   const getLocation = useCallback((companyId, locId) => {
@@ -123,7 +181,19 @@ export default function FeedScreen({ navigation }) {
             </View>
           </View>
           <View style={styles.payBadge}>
-            <Text style={styles.payAmount}>{item.pay}</Text>
+            <View style={styles.payTopRow}>
+              <Text style={styles.payAmount}>{item.pay}</Text>
+              <TouchableOpacity
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={() => toggleSavedShift(item.id)}
+              >
+                <Ionicons
+                  name={userSaved.includes(item.id) ? 'bookmark' : 'bookmark-outline'}
+                  size={18}
+                  color={userSaved.includes(item.id) ? COLORS.accent : COLORS.textTertiary}
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.payCurrency}>BYN</Text>
           </View>
         </View>
@@ -207,19 +277,41 @@ export default function FeedScreen({ navigation }) {
           )}
         </View>
         <TouchableOpacity
-          style={[styles.filterBtn, showFilters && styles.filterBtnActive]}
+          style={[styles.filterBtn, (showFilters || activeFilterCount > 0) && styles.filterBtnActive]}
           onPress={() => setShowFilters(!showFilters)}
           activeOpacity={0.7}
         >
-          <Ionicons name="options-outline" size={20} color={showFilters ? COLORS.white : COLORS.accent} />
+          <Ionicons name="options-outline" size={20} color={(showFilters || activeFilterCount > 0) ? COLORS.white : COLORS.accent} />
+          {activeFilterCount > 0 && !showFilters && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* Advanced Filters */}
       {showFilters && (
         <View style={styles.advFilters}>
+          {/* Category */}
+          <Text style={[styles.advSectionTitle, { marginTop: 0 }]}>Категория</Text>
+          <View style={styles.advChipsWrap}>
+            {CATEGORY_FILTERS.map(f => (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.advCatChip, categoryFilter === f.key && styles.advCatChipActive]}
+                onPress={() => setCategoryFilter(f.key)}
+              >
+                <Ionicons name={f.icon} size={14} color={categoryFilter === f.key ? COLORS.white : COLORS.textSecondary} />
+                <Text style={[styles.advCatText, categoryFilter === f.key && styles.advCatTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Pay */}
+          <Text style={styles.advSectionTitle}>Оплата</Text>
           <View style={styles.advRow}>
-            <Text style={styles.advLabel}>Оплата от</Text>
+            <Text style={styles.advLabel}>от</Text>
             <TextInput
               style={styles.advInput}
               value={payMin}
@@ -230,36 +322,59 @@ export default function FeedScreen({ navigation }) {
             />
             <Text style={styles.advUnit}>BYN</Text>
           </View>
-          <View style={styles.advRow}>
+
+          {/* Toggles */}
+          <Text style={styles.advSectionTitle}>Условия</Text>
+          <View style={styles.advChipsWrap}>
             <TouchableOpacity
               style={[styles.advToggle, noExpOnly && styles.advToggleActive]}
               onPress={() => setNoExpOnly(!noExpOnly)}
             >
+              <Ionicons name="school-outline" size={14} color={noExpOnly ? COLORS.white : COLORS.textSecondary} />
               <Text style={[styles.advToggleText, noExpOnly && styles.advToggleTextActive]}>Без опыта</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.advToggle, urgentOnly && styles.advToggleActive]}
               onPress={() => setUrgentOnly(!urgentOnly)}
             >
+              <Ionicons name="flash-outline" size={14} color={urgentOnly ? COLORS.white : COLORS.textSecondary} />
               <Text style={[styles.advToggleText, urgentOnly && styles.advToggleTextActive]}>Срочные</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.advToggle, noMedBook && styles.advToggleActive]}
+              onPress={() => setNoMedBook(!noMedBook)}
+            >
+              <Ionicons name="medkit-outline" size={14} color={noMedBook ? COLORS.white : COLORS.textSecondary} />
+              <Text style={[styles.advToggleText, noMedBook && styles.advToggleTextActive]}>Без медкнижки</Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Reset */}
+          {activeFilterCount > 0 && (
+            <TouchableOpacity
+              style={styles.advReset}
+              onPress={() => { setCategoryFilter('all'); setPayMin(''); setNoExpOnly(false); setUrgentOnly(false); setNoMedBook(false); }}
+            >
+              <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
+              <Text style={styles.advResetText}>Сбросить фильтры</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
-      {/* Quick Filters */}
+      {/* Date Filters */}
       <FlatList
-        data={QUICK_FILTERS}
+        data={DATE_FILTERS}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.quickFilters}
         keyExtractor={item => item}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.quickChip, activeFilter === item && styles.quickChipActive]}
-            onPress={() => setActiveFilter(item)}
+            style={[styles.quickChip, dateFilter === item && styles.quickChipActive]}
+            onPress={() => setDateFilter(item)}
           >
-            <Text style={[styles.quickChipText, activeFilter === item && styles.quickChipTextActive]}>
+            <Text style={[styles.quickChipText, dateFilter === item && styles.quickChipTextActive]}>
               {item}
             </Text>
           </TouchableOpacity>
@@ -276,6 +391,10 @@ export default function FeedScreen({ navigation }) {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />
         }
@@ -322,26 +441,52 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center',
   },
   filterBtnActive: { backgroundColor: COLORS.accent },
+  filterBadge: {
+    position: 'absolute', top: 4, right: 4,
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: COLORS.error, justifyContent: 'center', alignItems: 'center',
+  },
+  filterBadgeText: { fontSize: 9, ...FONTS.bold, color: COLORS.white },
 
   // Advanced Filters
   advFilters: {
-    marginHorizontal: SIZES.lg, marginTop: SIZES.sm, backgroundColor: COLORS.white,
-    borderRadius: SIZES.radiusMd, padding: SIZES.md, ...SHADOWS.sm,
+    marginHorizontal: SIZES.lg, marginTop: SIZES.sm, marginBottom: SIZES.xs,
+    backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg,
+    padding: SIZES.base, ...SHADOWS.md, zIndex: 10,
   },
+  advSectionTitle: {
+    fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.textTertiary,
+    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: SIZES.sm, marginTop: SIZES.sm,
+  },
+  advChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, marginBottom: SIZES.xs },
+  advCatChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm,
+    borderRadius: SIZES.radiusFull, backgroundColor: COLORS.surface,
+  },
+  advCatChipActive: { backgroundColor: COLORS.accent },
+  advCatText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
+  advCatTextActive: { color: COLORS.white },
   advRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginBottom: SIZES.sm },
-  advLabel: { fontSize: SIZES.small, color: COLORS.textSecondary, width: 70 },
+  advLabel: { fontSize: SIZES.small, color: COLORS.textSecondary },
   advInput: {
     width: 80, height: 36, backgroundColor: COLORS.surface, borderRadius: SIZES.radiusSm,
     paddingHorizontal: SIZES.sm, fontSize: SIZES.body, color: COLORS.textPrimary, textAlign: 'center',
   },
   advUnit: { fontSize: SIZES.small, color: COLORS.textSecondary },
   advToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull,
     backgroundColor: COLORS.surface,
   },
   advToggleActive: { backgroundColor: COLORS.accent },
   advToggleText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
   advToggleTextActive: { color: COLORS.white },
+  advReset: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.xs,
+    marginTop: SIZES.md, paddingVertical: SIZES.sm,
+  },
+  advResetText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
 
   // Quick Filters
   quickFilters: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, gap: SIZES.sm, alignItems: 'center' },
@@ -377,6 +522,7 @@ const styles = StyleSheet.create({
   ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   ratingText: { fontSize: SIZES.caption, ...FONTS.medium, color: COLORS.textSecondary },
   payBadge: { alignItems: 'flex-end' },
+  payTopRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
   payAmount: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.success },
   payCurrency: { fontSize: SIZES.caption, color: COLORS.textTertiary },
   shiftDetails: { marginTop: SIZES.md, gap: SIZES.sm },

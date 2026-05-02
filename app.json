@@ -1,32 +1,78 @@
 {
   "expo": {
-    "name": "СменаБай",
+    "name": "СменаБел",
     "slug": "SmenaBay",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "description": "СменаБел — платформа подработок и посменной работы в Беларуси. Для соискателей — быстрый поиск смен рядом. Для работодателей — публикация вакансий и отбор кандидатов.",
+    "primaryColor": "#4F46E5",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAFAFA"
+      "backgroundColor": "#4F46E5"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.smenabay.app"
+      "bundleIdentifier": "com.smenabay.app",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат.",
+        "NSPhotoLibraryUsageDescription": "СменаБел запрашивает доступ к фото, чтобы вы могли установить фото профиля и отправлять изображения в чат.",
+        "NSPhotoLibraryAddUsageDescription": "Разрешите сохранять изображения из приложения в вашу фотогалерею."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FAFAFA"
+        "backgroundColor": "#4F46E5"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.smenabay.app"
+      "package": "com.smenabay.app",
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 4,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "com.google.android.gms.permission.AD_ID"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "СменаБел запрашивает доступ к фото, чтобы вы могли установить фото профиля и отправлять изображения в чат.",
+          "cameraPermission": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат."
+        }
+      ],
+      "expo-apple-authentication",
+      "expo-font",
+      "./plugins/with-adi-registration.js",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "ec9c0ac8-1eb1-4cbf-9bf9-ed3293f23607"

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +35,8 @@ export default function DashboardScreen({ navigation }) {
     { label: 'Ждут подтверждения', value: stats.pendingApplications || 0, icon: 'hourglass-outline', color: '#D97706' },
     { label: 'Смен за месяц', value: stats.monthShifts || 0, icon: 'calendar-outline', color: '#059669' },
     { label: 'Рейтинг', value: stats.rating ? stats.rating.toFixed(1) : '—', icon: 'star-outline', color: '#F59E0B' },
+    { label: 'Заполняемость', value: `${stats.fillRate || 0}%`, icon: 'pie-chart-outline', color: '#8B5CF6' },
+    { label: 'Отмены', value: `${stats.cancelRate || 0}%`, icon: 'close-circle-outline', color: '#EF4444' },
   ];
 
   return (
@@ -131,6 +133,31 @@ export default function DashboardScreen({ navigation }) {
           )}
         </View>
 
+        {/* Top Workers */}
+        {stats.topWorkers?.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Лучшие исполнители</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SIZES.lg }}>
+              <View style={{ flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm }}>
+                {stats.topWorkers.map(({ worker, count }) => (
+                  <TouchableOpacity
+                    key={worker.id}
+                    style={styles.topWorkerCard}
+                    onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
+                  >
+                    <Image
+                      source={{ uri: worker.avatar || 'https://i.pravatar.cc/200?img=0' }}
+                      style={styles.topWorkerAvatar}
+                    />
+                    <Text style={styles.topWorkerName} numberOfLines={1}>{worker.firstName}</Text>
+                    <Text style={styles.topWorkerCount}>{count} смен</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
+
         <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
       </ScrollView>
     </View>
@@ -172,4 +199,9 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: SIZES.body, color: COLORS.textSecondary, marginBottom: SIZES.md },
   createBtn: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, backgroundColor: COLORS.accent, paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, borderRadius: SIZES.radiusMd },
   createBtnText: { fontSize: SIZES.body, ...FONTS.semibold, color: COLORS.white },
+
+  topWorkerCard: { alignItems: 'center', width: 80 },
+  topWorkerAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.skeleton },
+  topWorkerName: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textPrimary, marginTop: SIZES.xs },
+  topWorkerCount: { fontSize: SIZES.caption, color: COLORS.textSecondary },
 });

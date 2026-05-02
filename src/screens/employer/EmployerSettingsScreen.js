@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  StatusBar, Alert,
+  StatusBar, Alert, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ export default function EmployerSettingsScreen({ navigation }) {
     contactPerson: currentUser?.contactPerson || '',
     city: currentUser?.city || '',
     businessCategory: currentUser?.businessCategory || '',
+    phoneVisible: currentUser?.phoneVisible !== false,
   });
 
   const [showCities, setShowCities] = useState(false);
@@ -107,6 +108,20 @@ export default function EmployerSettingsScreen({ navigation }) {
         <Text style={styles.label}>Телефон</Text>
         <View style={[styles.input, styles.inputDisabled]}>
           <Text style={styles.inputDisabledText}>{currentUser.phone}</Text>
+        </View>
+
+        {/* Phone visibility toggle */}
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleLabel}>Показывать номер телефона</Text>
+            <Text style={styles.toggleHint}>Исполнители смогут видеть номер и звонить напрямую</Text>
+          </View>
+          <Switch
+            value={form.phoneVisible}
+            onValueChange={v => setForm(f => ({ ...f, phoneVisible: v }))}
+            trackColor={{ false: COLORS.border, true: COLORS.accent + '60' }}
+            thumbColor={form.phoneVisible ? COLORS.accent : '#f4f3f4'}
+          />
         </View>
 
         {/* City */}
@@ -210,6 +225,13 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: COLORS.surface, justifyContent: 'center',
   },
+  toggleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: SIZES.md, marginBottom: SIZES.md,
+    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+  },
+  toggleLabel: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
+  toggleHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: 2 },
   inputDisabledText: {
     fontSize: SIZES.body, color: COLORS.textSecondary, ...FONTS.regular,
   },

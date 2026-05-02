@@ -6,6 +6,18 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
       "port": 8081
+    },
+    {
+      "name": "smenabay-web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/vladlopunov/Downloads/smenabay-web && npx next dev -p 3001"],
+      "port": 3001
+    },
+    {
+      "name": "american-bbq",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/vladlopunov/Downloads/american-bbq && npx expo start --web --port 8082"],
+      "port": 8082
     }
   ]
 }

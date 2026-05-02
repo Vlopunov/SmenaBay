@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, StatusBar,
+  ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { CITIES, BUSINESS_CATEGORIES } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import { sendVerificationCode, verifyCode, isMockAuth } from '../../services/auth';
 
-export default function RegisterEmployerScreen({ navigation }) {
+export default function RegisterEmployerScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const registerEmployer = useStore(s => s.registerEmployer);
+  const authMethod = route?.params?.authMethod || 'phone';
+  const socialData = route?.params?.socialData || {};
 
   const [form, setForm] = useState({
-    companyName: '', unp: '', contactPerson: '', phone: '+375',
+    companyName: '', unp: '', contactPerson: socialData.displayName || '', phone: '+375',
     city: '', businessCategory: '', logo: null,
   });
   const [errors, setErrors] = useState({});
@@ -21,27 +25,82 @@ export default function RegisterEmployerScreen({ navigation }) {
   const [showCategories, setShowCategories] = useState(false);
   const [step, setStep] = useState(1);
   const [smsCode, setSmsCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [verification, setVerification] = useState(null);
+  const [smsError, setSmsError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      timerRef.current = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timerRef.current);
+    }
+  }, [resendTimer]);
 
   const validate = () => {
     const e = {};
     if (!form.companyName.trim()) e.companyName = 'Введите название';
     if (form.unp.length !== 9) e.unp = 'УНП — 9 цифр';
     if (!form.contactPerson.trim()) e.contactPerson = 'Введите ФИО';
-    if (form.phone.length < 13) e.phone = 'Введите номер';
+    if (authMethod === 'phone' && form.phone.length < 13) e.phone = 'Введите номер';
     if (!form.city) e.city = 'Выберите город';
     if (!form.businessCategory) e.businessCategory = 'Выберите категорию';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setStep(2);
+
+    if (authMethod !== 'phone') {
+      registerEmployer({ ...form, phoneVerified: false, authMethod });
+      return;
+    }
+
+    setLoading(true);
+    setSmsError('');
+    try {
+      const result = await sendVerificationCode(form.phone);
+      setVerification(result);
+      setStep(2);
+      setResendTimer(60);
+    } catch (e) {
+      Alert.alert('Ошибка', e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerify = () => {
-    if (smsCode.length < 4) return;
-    registerEmployer(form);
+  const handleVerify = async () => {
+    if (smsCode.length < 6) return;
+    setLoading(true);
+    setSmsError('');
+    try {
+      await verifyCode(verification, smsCode);
+      registerEmployer({ ...form, phoneVerified: true });
+    } catch (e) {
+      setSmsError(e.message);
+      setSmsCode('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    setLoading(true);
+    setSmsError('');
+    try {
+      const result = await sendVerificationCode(form.phone);
+      setVerification(result);
+      setResendTimer(60);
+      setSmsCode('');
+    } catch (e) {
+      setSmsError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderSelect = (label, value, placeholder, items, show, setShow, field, error) => (
@@ -90,19 +149,36 @@ export default function RegisterEmployerScreen({ navigation }) {
             value={smsCode}
             onChangeText={setSmsCode}
             keyboardType="number-pad"
-            maxLength={4}
+            maxLength={6}
             placeholder="0000"
             placeholderTextColor={COLORS.textTertiary}
             autoFocus
+            editable={!loading}
           />
-          <Text style={styles.smsHint}>В прототипе подойдёт любой код</Text>
+          {isMockAuth() && (
+            <Text style={styles.smsHint}>Режим разработки — подойдёт любой код</Text>
+          )}
+          {smsError ? <Text style={styles.smsErrorText}>{smsError}</Text> : null}
           <TouchableOpacity
-            style={[styles.submitBtn, smsCode.length < 4 && styles.submitBtnDisabled]}
+            style={[styles.submitBtn, (smsCode.length < 6 || loading) && styles.submitBtnDisabled]}
             onPress={handleVerify}
-            disabled={smsCode.length < 4}
+            disabled={smsCode.length < 6 || loading}
             activeOpacity={0.7}
           >
-            <Text style={styles.submitBtnText}>Подтвердить</Text>
+            {loading ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.submitBtnText}>Подтвердить</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.resendBtn}
+            onPress={resendTimer > 0 ? undefined : handleResend}
+            disabled={resendTimer > 0}
+          >
+            <Text style={[styles.resendText, resendTimer > 0 && styles.resendTextDisabled]}>
+              {resendTimer > 0 ? `Отправить повторно (${resendTimer}с)` : 'Отправить код повторно'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -213,4 +289,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, marginTop: SIZES['2xl'], letterSpacing: 12,
   },
   smsHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: SIZES.md },
+  smsErrorText: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.sm, textAlign: 'center' },
+  resendBtn: { marginTop: SIZES.lg, alignItems: 'center' },
+  resendText: { fontSize: SIZES.body, color: COLORS.accent, ...FONTS.medium },
+  resendTextDisabled: { color: COLORS.textTertiary },
 });

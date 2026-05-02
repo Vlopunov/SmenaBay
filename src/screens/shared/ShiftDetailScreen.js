@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Platform, Linking, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
+import VerifyPhoneModal from '../../components/VerifyPhoneModal';
+
+let WebView;
+if (Platform.OS !== 'web') {
+  WebView = require('react-native-webview').WebView;
+}
 
 export default function ShiftDetailScreen({ route, navigation }) {
   const { shiftId } = route.params;
@@ -21,11 +28,17 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const location = getLocationById(shift?.locationId);
   const currentUser = useStore(s => s.currentUser);
   const applyToShift = useStore(s => s.applyToShift);
-  const applications = useStore(s => s.applications); // subscribe to trigger re-render
-  const shifts = useStore(s => s.shifts); // subscribe for spotsTaken updates
+  const applications = useStore(s => s.applications);
+  const shifts = useStore(s => s.shifts);
   const existingApp = getApplicationForShiftAndWorker(shiftId);
   const companyReviews = getReviewsFor(shift?.companyId).slice(0, 3);
   const workers = useStore(s => s.workers);
+  const companies = useStore(s => s.companies);
+  const toggleSavedShift = useStore(s => s.toggleSavedShift);
+  const getOrCreateConversation = useStore(s => s.getOrCreateConversation);
+  const isSavedShift = useStore(s => s.isSavedShift);
+  const savedShifts = useStore(s => s.savedShifts);
+  const [showVerify, setShowVerify] = useState(false);
 
   if (!shift || !company) return null;
 
@@ -43,7 +56,10 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const hasApplied = !!existingApp;
 
   const handleApply = () => {
-    applyToShift(shiftId);
+    const result = applyToShift(shiftId);
+    if (result?.error === 'phone_not_verified') {
+      setShowVerify(true);
+    }
   };
 
   return (
@@ -56,7 +72,17 @@ export default function ShiftDetailScreen({ route, navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.navTitle}>Детали смены</Text>
-        <View style={{ width: 44 }} />
+        {isWorker ? (
+          <TouchableOpacity style={styles.backBtn} onPress={() => toggleSavedShift(shiftId)}>
+            <Ionicons
+              name={isSavedShift(shiftId) ? 'bookmark' : 'bookmark-outline'}
+              size={22}
+              color={isSavedShift(shiftId) ? COLORS.accent : COLORS.textPrimary}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 44 }} />
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -81,7 +107,7 @@ export default function ShiftDetailScreen({ route, navigation }) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate('PublicCompanyProfile', { companyId: company.id })}
         >
-          <Image source={{ uri: company.logo || 'https://i.pravatar.cc/200?img=60' }} style={styles.companyLogo} />
+          <Avatar uri={company.logo} name={company.companyName} size={48} style={{ borderRadius: 12 }} />
           <View style={styles.companyInfo}>
             <Text style={styles.companyName}>{company.companyName}</Text>
             <View style={styles.companyMeta}>
@@ -111,12 +137,53 @@ export default function ShiftDetailScreen({ route, navigation }) {
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="location-outline" size={20} color={COLORS.accent} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.detailLabel}>Адрес</Text>
               <Text style={styles.detailValue}>{location?.address || '—'}</Text>
               {location?.name && <Text style={styles.detailSub}>{location.name}</Text>}
             </View>
           </View>
+
+          {/* Mini map */}
+          {location?.lat && location?.lng && Platform.OS !== 'web' && WebView && (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => {
+                const url = `https://yandex.ru/maps/?pt=${location.lng},${location.lat}&z=16&l=map`;
+                Linking.openURL(url);
+              }}
+            >
+              <View style={styles.miniMapWrap}>
+                <WebView
+                  source={{ html: `
+                    <!DOCTYPE html><html><head>
+                    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+                    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full"></script>
+                    <style>*{margin:0;padding:0}html,body,#map{width:100%;height:100%;border-radius:12px;overflow:hidden}</style>
+                    </head><body><div id="map"></div><script>
+                    ymaps.ready(function(){
+                      var map=new ymaps.Map('map',{center:[${location.lat},${location.lng}],zoom:15,controls:[]});
+                      map.behaviors.disable(['drag','scrollZoom','multiTouch']);
+                      var p=new ymaps.Placemark([${location.lat},${location.lng}],{},{preset:'islands#blueCircleDotIcon'});
+                      map.geoObjects.add(p);
+                    });
+                    </script></body></html>
+                  ` }}
+                  style={styles.miniMap}
+                  scrollEnabled={false}
+                  javaScriptEnabled
+                  domStorageEnabled
+                />
+                <View style={styles.miniMapOverlay}>
+                  <View style={styles.miniMapBtn}>
+                    <Ionicons name="navigate-outline" size={14} color={COLORS.accent} />
+                    <Text style={styles.miniMapBtnText}>Открыть в Яндекс.Картах</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.detailItem}>
             <Ionicons name="people-outline" size={20} color={COLORS.accent} />
             <View>
@@ -177,6 +244,37 @@ export default function ShiftDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Similar shifts */}
+        {isWorker && (() => {
+          const similar = shifts
+            .filter(s => s.id !== shiftId && s.status === 'active' && (
+              s.companyId === shift.companyId || s.title === shift.title
+            ))
+            .slice(0, 3);
+          if (similar.length === 0) return null;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Похожие смены</Text>
+              {similar.map(s => {
+                const c = workers ? companies.find(co => co.id === s.companyId) : null;
+                return (
+                  <TouchableOpacity
+                    key={s.id}
+                    style={styles.similarCard}
+                    onPress={() => navigation.push('ShiftDetail', { shiftId: s.id })}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.similarTitle}>{s.title}</Text>
+                      <Text style={styles.similarSub}>{c?.companyName}</Text>
+                    </View>
+                    <Text style={styles.similarPay}>{s.pay} BYN</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          );
+        })()}
+
         <View style={{ height: 120 }} />
       </ScrollView>
 
@@ -188,13 +286,29 @@ export default function ShiftDetailScreen({ route, navigation }) {
               <Text style={styles.applyBtnText}>Откликнуться</Text>
             </TouchableOpacity>
           ) : hasApplied ? (
-            <View style={styles.appliedBtn}>
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.accent} />
-              <Text style={styles.appliedBtnText}>
-                {existingApp.status === 'pending' ? 'Отклик отправлен' :
-                 existingApp.status === 'approved' ? 'Вы подтверждены' : 'Отклик отправлен'}
-              </Text>
-            </View>
+            existingApp.status === 'approved' ? (
+              <View style={styles.approvedRow}>
+                <View style={[styles.appliedBtn, { flex: 1 }]}>
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.accent} />
+                  <Text style={styles.appliedBtnText}>Вы подтверждены</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.chatBtn}
+                  onPress={() => {
+                    const conv = getOrCreateConversation(shiftId, currentUser.id, shift.companyId);
+                    navigation.navigate('ChatConversation', { conversationId: conv.id });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chatbubble" size={20} color={COLORS.white} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.appliedBtn}>
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.accent} />
+                <Text style={styles.appliedBtnText}>Отклик отправлен</Text>
+              </View>
+            )
           ) : isFilled ? (
             <View style={styles.filledBtn}>
               <Text style={styles.filledBtnText}>Смена заполнена</Text>
@@ -202,6 +316,12 @@ export default function ShiftDetailScreen({ route, navigation }) {
           ) : null}
         </View>
       )}
+
+      <VerifyPhoneModal
+        visible={showVerify}
+        onClose={() => setShowVerify(false)}
+        onVerified={() => applyToShift(shiftId)}
+      />
     </View>
   );
 }
@@ -264,6 +384,16 @@ const styles = StyleSheet.create({
   detailValue: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary, marginTop: 1 },
   detailSub: { fontSize: SIZES.caption, color: COLORS.textSecondary, marginTop: 1 },
 
+  miniMapWrap: { height: 160, borderRadius: 12, overflow: 'hidden', position: 'relative', marginTop: SIZES.xs },
+  miniMap: { flex: 1, borderRadius: 12 },
+  miniMapOverlay: { position: 'absolute', bottom: SIZES.sm, left: 0, right: 0, alignItems: 'center' },
+  miniMapBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: COLORS.white, paddingHorizontal: SIZES.md, paddingVertical: 6,
+    borderRadius: SIZES.radiusFull, ...SHADOWS.md,
+  },
+  miniMapBtnText: { fontSize: SIZES.caption, ...FONTS.medium, color: COLORS.accent },
+
   section: { marginTop: SIZES.xl },
   sectionTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary, marginBottom: SIZES.md },
   description: { fontSize: SIZES.body, color: COLORS.textSecondary, lineHeight: 22 },
@@ -275,6 +405,11 @@ const styles = StyleSheet.create({
   reviewAuthor: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
   reviewStars: { flexDirection: 'row', gap: 1 },
   reviewText: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: SIZES.sm, lineHeight: 20 },
+
+  similarCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.md, marginBottom: SIZES.sm, ...SHADOWS.sm },
+  similarTitle: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
+  similarSub: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2 },
+  similarPay: { fontSize: SIZES.bodyLarge, ...FONTS.bold, color: COLORS.success, marginLeft: SIZES.md },
 
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -291,6 +426,11 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.radiusMd, height: SIZES.buttonHeight, justifyContent: 'center', alignItems: 'center',
   },
   appliedBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.accent },
+  approvedRow: { flexDirection: 'row', gap: SIZES.sm },
+  chatBtn: {
+    width: SIZES.buttonHeight, height: SIZES.buttonHeight, borderRadius: SIZES.radiusMd,
+    backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center',
+  },
   filledBtn: {
     backgroundColor: COLORS.surface, borderRadius: SIZES.radiusMd, height: SIZES.buttonHeight,
     justifyContent: 'center', alignItems: 'center',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  StatusBar, Alert,
+  StatusBar, Alert, Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ export default function WorkerSettingsScreen({ navigation }) {
     city: currentUser?.city || '',
     categories: currentUser?.categories || [],
     avatar: currentUser?.avatar || '',
+    phoneVisible: currentUser?.phoneVisible !== false,
   });
 
   const [showCities, setShowCities] = useState(false);
@@ -96,6 +97,20 @@ export default function WorkerSettingsScreen({ navigation }) {
           <Text style={styles.inputDisabledText}>{currentUser.phone}</Text>
         </View>
 
+        {/* Phone visibility toggle */}
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleLabel}>Показывать номер телефона</Text>
+            <Text style={styles.toggleHint}>Заказчики смогут видеть ваш номер и звонить напрямую</Text>
+          </View>
+          <Switch
+            value={form.phoneVisible}
+            onValueChange={v => setForm(f => ({ ...f, phoneVisible: v }))}
+            trackColor={{ false: COLORS.border, true: COLORS.accent + '60' }}
+            thumbColor={form.phoneVisible ? COLORS.accent : '#f4f3f4'}
+          />
+        </View>
+
         {/* City */}
         <Text style={styles.label}>Город</Text>
         <TouchableOpacity
@@ -144,18 +159,6 @@ export default function WorkerSettingsScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Avatar URL */}
-        <Text style={styles.label}>Ссылка на аватар</Text>
-        <TextInput
-          style={styles.input}
-          value={form.avatar}
-          onChangeText={v => setForm(f => ({ ...f, avatar: v }))}
-          placeholder="https://..."
-          placeholderTextColor={COLORS.textTertiary}
-          autoCapitalize="none"
-          keyboardType="url"
-        />
-
         {/* Save */}
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.7}>
           <Text style={styles.saveBtnText}>Сохранить</Text>
@@ -193,6 +196,13 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: COLORS.surface, justifyContent: 'center',
   },
+  toggleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: SIZES.md, marginBottom: SIZES.md,
+    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+  },
+  toggleLabel: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
+  toggleHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: 2 },
   inputDisabledText: {
     fontSize: SIZES.body, color: COLORS.textSecondary, ...FONTS.regular,
   },

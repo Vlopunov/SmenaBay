@@ -1,7 +1,9 @@
-// СменаБай — Mock Data
+// СменаБел — Mock Data
 // Реалистичные данные для Минска, Беларусь
 
 // ============ WORKERS (10) ============
+const minutesAgo = (m) => new Date(Date.now() - m * 60000).toISOString();
+
 export const MOCK_WORKERS = [
   {
     id: 'w1',
@@ -14,10 +16,11 @@ export const MOCK_WORKERS = [
     categories: ['ПВЗ', 'Склад', 'Грузчик'],
     rating: 4.9,
     shiftsCompleted: 87,
-    totalEarned: 5240,
+
     badges: ['verified', 'top10', 'fifty_shifts', 'no_cancels'],
     documents: { passport: true, medicalBook: false },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
+    lastSeen: minutesAgo(1),
     registeredAt: '2025-06-15',
   },
   {
@@ -31,10 +34,10 @@ export const MOCK_WORKERS = [
     categories: ['Продавец', 'Промоутер', 'Официант'],
     rating: 4.7,
     shiftsCompleted: 42,
-    totalEarned: 2870,
     badges: ['verified', 'no_cancels'],
     documents: { passport: true, medicalBook: true },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
+    lastSeen: minutesAgo(10),
     registeredAt: '2025-08-20',
   },
   {
@@ -48,10 +51,10 @@ export const MOCK_WORKERS = [
     categories: ['Грузчик', 'Разнорабочий', 'Склад'],
     rating: 4.5,
     shiftsCompleted: 120,
-    totalEarned: 7800,
     badges: ['verified', 'top10', 'fifty_shifts'],
     documents: { passport: true, medicalBook: false },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
+    lastSeen: minutesAgo(45),
     registeredAt: '2025-03-10',
   },
   {
@@ -65,10 +68,9 @@ export const MOCK_WORKERS = [
     categories: ['Клининг', 'ПВЗ'],
     rating: 5.0,
     shiftsCompleted: 28,
-    totalEarned: 1680,
     badges: ['verified', 'no_cancels', 'medical_book'],
     documents: { passport: true, medicalBook: true },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
     registeredAt: '2025-10-01',
   },
   {
@@ -82,10 +84,9 @@ export const MOCK_WORKERS = [
     categories: ['Курьер', 'Разнорабочий'],
     rating: 3.8,
     shiftsCompleted: 15,
-    totalEarned: 980,
     badges: [],
     documents: { passport: false, medicalBook: false },
-    verified: false,
+    verified: false, phoneVisible: true, phoneVerified: true,
     registeredAt: '2026-01-15',
   },
   {
@@ -99,10 +100,9 @@ export const MOCK_WORKERS = [
     categories: ['Официант', 'Повар', 'Продавец'],
     rating: 4.6,
     shiftsCompleted: 35,
-    totalEarned: 2450,
     badges: ['verified', 'medical_book'],
     documents: { passport: true, medicalBook: true },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
     registeredAt: '2025-09-05',
   },
   {
@@ -116,10 +116,9 @@ export const MOCK_WORKERS = [
     categories: ['Склад', 'Грузчик', 'Разнорабочий'],
     rating: 4.2,
     shiftsCompleted: 8,
-    totalEarned: 520,
     badges: ['newbie'],
     documents: { passport: false, medicalBook: false },
-    verified: false,
+    verified: false, phoneVisible: true, phoneVerified: true,
     registeredAt: '2026-02-20',
   },
   {
@@ -133,10 +132,9 @@ export const MOCK_WORKERS = [
     categories: ['Промоутер', 'Продавец', 'Официант'],
     rating: 4.8,
     shiftsCompleted: 55,
-    totalEarned: 3520,
     badges: ['verified', 'fifty_shifts', 'no_cancels'],
     documents: { passport: true, medicalBook: false },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
     registeredAt: '2025-07-12',
   },
   {
@@ -150,10 +148,9 @@ export const MOCK_WORKERS = [
     categories: ['ПВЗ', 'Курьер'],
     rating: 3.5,
     shiftsCompleted: 3,
-    totalEarned: 180,
     badges: ['newbie'],
     documents: { passport: false, medicalBook: false },
-    verified: false,
+    verified: false, phoneVisible: true, phoneVerified: true,
     registeredAt: '2026-03-28',
   },
   {
@@ -167,10 +164,9 @@ export const MOCK_WORKERS = [
     categories: ['Клининг', 'ПВЗ', 'Продавец'],
     rating: 4.4,
     shiftsCompleted: 22,
-    totalEarned: 1320,
     badges: ['verified'],
     documents: { passport: true, medicalBook: false },
-    verified: true,
+    verified: true, phoneVisible: true, phoneVerified: true,
     registeredAt: '2025-11-18',
   },
 ];
@@ -190,8 +186,9 @@ export const MOCK_COMPANIES = [
     rating: 4.6,
     reviewsCount: 45,
     totalShiftsPublished: 180,
-    plan: 'premium',
+    plan: 'premium', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-12-31',
+    lastSeen: minutesAgo(0),
     locations: [
       { id: 'loc1', companyId: 'c1', address: 'пр. Независимости, 58', city: 'Минск', lat: 53.9006, lng: 27.5590, name: 'ПВЗ Немига' },
       { id: 'loc2', companyId: 'c1', address: 'ул. Сурганова, 27', city: 'Минск', lat: 53.9235, lng: 27.5882, name: 'ПВЗ Академия наук' },
@@ -211,7 +208,7 @@ export const MOCK_COMPANIES = [
     rating: 4.3,
     reviewsCount: 38,
     totalShiftsPublished: 150,
-    plan: 'business',
+    plan: 'business', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-09-30',
     locations: [
       { id: 'loc3', companyId: 'c2', address: 'ул. Притыцкого, 83', city: 'Минск', lat: 53.9080, lng: 27.4820, name: 'ПВЗ Каменная горка' },
@@ -231,7 +228,7 @@ export const MOCK_COMPANIES = [
     rating: 4.8,
     reviewsCount: 52,
     totalShiftsPublished: 95,
-    plan: 'business',
+    plan: 'business', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-08-15',
     locations: [
       { id: 'loc4', companyId: 'c3', address: 'ул. Якуба Коласа, 37', city: 'Минск', lat: 53.9180, lng: 27.5840, name: 'Васильки Коласа' },
@@ -252,7 +249,7 @@ export const MOCK_COMPANIES = [
     rating: 4.1,
     reviewsCount: 19,
     totalShiftsPublished: 40,
-    plan: 'free',
+    plan: 'free', phoneVisible: true, phoneVerified: true,
     planExpiresAt: null,
     locations: [
       { id: 'loc6', companyId: 'c4', address: 'ул. Зыбицкая, 6', city: 'Минск', lat: 53.9030, lng: 27.5560, name: 'Литвины Зыбицкая' },
@@ -272,7 +269,7 @@ export const MOCK_COMPANIES = [
     rating: 4.4,
     reviewsCount: 67,
     totalShiftsPublished: 220,
-    plan: 'premium',
+    plan: 'premium', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-11-30',
     locations: [
       { id: 'loc7', companyId: 'c5', address: 'ул. Тимирязева, 121А', city: 'Минск', lat: 53.9320, lng: 27.5170, name: 'Склад Тимирязева' },
@@ -293,7 +290,7 @@ export const MOCK_COMPANIES = [
     rating: 4.5,
     reviewsCount: 28,
     totalShiftsPublished: 75,
-    plan: 'business',
+    plan: 'business', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-10-15',
     locations: [
       { id: 'loc9', companyId: 'c6', address: 'пр. Победителей, 9', city: 'Минск', lat: 53.9090, lng: 27.5480, name: 'Галерея Победителей' },
@@ -313,7 +310,7 @@ export const MOCK_COMPANIES = [
     rating: 4.7,
     reviewsCount: 34,
     totalShiftsPublished: 110,
-    plan: 'business',
+    plan: 'business', phoneVisible: true, phoneVerified: true,
     planExpiresAt: '2026-07-20',
     locations: [
       { id: 'loc10', companyId: 'c7', address: 'ул. Немига, 12', city: 'Минск', lat: 53.9040, lng: 27.5530, name: 'Офис Немига' },
@@ -333,7 +330,7 @@ export const MOCK_COMPANIES = [
     rating: 3.9,
     reviewsCount: 12,
     totalShiftsPublished: 30,
-    plan: 'free',
+    plan: 'free', phoneVisible: true, phoneVerified: true,
     planExpiresAt: null,
     locations: [
       { id: 'loc11', companyId: 'c8', address: 'ул. Харьковская, 50', city: 'Минск', lat: 53.8660, lng: 27.6140, name: 'Завод Харьковская' },

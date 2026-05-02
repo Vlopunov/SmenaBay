@@ -1,11 +1,14 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
 
 const PLAN_LABELS = { free: 'Старт (бесплатно)', business: 'Бизнес', premium: 'Премиум' };
 
@@ -13,16 +16,46 @@ const MENU = [
   { icon: 'business-outline', label: 'Данные компании', screen: 'Settings' },
   { icon: 'location-outline', label: 'Управление локациями', screen: 'Locations' },
   { icon: 'card-outline', label: 'Тарифы и подписка', screen: 'Plans' },
+  { icon: 'search-outline', label: 'Каталог исполнителей', screen: 'WorkerDirectory' },
   { icon: 'people-outline', label: 'Избранные исполнители', screen: 'Favorites' },
   { icon: 'notifications-outline', label: 'Уведомления', screen: 'Notifications' },
   { icon: 'star-outline', label: 'Отзывы о компании', screen: 'CompanyReviews' },
-  { icon: 'help-circle-outline', label: 'Помощь', screen: null },
+  { icon: 'help-circle-outline', label: 'Помощь', screen: 'help' },
 ];
 
 export default function EmployerProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const currentUser = useStore(s => s.currentUser);
   const logout = useStore(s => s.logout);
+  const updateProfile = useStore(s => s.updateProfile);
+
+  const pickLogo = async () => {
+    Alert.alert('Изменить логотип', '', [
+      {
+        text: 'Камера', onPress: async () => {
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (!perm.granted) return;
+          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+          if (!r.canceled && r.assets?.[0]) {
+            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
+            updateProfile({ logo: m.uri });
+          }
+        },
+      },
+      {
+        text: 'Галерея', onPress: async () => {
+          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!perm.granted) return;
+          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+          if (!r.canceled && r.assets?.[0]) {
+            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
+            updateProfile({ logo: m.uri });
+          }
+        },
+      },
+      { text: 'Отмена', style: 'cancel' },
+    ]);
+  };
   const getReviewsFor = useStore(s => s.getReviewsFor);
   const reviews = getReviewsFor(currentUser?.id);
 
@@ -39,7 +72,12 @@ export default function EmployerProfileScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Company Card */}
         <View style={styles.profileCard}>
-          <Image source={{ uri: currentUser.logo || 'https://i.pravatar.cc/200?img=60' }} style={styles.logo} />
+          <TouchableOpacity onPress={pickLogo} activeOpacity={0.7} style={{ position: 'relative' }}>
+            <Avatar uri={currentUser.logo} name={currentUser.companyName} size={64} style={{ borderRadius: 18 }} />
+            <View style={styles.logoEditBadge}>
+              <Ionicons name="camera" size={11} color={COLORS.white} />
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{currentUser.companyName}</Text>
             <Text style={styles.category}>{currentUser.businessCategory}</Text>
@@ -77,6 +115,8 @@ export default function EmployerProfileScreen({ navigation }) {
               onPress={() => {
                 if (item.screen === 'CompanyReviews') {
                   navigation.navigate('PublicCompanyProfile', { companyId: currentUser.id });
+                } else if (item.screen === 'help') {
+                  navigation.navigate('FAQ');
                 } else if (item.screen) {
                   navigation.navigate(item.screen);
                 }
@@ -99,7 +139,7 @@ export default function EmployerProfileScreen({ navigation }) {
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>СменаБай v1.0.0</Text>
+        <Text style={styles.version}>СменаБел v1.0.0</Text>
         <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
       </ScrollView>
     </View>
@@ -113,6 +153,12 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: SIZES.lg },
   profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.lg, ...SHADOWS.md },
   logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: COLORS.skeleton },
+  logoEditBadge: {
+    position: 'absolute', bottom: -2, right: -2,
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: COLORS.white,
+  },
   profileInfo: { flex: 1, marginLeft: SIZES.md },
   name: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
   category: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: 2 },

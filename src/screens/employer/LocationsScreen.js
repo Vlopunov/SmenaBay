@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   Alert, StatusBar, Modal, ActivityIndicator, Keyboard, Platform,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ const MAP_HTML = `
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+  <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body,#map{width:100%;height:100%;overflow:hidden}
@@ -38,26 +39,13 @@ const MAP_HTML = `
       map=new ymaps.Map('map',{center:[53.9,27.5667],zoom:13,controls:['zoomControl']});
       map.events.add('actionend',function(){
         clearTimeout(timer);
-        timer=setTimeout(function(){geocode(map.getCenter())},350);
+        timer=setTimeout(function(){
+          var c=map.getCenter();
+          post({type:'center',lat:c[0],lng:c[1]});
+        },350);
       });
-      geocode([53.9,27.5667]);
       post({type:'ready'});
     });
-    function geocode(c){
-      ymaps.geocode(c,{results:1}).then(function(r){
-        var o=r.geoObjects.get(0);
-        if(o) post({type:'address',address:o.getAddressLine(),lat:c[0],lng:c[1]});
-      }).catch(function(){});
-    }
-    window.searchAddress=function(q){
-      ymaps.geocode(q,{results:6,boundedBy:[[53.6,27.2],[54.2,28.0]],strictBounds:false}).then(function(r){
-        var arr=[];
-        r.geoObjects.each(function(o){
-          arr.push({address:o.getAddressLine(),name:o.properties.get('name'),lat:o.geometry.getCoordinates()[0],lng:o.geometry.getCoordinates()[1]});
-        });
-        post({type:'suggestions',results:arr});
-      }).catch(function(){});
-    };
     window.moveTo=function(lat,lng){
       if(map){map.setCenter([lat,lng],16,{duration:300})}
     };
@@ -66,6 +54,41 @@ const MAP_HTML = `
 </body>
 </html>
 `;
+
+/* ─── Nominatim (OpenStreetMap) geocoder — free, no API key ─── */
+const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+
+async function geocodeSearch(query) {
+  try {
+    const res = await fetch(
+      `${NOMINATIM_BASE}/search?` +
+      `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6` +
+      `&viewbox=27.2,53.6,28.0,54.2&bounded=0&accept-language=ru`,
+    );
+    const data = await res.json();
+    return data.map(item => ({
+      name: item.display_name.split(',')[0],
+      address: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `${NOMINATIM_BASE}/reverse?` +
+      `lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=ru`,
+    );
+    const data = await res.json();
+    return data.display_name || '';
+  } catch {
+    return '';
+  }
+}
 
 export default function LocationsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -91,12 +114,19 @@ export default function LocationsScreen({ navigation }) {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'ready') {
         setMapReady(true);
-      } else if (data.type === 'address') {
-        setSelectedAddress(data.address);
+        // Reverse-geocode initial center
+        reverseGeocode(53.9, 27.5667).then(addr => {
+          if (addr) {
+            setSelectedAddress(addr);
+            setSelectedCoords({ lat: 53.9, lng: 27.5667 });
+          }
+        });
+      } else if (data.type === 'center') {
+        // Map was dragged — reverse-geocode new center
         setSelectedCoords({ lat: data.lat, lng: data.lng });
-        setSuggestions([]);
-      } else if (data.type === 'suggestions') {
-        setSuggestions(data.results || []);
+        reverseGeocode(data.lat, data.lng).then(addr => {
+          if (addr) setSelectedAddress(addr);
+        });
       }
     } catch (e) {}
   }, []);
@@ -104,30 +134,38 @@ export default function LocationsScreen({ navigation }) {
   /* ─── Search with debounce ─── */
   const handleSearch = useCallback((text) => {
     setSearchQuery(text);
-    if (Platform.OS === 'web') {
-      // On web, directly set the address from the search input
-      setSelectedAddress(text);
-      return;
-    }
     clearTimeout(searchTimer.current);
-    if (text.trim().length < 3) {
+    if (text.trim().length < 2) {
       setSuggestions([]);
       return;
     }
-    searchTimer.current = setTimeout(() => {
-      webViewRef.current?.injectJavaScript(`searchAddress(${JSON.stringify(text)});true;`);
+    searchTimer.current = setTimeout(async () => {
+      const results = await geocodeSearch(text + ', Минск');
+      setSuggestions(results);
     }, 400);
   }, []);
 
   /* ─── Select suggestion ─── */
   const selectSuggestion = useCallback((item) => {
-    setSearchQuery(item.name || item.address);
+    setSearchQuery(item.name || item.address.split(',')[0]);
     setSelectedAddress(item.address);
     setSelectedCoords({ lat: item.lat, lng: item.lng });
     setSuggestions([]);
     Keyboard.dismiss();
     webViewRef.current?.injectJavaScript(`moveTo(${item.lat},${item.lng});true;`);
   }, []);
+
+  /* ─── Submit search — go to first result ─── */
+  const handleSearchSubmit = useCallback(async () => {
+    if (suggestions.length > 0) {
+      selectSuggestion(suggestions[0]);
+    } else if (searchQuery.trim().length >= 2) {
+      const results = await geocodeSearch(searchQuery + ', Минск');
+      if (results.length > 0) {
+        selectSuggestion(results[0]);
+      }
+    }
+  }, [suggestions, searchQuery, selectSuggestion]);
 
   /* ─── Save location ─── */
   const handleSave = () => {
@@ -269,6 +307,7 @@ export default function LocationsScreen({ navigation }) {
                 placeholderTextColor={COLORS.textTertiary}
                 value={searchQuery}
                 onChangeText={handleSearch}
+                onSubmitEditing={handleSearchSubmit}
                 returnKeyType="search"
                 autoCorrect={false}
               />
@@ -332,35 +371,40 @@ export default function LocationsScreen({ navigation }) {
           </View>
 
           {/* Bottom panel */}
-          <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + SIZES.md }]}>
-            {/* Selected address display */}
-            <View style={styles.addressRow}>
-              <View style={styles.addressDot} />
-              <Text style={styles.addressText} numberOfLines={2}>
-                {selectedAddress || 'Перемещайте карту для выбора адреса'}
-              </Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
+          >
+            <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + SIZES.md }]}>
+              {/* Selected address display */}
+              <View style={styles.addressRow}>
+                <View style={styles.addressDot} />
+                <Text style={styles.addressText} numberOfLines={2}>
+                  {selectedAddress || 'Перемещайте карту для выбора адреса'}
+                </Text>
+              </View>
+
+              {/* Name input */}
+              <TextInput
+                style={styles.nameInput}
+                placeholder="Название (напр. «Офис на Немиге»)"
+                placeholderTextColor={COLORS.textTertiary}
+                value={locationName}
+                onChangeText={setLocationName}
+              />
+
+              {/* Save button */}
+              <TouchableOpacity
+                style={[styles.saveBtn, !selectedAddress && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                activeOpacity={0.7}
+                disabled={!selectedAddress}
+              >
+                <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                <Text style={styles.saveBtnText}>Сохранить локацию</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* Name input */}
-            <TextInput
-              style={styles.nameInput}
-              placeholder="Название (напр. «Офис на Немиге»)"
-              placeholderTextColor={COLORS.textTertiary}
-              value={locationName}
-              onChangeText={setLocationName}
-            />
-
-            {/* Save button */}
-            <TouchableOpacity
-              style={[styles.saveBtn, !selectedAddress && styles.saveBtnDisabled]}
-              onPress={handleSave}
-              activeOpacity={0.7}
-              disabled={!selectedAddress}
-            >
-              <Ionicons name="checkmark" size={20} color={COLORS.white} />
-              <Text style={styles.saveBtnText}>Сохранить локацию</Text>
-            </TouchableOpacity>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>

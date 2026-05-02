@@ -27,6 +27,7 @@ export default function MyShiftsScreen({ navigation }) {
   const companies = useStore(s => s.companies);
   const cancelApplication = useStore(s => s.cancelApplication);
   const getReviewForShift = useStore(s => s.getReviewForShift);
+  const getOrCreateConversation = useStore(s => s.getOrCreateConversation);
   const [tab, setTab] = useState(0);
 
   const myApps = useMemo(() =>
@@ -113,13 +114,25 @@ export default function MyShiftsScreen({ navigation }) {
               <Text style={styles.cancelBtnText}>Отменить отклик</Text>
             </TouchableOpacity>
           )}
-          {app.status === 'approved' && company?.phone && (
+          {app.status === 'approved' && (
+            <TouchableOpacity
+              style={styles.contactBtn}
+              onPress={() => {
+                const conv = getOrCreateConversation(shift.id, currentUser.id, shift.companyId);
+                navigation.navigate('ChatConversation', { conversationId: conv.id });
+              }}
+            >
+              <Ionicons name="chatbubble-outline" size={16} color={COLORS.accent} />
+              <Text style={styles.contactBtnText}>Написать</Text>
+            </TouchableOpacity>
+          )}
+          {app.status === 'approved' && company?.phone && company?.phoneVisible !== false && (
             <TouchableOpacity
               style={styles.contactBtn}
               onPress={() => Linking.openURL(`tel:${company.phone}`)}
             >
               <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.contactBtnText}>Связаться</Text>
+              <Text style={styles.contactBtnText}>Позвонить</Text>
             </TouchableOpacity>
           )}
           {tab === 1 && !hasReview && (
@@ -133,6 +146,15 @@ export default function MyShiftsScreen({ navigation }) {
             >
               <Ionicons name="star-outline" size={16} color={COLORS.white} />
               <Text style={styles.reviewBtnText}>Оставить отзыв</Text>
+            </TouchableOpacity>
+          )}
+          {tab === 1 && (
+            <TouchableOpacity
+              style={styles.contactBtn}
+              onPress={() => navigation.navigate('Feed', { initialSearch: shift.title })}
+            >
+              <Ionicons name="search-outline" size={16} color={COLORS.accent} />
+              <Text style={styles.contactBtnText}>Похожие</Text>
             </TouchableOpacity>
           )}
         </View>

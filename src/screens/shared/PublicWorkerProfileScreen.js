@@ -1,12 +1,14 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
+import Avatar from '../../components/Avatar';
 
 export default function PublicWorkerProfileScreen({ route, navigation }) {
   const { workerId } = route.params;
@@ -43,9 +45,25 @@ export default function PublicWorkerProfileScreen({ route, navigation }) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.profileCard}>
-          <Image source={{ uri: worker.avatar || 'https://i.pravatar.cc/200' }} style={styles.avatar} />
+          <View style={{ alignSelf: 'center' }}>
+            <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={80} />
+            <OnlineDot lastSeen={worker.lastSeen} size={16} />
+          </View>
           <Text style={styles.name}>{worker.firstName} {worker.lastName}</Text>
+          {formatLastSeen(worker.lastSeen) ? (
+            <Text style={styles.lastSeen}>{formatLastSeen(worker.lastSeen)}</Text>
+          ) : null}
           <Text style={styles.city}>{worker.city} · На платформе с {new Date(worker.registeredAt).toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' })}</Text>
+          {worker.phoneVisible !== false && worker.phone && isEmployer && (
+            <TouchableOpacity
+              style={styles.phoneBtn}
+              onPress={() => Linking.openURL(`tel:${worker.phone}`)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="call-outline" size={16} color={COLORS.accent} />
+              <Text style={styles.phoneBtnText}>{worker.phone}</Text>
+            </TouchableOpacity>
+          )}
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{worker.rating > 0 ? worker.rating.toFixed(1) : '—'}</Text>
@@ -131,7 +149,14 @@ const styles = StyleSheet.create({
   profileCard: { alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.xl, ...SHADOWS.md },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.skeleton },
   name: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, marginTop: SIZES.md },
+  lastSeen: { fontSize: SIZES.small, color: '#22C55E', marginTop: 2 },
   city: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
+  phoneBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: SIZES.sm,
+    marginTop: SIZES.md, paddingVertical: SIZES.sm, paddingHorizontal: SIZES.md,
+    backgroundColor: COLORS.accentSoft, borderRadius: SIZES.radiusFull,
+  },
+  phoneBtnText: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.accent },
   statsRow: { flexDirection: 'row', alignItems: 'center', marginTop: SIZES.lg, gap: SIZES.xl },
   stat: { alignItems: 'center' },
   statValue: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },

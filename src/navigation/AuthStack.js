@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import OnboardingScreen from '../screens/auth/OnboardingScreen';
 import RoleSelectScreen from '../screens/auth/RoleSelectScreen';
 import RegisterWorkerScreen from '../screens/auth/RegisterWorkerScreen';
 import RegisterEmployerScreen from '../screens/auth/RegisterEmployerScreen';
@@ -11,6 +12,7 @@ const Stack = createNativeStackNavigator();
 export default function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
       <Stack.Screen name="RegisterWorker" component={RegisterWorkerScreen} />
       <Stack.Screen name="RegisterEmployer" component={RegisterEmployerScreen} />

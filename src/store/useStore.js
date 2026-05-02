@@ -1,24 +1,68 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   MOCK_WORKERS, MOCK_COMPANIES, MOCK_SHIFTS, MOCK_APPLICATIONS,
   MOCK_REVIEWS, MOCK_NOTIFICATIONS,
 } from '../data/mockData';
+import {
+  syncCreateShift, syncUpdateShift, syncCreateApplication, syncUpdateApplication,
+  syncCreateReview, syncUpdateUser, syncCreateNotification, syncSendMessage,
+  loadFromFirestore, setupRealtimeListeners,
+} from '../services/firestoreSync';
 
-const useStore = create((set, get) => ({
+const useStore = create(
+  persist(
+    (set, get) => ({
   // ===== AUTH =====
   currentUser: null,   // worker or company object
   isAuthenticated: false,
 
+  // Initialize from Firestore (call on app startup)
+  initializeFromFirestore: async () => {
+    await loadFromFirestore(set, get);
+    return setupRealtimeListeners(set, get);
+  },
+
+  // Update current user's lastSeen timestamp
+  updateLastSeen: () => {
+    const user = get().currentUser;
+    if (!user) return;
+    const now = new Date().toISOString();
+    if (user.role === 'worker') {
+      set(s => ({
+        currentUser: { ...s.currentUser, lastSeen: now },
+        workers: s.workers.map(w => w.id === user.id ? { ...w, lastSeen: now } : w),
+      }));
+    } else {
+      set(s => ({
+        currentUser: { ...s.currentUser, lastSeen: now },
+        companies: s.companies.map(c => c.id === user.id ? { ...c, lastSeen: now } : c),
+      }));
+    }
+  },
+
   login: (phone) => {
+    const now = new Date().toISOString();
     const worker = get().workers.find(w => w.phone === phone);
     if (worker) {
-      set({ currentUser: worker, isAuthenticated: true });
-      return worker;
+      const updated = { ...worker, lastSeen: now };
+      set(s => ({
+        currentUser: updated,
+        isAuthenticated: true,
+        workers: s.workers.map(w => w.id === worker.id ? updated : w),
+      }));
+      return updated;
     }
     const company = get().companies.find(c => c.phone === phone);
     if (company) {
-      set({ currentUser: company, isAuthenticated: true });
-      return company;
+      const updated = { ...company, lastSeen: now };
+      set(s => ({
+        currentUser: updated,
+        isAuthenticated: true,
+        companies: s.companies.map(c => c.id === company.id ? updated : c),
+      }));
+      return updated;
     }
     return null;
   },
@@ -29,10 +73,11 @@ const useStore = create((set, get) => ({
       role: 'worker',
       rating: 0,
       shiftsCompleted: 0,
-      totalEarned: 0,
       badges: ['newbie'],
       documents: { passport: false, medicalBook: false },
       verified: false,
+      phoneVerified: false,
+      phoneVisible: true,
       registeredAt: new Date().toISOString().split('T')[0],
       ...data,
     };
@@ -54,6 +99,8 @@ const useStore = create((set, get) => ({
       plan: 'free',
       planExpiresAt: null,
       locations: [],
+      phoneVerified: false,
+      phoneVisible: true,
       registeredAt: new Date().toISOString().split('T')[0],
       ...data,
     };
@@ -82,6 +129,7 @@ const useStore = create((set, get) => ({
         companies: s.companies.map(c => c.id === user.id ? updated : c),
       }));
     }
+    syncUpdateUser(user.id, updates);
   },
 
   // ===== DATA =====
@@ -124,6 +172,7 @@ const useStore = create((set, get) => ({
 
   createShift: (data) => {
     const user = get().currentUser;
+    if (user && !user.phoneVerified) return { error: 'phone_not_verified' };
     // Check plan limits
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -202,11 +251,7 @@ const useStore = create((set, get) => ({
       ),
       workers: s.workers.map(w =>
         approvedWorkerIds.includes(w.id)
-          ? {
-              ...w,
-              shiftsCompleted: w.shiftsCompleted + 1,
-              totalEarned: w.totalEarned + (shift?.pay || 0),
-            }
+          ? { ...w, shiftsCompleted: w.shiftsCompleted + 1 }
           : w
       ),
     }));
@@ -229,11 +274,13 @@ const useStore = create((set, get) => ({
 
   // ===== APPLICATIONS =====
   applyToShift: (shiftId) => {
+    const user = get().currentUser;
+    if (user && !user.phoneVerified) return { error: 'phone_not_verified' };
+
     const shiftCheck = get().getShiftById(shiftId);
     if (shiftCheck && shiftCheck.status !== 'active') return { error: 'shift_not_active' };
     if (shiftCheck && shiftCheck.spotsTaken >= shiftCheck.spotsTotal) return { error: 'shift_full' };
 
-    const user = get().currentUser;
     const existing = get().applications.find(
       a => a.shiftId === shiftId && a.workerId === user.id && a.status !== 'cancelled_by_worker'
     );
@@ -284,6 +331,12 @@ const useStore = create((set, get) => ({
     const shift = get().getShiftById(app.shiftId);
     get().addNotification(app.workerId, 'application_approved',
       'Отклик подтверждён', `Ваш отклик на «${shift?.title}» подтверждён!`, app.shiftId);
+
+    // Auto-create chat conversation with system message
+    if (shift) {
+      const conv = get().getOrCreateConversation(app.shiftId, app.workerId, shift.companyId);
+      get().sendSystemMessage(conv.id, `Заявка подтверждена! Смена «${shift.title}» — ${shift.date}, ${shift.timeStart}–${shift.timeEnd}`);
+    }
 
     // Check if shift is now filled
     const updatedShift = get().getShiftById(app.shiftId);
@@ -360,9 +413,11 @@ const useStore = create((set, get) => ({
       ...review,
     };
     set(s => ({ reviews: [...s.reviews, newReview] }));
+    syncCreateReview(newReview);
 
     // Update target rating
     const allReviews = get().getReviewsFor(review.targetId);
+    if (allReviews.length === 0) return;
     const avg = allReviews.reduce((sum, r) => sum + r.overallRating, 0) / allReviews.length;
     const rounded = +avg.toFixed(1);
 
@@ -431,6 +486,7 @@ const useStore = create((set, get) => ({
       createdAt: new Date().toISOString().split('T')[0],
     };
     set(s => ({ notifications: [...s.notifications, notif] }));
+    syncCreateNotification(notif);
   },
 
   // ===== LOCATIONS =====
@@ -494,6 +550,204 @@ const useStore = create((set, get) => ({
     return userId ? (get().favorites[userId] || []).includes(workerId) : false;
   },
 
+  // ===== SAVED SHIFTS (worker bookmarks) =====
+  savedShifts: {},
+  toggleSavedShift: (shiftId) => {
+    const userId = get().currentUser?.id;
+    if (!userId) return;
+    set(s => {
+      const saved = s.savedShifts[userId] || [];
+      return {
+        savedShifts: {
+          ...s.savedShifts,
+          [userId]: saved.includes(shiftId)
+            ? saved.filter(id => id !== shiftId)
+            : [...saved, shiftId],
+        },
+      };
+    });
+  },
+  isSavedShift: (shiftId) => {
+    const userId = get().currentUser?.id;
+    return userId ? (get().savedShifts[userId] || []).includes(shiftId) : false;
+  },
+
+  // ===== INVITATIONS (employer → worker) =====
+  invitations: [],
+  inviteWorkerToShift: (workerId, shiftId) => {
+    const existing = get().invitations.find(
+      inv => inv.workerId === workerId && inv.shiftId === shiftId
+    );
+    if (existing) return { error: 'already_invited' };
+
+    const inv = {
+      id: 'inv_' + Date.now(),
+      workerId,
+      shiftId,
+      employerId: get().currentUser?.id,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    set(s => ({ invitations: [...s.invitations, inv] }));
+
+    const shift = get().getShiftById(shiftId);
+    const company = get().currentUser;
+    get().addNotification(workerId, 'shift_invite',
+      'Приглашение на смену',
+      `${company?.companyName} приглашает вас на смену «${shift?.title}»`,
+      shiftId);
+    return { success: true };
+  },
+
+  // ===== CONVERSATIONS (chat) =====
+  conversations: (() => {
+    // Seed conversations from approved applications
+    const convs = [];
+    const approvedApps = MOCK_APPLICATIONS.filter(a => a.status === 'approved');
+    const seen = new Set();
+    approvedApps.forEach(a => {
+      const shift = MOCK_SHIFTS.find(s => s.id === a.shiftId);
+      if (!shift) return;
+      const key = `${a.shiftId}_${a.workerId}_${shift.companyId}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const worker = MOCK_WORKERS.find(w => w.id === a.workerId);
+      const company = MOCK_COMPANIES.find(c => c.id === shift.companyId);
+      const msgs = [];
+      // System message
+      msgs.push({
+        id: 'msg_seed_' + convs.length + '_0',
+        senderId: 'system',
+        text: `Заявка подтверждена! Смена «${shift.title}» — ${shift.date}, ${shift.timeStart}–${shift.timeEnd}`,
+        createdAt: new Date(Date.now() - (convs.length + 1) * 3600000 - 60000).toISOString(),
+        read: true,
+        isSystem: true,
+      });
+      // Welcome message from company
+      msgs.push({
+        id: 'msg_seed_' + convs.length + '_1',
+        senderId: shift.companyId,
+        text: `Здравствуйте, ${worker?.firstName}! Ждём вас на смену. Вход с торца здания.`,
+        createdAt: new Date(Date.now() - (convs.length + 1) * 3600000).toISOString(),
+        read: true,
+      });
+      // Some conversations have replies
+      if (convs.length < 3) {
+        msgs.push({
+          id: 'msg_seed_' + convs.length + '_2',
+          senderId: a.workerId,
+          text: 'Спасибо! Буду вовремя 👍',
+          createdAt: new Date(Date.now() - convs.length * 3600000).toISOString(),
+          read: true,
+        });
+      }
+      convs.push({
+        id: 'conv_seed_' + convs.length,
+        shiftId: a.shiftId,
+        workerId: a.workerId,
+        companyId: shift.companyId,
+        messages: msgs,
+        createdAt: new Date(Date.now() - (convs.length + 2) * 3600000).toISOString(),
+        lastMessageAt: msgs[msgs.length - 1].createdAt,
+      });
+    });
+    return convs;
+  })(),
+
+  getConversationsForUser: () => {
+    const userId = get().currentUser?.id;
+    if (!userId) return [];
+    return get().conversations
+      .filter(c => c.workerId === userId || c.companyId === userId)
+      .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
+  },
+
+  getOrCreateConversation: (shiftId, workerId, companyId) => {
+    const existing = get().conversations.find(
+      c => c.shiftId === shiftId && c.workerId === workerId && c.companyId === companyId
+    );
+    if (existing) return existing;
+
+    const conv = {
+      id: 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      shiftId,
+      workerId,
+      companyId,
+      messages: [],
+      createdAt: new Date().toISOString(),
+      lastMessageAt: null,
+    };
+    set(s => ({ conversations: [...s.conversations, conv] }));
+    return conv;
+  },
+
+  sendMessage: (conversationId, text, imageUri) => {
+    const userId = get().currentUser?.id;
+    if (!userId || (!text?.trim() && !imageUri)) return;
+
+    const msg = {
+      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      senderId: userId,
+      text: text?.trim() || '',
+      createdAt: new Date().toISOString(),
+      read: false,
+      ...(imageUri ? { imageUri } : {}),
+    };
+
+    set(s => ({
+      conversations: s.conversations.map(c =>
+        c.id === conversationId
+          ? { ...c, messages: [...c.messages, msg], lastMessageAt: msg.createdAt }
+          : c
+      ),
+    }));
+    syncSendMessage(conversationId, userId, text?.trim() || '', imageUri);
+    return msg;
+  },
+
+  sendSystemMessage: (conversationId, text) => {
+    const msg = {
+      id: 'msg_sys_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      senderId: 'system',
+      text,
+      createdAt: new Date().toISOString(),
+      read: false,
+      isSystem: true,
+    };
+    set(s => ({
+      conversations: s.conversations.map(c =>
+        c.id === conversationId
+          ? { ...c, messages: [...c.messages, msg], lastMessageAt: msg.createdAt }
+          : c
+      ),
+    }));
+  },
+
+  getUnreadChatCount: () => {
+    const userId = get().currentUser?.id;
+    if (!userId) return 0;
+    return get().conversations
+      .filter(c => c.workerId === userId || c.companyId === userId)
+      .reduce((total, c) => {
+        return total + c.messages.filter(m => m.senderId !== userId && !m.read).length;
+      }, 0);
+  },
+
+  markConversationRead: (conversationId) => {
+    const userId = get().currentUser?.id;
+    set(s => ({
+      conversations: s.conversations.map(c =>
+        c.id === conversationId
+          ? {
+              ...c,
+              messages: c.messages.map(m =>
+                m.senderId !== userId && !m.read ? { ...m, read: true } : m
+              ),
+            }
+          : c
+      ),
+    }));
+  },
+
   // ===== PLANS =====
   changePlan: (plan) => {
     if (!['free', 'business', 'premium'].includes(plan)) return;
@@ -517,6 +771,25 @@ const useStore = create((set, get) => ({
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
 
+    const completedAndFilled = shifts.filter(s => ['completed', 'filled'].includes(s.status));
+    const totalSpots = completedAndFilled.reduce((sum, s) => sum + s.spotsTotal, 0);
+    const takenSpots = completedAndFilled.reduce((sum, s) => sum + s.spotsTaken, 0);
+    const fillRate = totalSpots > 0 ? Math.round((takenSpots / totalSpots) * 100) : 0;
+    const cancelledCount = shifts.filter(s => s.status === 'cancelled').length;
+    const cancelRate = shifts.length > 0 ? Math.round((cancelledCount / shifts.length) * 100) : 0;
+
+    // Top workers: count approved apps for completed shifts
+    const companyShiftIds = shifts.filter(s => s.status === 'completed').map(s => s.id);
+    const workerCounts = {};
+    get().applications
+      .filter(a => a.status === 'approved' && companyShiftIds.includes(a.shiftId))
+      .forEach(a => { workerCounts[a.workerId] = (workerCounts[a.workerId] || 0) + 1; });
+    const topWorkers = Object.entries(workerCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([workerId, count]) => ({ worker: get().workers.find(w => w.id === workerId), count }))
+      .filter(item => item.worker);
+
     return {
       activeShifts: shifts.filter(s => ['active', 'in_progress'].includes(s.status)).length,
       pendingApplications: get().applications.filter(
@@ -524,9 +797,24 @@ const useStore = create((set, get) => ({
       ).length,
       monthShifts: shifts.filter(s => s.createdAt >= monthStart).length,
       rating: user.rating,
+      fillRate,
+      cancelRate,
+      topWorkers,
     };
   },
-}));
+}),
+    {
+      name: 'smenabel-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        currentUser: state.currentUser,
+        isAuthenticated: state.isAuthenticated,
+        favorites: state.favorites,
+        savedShifts: state.savedShifts,
+      }),
+    },
+  ),
+);
 
 function calcDuration(start, end) {
   const [sh, sm] = start.split(':').map(Number);

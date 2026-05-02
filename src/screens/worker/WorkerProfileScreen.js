@@ -1,37 +1,68 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
 
 const STATS_CONFIG = [
   { key: 'shiftsCompleted', label: 'Смен' },
   { key: 'rating', label: 'Рейтинг' },
-  { key: 'totalEarned', label: 'Заработано' },
 ];
 
 const MENU = [
   { icon: 'person-outline', label: 'Личные данные', screen: 'Settings' },
-  { icon: 'card-outline', label: 'Платёжные реквизиты', screen: 'Settings' },
+  { icon: 'bookmark-outline', label: 'Сохранённые смены', screen: 'SavedShifts' },
   { icon: 'document-text-outline', label: 'Документы', screen: 'Settings' },
   { icon: 'notifications-outline', label: 'Уведомления', screen: 'Notifications' },
   { icon: 'star-outline', label: 'Отзывы обо мне', screen: 'MyReviews' },
-  { icon: 'help-circle-outline', label: 'Помощь', screen: null },
-  { icon: 'information-circle-outline', label: 'О приложении', screen: null },
+  { icon: 'help-circle-outline', label: 'Помощь', screen: 'help' },
+  { icon: 'information-circle-outline', label: 'О приложении', screen: 'about' },
 ];
 
 export default function WorkerProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const currentUser = useStore(s => s.currentUser);
   const logout = useStore(s => s.logout);
+  const updateProfile = useStore(s => s.updateProfile);
   const getReviewsFor = useStore(s => s.getReviewsFor);
   const reviews = getReviewsFor(currentUser?.id);
 
   if (!currentUser) return null;
+
+  const pickAvatar = async () => {
+    Alert.alert('Изменить фото', '', [
+      {
+        text: 'Камера', onPress: async () => {
+          const perm = await ImagePicker.requestCameraPermissionsAsync();
+          if (!perm.granted) return;
+          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+          if (!r.canceled && r.assets?.[0]) {
+            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
+            updateProfile({ avatar: m.uri });
+          }
+        },
+      },
+      {
+        text: 'Галерея', onPress: async () => {
+          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!perm.granted) return;
+          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+          if (!r.canceled && r.assets?.[0]) {
+            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
+            updateProfile({ avatar: m.uri });
+          }
+        },
+      },
+      { text: 'Отмена', style: 'cancel' },
+    ]);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -50,10 +81,12 @@ export default function WorkerProfileScreen({ navigation }) {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.profileTop}>
-            <Image
-              source={{ uri: currentUser.avatar || 'https://i.pravatar.cc/200?img=0' }}
-              style={styles.avatar}
-            />
+            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.7} style={{ position: 'relative' }}>
+              <Avatar uri={currentUser.avatar} name={currentUser.firstName} name2={currentUser.lastName} size={72} />
+              <View style={styles.avatarEditBadge}>
+                <Ionicons name="camera" size={12} color={COLORS.white} />
+              </View>
+            </TouchableOpacity>
             <View style={styles.profileInfo}>
               <Text style={styles.name}>{currentUser.firstName} {currentUser.lastName}</Text>
               <Text style={styles.phone}>{currentUser.phone}</Text>
@@ -68,7 +101,6 @@ export default function WorkerProfileScreen({ navigation }) {
           <View style={styles.statsRow}>
             {STATS_CONFIG.map((stat, i) => {
               let value = currentUser[stat.key];
-              if (stat.key === 'totalEarned') value = `${value} BYN`;
               if (stat.key === 'rating') value = value > 0 ? value.toFixed(1) : '—';
               return (
                 <View key={stat.key} style={styles.statItem}>
@@ -121,6 +153,10 @@ export default function WorkerProfileScreen({ navigation }) {
               onPress={() => {
                 if (item.screen === 'MyReviews') {
                   navigation.navigate('PublicWorkerProfile', { workerId: currentUser.id });
+                } else if (item.screen === 'help') {
+                  navigation.navigate('FAQ');
+                } else if (item.screen === 'about') {
+                  Alert.alert('СменаБел v1.0', 'Платформа для поиска подработок в Беларуси.\n\nПоддержка: support@smenabel.by');
                 } else if (item.screen) {
                   navigation.navigate(item.screen);
                 }
@@ -144,7 +180,7 @@ export default function WorkerProfileScreen({ navigation }) {
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>СменаБай v1.0.0</Text>
+        <Text style={styles.version}>СменаБел v1.0.0</Text>
         <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
       </ScrollView>
     </View>
@@ -166,6 +202,12 @@ const styles = StyleSheet.create({
   profileCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.lg, ...SHADOWS.md },
   profileTop: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.skeleton },
+  avatarEditBadge: {
+    position: 'absolute', bottom: 0, right: -2,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: COLORS.white,
+  },
   profileInfo: { marginLeft: SIZES.base, flex: 1 },
   name: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.3 },
   phone: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: 2 },

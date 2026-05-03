@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, StatusBar, Modal, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
 import { Icon, MonoTag, Money, Pill, PrimaryButton, GhostButton } from '../../components/ui/Atoms';
@@ -86,7 +86,7 @@ export default function RoleSelectScreen({ navigation }) {
       {/* Auth method modal */}
       <Modal visible={!!selectedRole} transparent animationType="slide" onRequestClose={() => !loading && setSelectedRole(null)}>
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => !loading && setSelectedRole(null)}>
-          <View style={[styles.sheet, { paddingBottom: insets.bottom + 18 }]}>
+          <Pressable onPress={() => {}} style={[styles.sheet, { paddingBottom: insets.bottom + 18 }]}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>
               Регистрация{'\n'}<Text style={styles.serif}>{selectedRole === 'worker' ? 'исполнителя' : 'заказчика'}</Text>
@@ -101,7 +101,7 @@ export default function RoleSelectScreen({ navigation }) {
             <TouchableOpacity onPress={() => setSelectedRole(null)} disabled={loading} style={{ alignItems: 'center', paddingTop: 18 }}>
               <Text style={styles.cancelText}>Отмена</Text>
             </TouchableOpacity>
-          </View>
+          </Pressable>
         </TouchableOpacity>
       </Modal>
     </View>

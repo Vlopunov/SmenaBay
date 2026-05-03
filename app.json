@@ -34,7 +34,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.smenabay.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

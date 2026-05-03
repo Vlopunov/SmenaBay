@@ -24,24 +24,30 @@ export async function loadFromFirestore(set, get) {
     // console.log('📡 Loading data from Firestore...');
 
     const [workers, companies, shiftsData, applicationsData, reviewsData] = await Promise.all([
-      fs.getAllWorkers(),
-      fs.getAllCompanies(),
-      fs.getShifts({}),
-      fs.getApplications({}),
-      fs.getReviews(''), // empty targetId gets all - we'll filter client-side
+      fs.getAllWorkers().catch(() => []),
+      fs.getAllCompanies().catch(() => []),
+      fs.getShifts({}).catch(() => []),
+      fs.getApplications({}).catch(() => []),
+      fs.getReviews('').catch(() => []),
     ]);
 
-    // Get all reviews by fetching for each target
-    // For now, load shifts reviews
-    const allReviews = reviewsData;
+    // Merge with existing state instead of replacing — preserves local-only
+    // users (e.g. just-registered) if their Firestore doc hasn't been
+    // committed yet, and avoids wiping the in-memory store on a failed read.
+    const merge = (local, remote) => {
+      const map = new Map();
+      local.forEach(u => map.set(u.id, u));
+      remote.forEach(u => map.set(u.id, { ...map.get(u.id), ...u }));
+      return Array.from(map.values());
+    };
 
-    set({
-      workers,
-      companies,
-      shifts: shiftsData,
-      applications: applicationsData,
-      reviews: allReviews,
-    });
+    set(state => ({
+      workers: merge(state.workers, workers),
+      companies: merge(state.companies, companies),
+      shifts: shiftsData.length ? shiftsData : state.shifts,
+      applications: applicationsData.length ? applicationsData : state.applications,
+      reviews: reviewsData.length ? reviewsData : state.reviews,
+    }));
 
     // Load notifications for current user
     const user = get().currentUser;
@@ -95,6 +101,13 @@ export async function syncCreateReview(review) {
   try {
     await fs.createReview(review);
   } catch (e) { /* silent */ }
+}
+
+export async function syncCreateUser(userId, data) {
+  if (!USE_FIRESTORE) return;
+  try {
+    await fs.createUser(userId, data);
+  } catch (e) { console.warn('[syncCreateUser]', e?.message); }
 }
 
 export async function syncUpdateUser(userId, updates) {

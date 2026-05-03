@@ -7,7 +7,7 @@ import {
 } from '../data/mockData';
 import {
   syncCreateShift, syncUpdateShift, syncCreateApplication, syncUpdateApplication,
-  syncCreateReview, syncUpdateUser, syncCreateNotification, syncSendMessage,
+  syncCreateReview, syncCreateUser, syncUpdateUser, syncCreateNotification, syncSendMessage,
   loadFromFirestore, setupRealtimeListeners,
 } from '../services/firestoreSync';
 
@@ -20,8 +20,13 @@ const useStore = create(
 
   // Initialize from Firestore (call on app startup)
   initializeFromFirestore: async () => {
-    await loadFromFirestore(set, get);
-    return setupRealtimeListeners(set, get);
+    try {
+      await loadFromFirestore(set, get);
+      return setupRealtimeListeners(set, get);
+    } catch (e) {
+      console.warn('[initializeFromFirestore]', e?.message);
+      return () => {};
+    }
   },
 
   // Update current user's lastSeen timestamp
@@ -86,6 +91,7 @@ const useStore = create(
       currentUser: newWorker,
       isAuthenticated: true,
     }));
+    syncCreateUser(newWorker.id, newWorker);
     return newWorker;
   },
 
@@ -109,6 +115,7 @@ const useStore = create(
       currentUser: newCompany,
       isAuthenticated: true,
     }));
+    syncCreateUser(newCompany.id, newCompany);
     return newCompany;
   },
 

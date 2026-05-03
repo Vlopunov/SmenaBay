@@ -17,9 +17,9 @@ function Heartbeat() {
     const interval = setInterval(updateLastSeen, 30000);
 
     // Initialize Firestore sync (loads data + sets up real-time listeners)
-    initializeFromFirestore().then(cleanup => {
-      cleanupRef.current = cleanup;
-    });
+    initializeFromFirestore()
+      .then(cleanup => { cleanupRef.current = cleanup; })
+      .catch(err => { console.warn('[Heartbeat init]', err?.message); });
 
     return () => {
       clearInterval(interval);

@@ -10,6 +10,7 @@ import {
   syncCreateReview, syncCreateUser, syncUpdateUser, syncCreateNotification, syncSendMessage,
   loadFromFirestore, setupRealtimeListeners,
 } from '../services/firestoreSync';
+import { signOut as authSignOut } from '../services/auth';
 
 const useStore = create(
   persist(
@@ -119,7 +120,11 @@ const useStore = create(
     return newCompany;
   },
 
-  logout: () => set({ currentUser: null, isAuthenticated: false }),
+  logout: () => {
+    set({ currentUser: null, isAuthenticated: false });
+    // Best-effort sign out from Firebase + Google so the next login is clean.
+    authSignOut().catch(() => {});
+  },
   // Note: favorites are not cleared on logout — they persist per-user
 
   updateProfile: (updates) => {

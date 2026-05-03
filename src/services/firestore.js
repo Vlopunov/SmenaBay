@@ -17,7 +17,11 @@ const serverTimestamp = () => FieldValue.serverTimestamp();
 const arrayUnion = (item) => FieldValue.arrayUnion(item);
 const increment = (n) => FieldValue.increment(n);
 
-export const USE_FIRESTORE = true;
+// Disabled: RN Firebase Firestore is unstable under React Native new
+// architecture (Fabric/Bridgeless) on Android — native crashes under load.
+// All read/write paths short-circuit; data lives in Zustand + AsyncStorage.
+// Re-enable once RN Firebase fully supports new arch.
+export const USE_FIRESTORE = false;
 
 // ===== USERS =====
 

@@ -132,48 +132,16 @@ export async function syncSendMessage(conversationId, senderId, text, imageUri) 
 }
 
 /**
- * Set up real-time listeners for live updates
- * Call on app startup after auth
+ * Real-time listeners DISABLED.
+ *
+ * Under React Native new architecture (Fabric + Bridgeless), RN Firebase
+ * Firestore .onSnapshot() listeners are unstable on Android — known issue
+ * causing native crashes under load. We use one-shot reads in
+ * loadFromFirestore() instead. Live updates can be re-enabled once RN
+ * Firebase fully supports new arch (tracked in their repo).
+ *
+ * This is a no-op so callers can keep the same shape.
  */
-export function setupRealtimeListeners(set, get) {
-  if (!USE_FIRESTORE) return () => {};
-
-  const user = get().currentUser;
-  if (!user) return () => {};
-
-  const unsubscribers = [];
-
-  // Listen to shifts changes
-  unsubscribers.push(
-    fs.onShiftsChange(shifts => {
-      set({ shifts });
-    })
-  );
-
-  // Listen to notifications
-  unsubscribers.push(
-    fs.onNotificationsChange(user.id, notifications => {
-      set({ notifications });
-    })
-  );
-
-  // Listen to conversations
-  unsubscribers.push(
-    fs.onConversationsChange(user.id, conversations => {
-      set(s => ({
-        conversations: [
-          ...conversations,
-          ...s.conversations.filter(c => !conversations.find(nc => nc.id === c.id)),
-        ],
-      }));
-    })
-  );
-
-  // console.log('📡 Real-time listeners active');
-
-  // Return cleanup function
-  return () => {
-    unsubscribers.forEach(unsub => unsub());
-    // console.log('📡 Real-time listeners stopped');
-  };
+export function setupRealtimeListeners(_set, _get) {
+  return () => {};
 }

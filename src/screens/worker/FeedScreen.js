@@ -101,13 +101,13 @@ export default function FeedScreen({ navigation }) {
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={styles.payBig}>{item.pay}</Text>
-            <Text style={styles.payUnit}>BYN · {(item.pay / (item.duration || 8)).toFixed(1)}/ч</Text>
+            <Text style={styles.payUnit}>BYN · {(item.pay / (item.durationHours || 8)).toFixed(1)}/ч</Text>
           </View>
         </View>
         <View style={styles.rowMeta}>
           {item.urgent && <Pill bg={COLORS.live} color={COLORS.white}>Срочно</Pill>}
           {item.requirements?.noExperienceOk && <Pill bg={COLORS.paperSoft} color={COLORS.fg}>Без опыта</Pill>}
-          <Pill border={COLORS.line} icon="clock">{item.startTime}–{item.endTime}</Pill>
+          <Pill border={COLORS.line} icon="clock">{item.timeStart}–{item.timeEnd}</Pill>
           <Pill border={COLORS.line} icon="cal">{formatDateLabel(item.date)}</Pill>
           <Text style={styles.codeText}>SB·{item.id.slice(-4).toUpperCase()}</Text>
         </View>
@@ -187,7 +187,7 @@ export default function FeedScreen({ navigation }) {
             {/* Signal corner — yellow rounded triangle */}
             <View style={styles.signalCorner}>
               <Text style={styles.signalCornerLabel}>В ЧАС</Text>
-              <Text style={styles.signalCornerValue}>{(hero.pay / (hero.duration || 8)).toFixed(1)}</Text>
+              <Text style={styles.signalCornerValue}>{(hero.pay / (hero.durationHours || 8)).toFixed(1)}</Text>
               <Text style={styles.signalCornerUnit}>BYN/Ч</Text>
             </View>
 
@@ -205,7 +205,7 @@ export default function FeedScreen({ navigation }) {
               <Money amount={String(hero.pay)} size={50} color={COLORS.signal} />
               <View style={{ marginLeft: 8 }}>
                 <Text style={styles.heroPayLabel}>ЗА СМЕНУ</Text>
-                <Text style={styles.heroPayValue}>{hero.startTime}–{hero.endTime}</Text>
+                <Text style={styles.heroPayValue}>{hero.timeStart}–{hero.timeEnd}</Text>
               </View>
             </View>
 

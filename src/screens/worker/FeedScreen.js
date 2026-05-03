@@ -1,547 +1,342 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
-  Image, StatusBar, RefreshControl,
+  StatusBar, RefreshControl,
 } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
+import { Icon, MonoTag, Money, Pill, Chip, IconButton, LogoBlock } from '../../components/ui/Atoms';
 import useStore from '../../store/useStore';
 
-const DATE_FILTERS = ['Все', 'Сегодня', 'Завтра', 'Эта неделя'];
-
 const CATEGORY_FILTERS = [
-  { key: 'all', label: 'Все категории', icon: 'apps-outline' },
-  { key: 'pvz', label: 'ПВЗ', icon: 'cube-outline' },
-  { key: 'horeca', label: 'HoReCa', icon: 'restaurant-outline' },
-  { key: 'warehouse', label: 'Склад', icon: 'file-tray-stacked-outline' },
-  { key: 'retail', label: 'Ритейл', icon: 'storefront-outline' },
-  { key: 'cleaning', label: 'Клининг', icon: 'sparkles-outline' },
-  { key: 'coffee', label: 'Кофейни', icon: 'cafe-outline' },
-  { key: 'courier', label: 'Курьеры', icon: 'bicycle-outline' },
-  { key: 'promo', label: 'Промо', icon: 'megaphone-outline' },
-  { key: 'events', label: 'Ивенты', icon: 'musical-notes-outline' },
-  { key: 'production', label: 'Производство', icon: 'construct-outline' },
+  { key: 'all',        label: 'Все',     icon: null },
+  { key: 'pvz',        label: 'ПВЗ',     icon: 'box' },
+  { key: 'horeca',     label: 'HoReCa',  icon: 'fork' },
+  { key: 'warehouse',  label: 'Склад',   icon: 'truck' },
+  { key: 'retail',     label: 'Ритейл',  icon: 'cart' },
+  { key: 'cleaning',   label: 'Клининг', icon: 'broom' },
+  { key: 'courier',    label: 'Курьер',  icon: 'bolt' },
 ];
 
-export default function FeedScreen({ navigation, route }) {
+const TODAY = new Date().toISOString().split('T')[0];
+const TOMORROW = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
+
+export default function FeedScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const currentUser = useStore(s => s.currentUser);
   const shifts = useStore(s => s.shifts);
   const companies = useStore(s => s.companies);
-  const getUnreadCount = useStore(s => s.getUnreadCount);
-  const toggleSavedShift = useStore(s => s.toggleSavedShift);
-  const savedShifts = useStore(s => s.savedShifts);
-  const userSaved = savedShifts[currentUser?.id] || [];
 
   const [search, setSearch] = useState('');
-
-  // Accept initial search from navigation params (e.g. "Find similar" from MyShifts)
-  useEffect(() => {
-    if (route?.params?.initialSearch) {
-      setSearch(route.params.initialSearch);
-    }
-  }, [route?.params?.initialSearch]);
-  const [dateFilter, setDateFilter] = useState('Все');
-  const [refreshing, setRefreshing] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [payMin, setPayMin] = useState('');
-  const [noExpOnly, setNoExpOnly] = useState(false);
-  const [urgentOnly, setUrgentOnly] = useState(false);
-  const [noMedBook, setNoMedBook] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const activeFilterCount = [
-    categoryFilter !== 'all',
-    !!payMin,
-    noExpOnly,
-    urgentOnly,
-    noMedBook,
-  ].filter(Boolean).length;
-
-  const today = new Date().toISOString().split('T')[0];
-  const tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0]; })();
-
-  const unreadCount = getUnreadCount();
+  const getCompany = useCallback((id) => companies.find(c => c.id === id), [companies]);
 
   const filteredShifts = useMemo(() => {
     let result = shifts.filter(s => s.status === 'active');
-
-    // City filter
-    if (currentUser?.city) {
-      result = result.filter(s => {
-        const company = companies.find(c => c.id === s.companyId);
-        return company?.city === currentUser.city;
-      });
-    }
-
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(s => {
-        const company = companies.find(c => c.id === s.companyId);
-        return s.title.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q) ||
-          company?.companyName.toLowerCase().includes(q);
+        const c = getCompany(s.companyId);
+        return s.title.toLowerCase().includes(q) || c?.companyName?.toLowerCase().includes(q);
       });
     }
-
-    // Date filter
-    if (dateFilter === 'Сегодня') result = result.filter(s => s.date === today);
-    else if (dateFilter === 'Завтра') result = result.filter(s => s.date === tomorrow);
-    else if (dateFilter === 'Эта неделя') {
-      const weekEnd = new Date();
-      weekEnd.setDate(weekEnd.getDate() + 7);
-      const weekEndStr = weekEnd.toISOString().split('T')[0];
-      result = result.filter(s => s.date >= today && s.date <= weekEndStr);
-    }
-
-    // Category filter
     if (categoryFilter !== 'all') {
       result = result.filter(s => {
-        const title = s.title.toLowerCase();
-        const bcat = companies.find(c => c.id === s.companyId)?.businessCategory || '';
+        const t = s.title.toLowerCase();
+        const bc = getCompany(s.companyId)?.businessCategory || '';
         switch (categoryFilter) {
-          case 'pvz': return title.includes('пвз') || bcat === 'ПВЗ';
-          case 'horeca': return bcat === 'HoReCa' || title.includes('официант') || title.includes('повар') || title.includes('бармен');
-          case 'warehouse': return bcat === 'Склад/Логистика' || title.includes('склад') || title.includes('грузчик') || title.includes('комплектовщик') || title.includes('сборщик');
-          case 'retail': return bcat === 'Ритейл' || title.includes('продавец') || title.includes('кассир');
-          case 'cleaning': return bcat === 'Клининг' || title.includes('уборщик') || title.includes('клининг');
-          case 'coffee': return title.includes('бариста') || title.includes('кофейн') || title.includes('кофе');
-          case 'courier': return title.includes('курьер') || title.includes('доставк');
-          case 'promo': return title.includes('промоутер') || title.includes('промо') || title.includes('раздач');
-          case 'events': return bcat === 'Ивенты' || title.includes('ивент') || title.includes('мероприят');
-          case 'production': return bcat === 'Производство' || title.includes('производств') || title.includes('разнорабоч');
+          case 'pvz':       return t.includes('пвз') || bc === 'ПВЗ';
+          case 'horeca':    return bc === 'HoReCa' || /бармен|официант|повар/.test(t);
+          case 'warehouse': return bc === 'Склад/Логистика' || /склад|грузчик|комплектовщик/.test(t);
+          case 'retail':    return bc === 'Ритейл' || /продавец|кассир/.test(t);
+          case 'cleaning':  return bc === 'Клининг' || /уборщик|клининг/.test(t);
+          case 'courier':   return /курьер|доставк/.test(t);
           default: return true;
         }
       });
     }
-
-    // Advanced filters
-    if (payMin && !isNaN(payMin)) result = result.filter(s => s.pay >= Number(payMin));
-    if (noExpOnly) result = result.filter(s => s.requirements.noExperienceOk);
-    if (urgentOnly) result = result.filter(s => s.urgent);
-    if (noMedBook) result = result.filter(s => !s.requirements.medicalBookRequired);
-
-    // Sort: urgent first, then by date
     return result.sort((a, b) => {
       if (a.urgent && !b.urgent) return -1;
       if (!a.urgent && b.urgent) return 1;
       return new Date(a.date) - new Date(b.date);
     });
-  }, [shifts, search, dateFilter, categoryFilter, payMin, noExpOnly, urgentOnly, noMedBook, currentUser, companies]);
-
-  const getCompany = useCallback((id) => companies.find(c => c.id === id), [companies]);
-  const getLocation = useCallback((companyId, locId) => {
-    const company = companies.find(c => c.id === companyId);
-    return company?.locations.find(l => l.id === locId);
-  }, [companies]);
-
-  const formatDate = (dateStr) => {
-    if (dateStr === today) return 'Сегодня';
-    if (dateStr === tomorrow) return 'Завтра';
-    const d = new Date(dateStr);
-    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-    return `${d.getDate()} ${months[d.getMonth()]}`;
-  };
+  }, [shifts, search, categoryFilter, getCompany]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
+    setTimeout(() => setRefreshing(false), 600);
   };
 
-  const renderShift = ({ item }) => {
-    const company = getCompany(item.companyId);
-    const location = getLocation(item.companyId, item.locationId);
+  const formatDateLabel = (dateStr) => {
+    if (dateStr === TODAY) return 'Сегодня';
+    if (dateStr === TOMORROW) return 'Завтра';
+    const d = new Date(dateStr);
+    const m = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    return `${d.getDate()} ${m[d.getMonth()]}`;
+  };
 
+  const lettersOf = (name) => (name || '').split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+
+  const [hero, ...rest] = filteredShifts;
+  const dayName = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'][new Date().getDay()];
+
+  const renderShift = ({ item }) => {
+    const c = getCompany(item.companyId);
     return (
       <TouchableOpacity
-        style={styles.shiftCard}
-        activeOpacity={0.7}
+        activeOpacity={0.85}
+        style={styles.row}
         onPress={() => navigation.navigate('ShiftDetail', { shiftId: item.id })}
       >
-        {item.urgent && (
-          <View style={styles.urgentBadge}>
-            <Ionicons name="flash" size={12} color={COLORS.white} />
-            <Text style={styles.urgentText}>Срочно</Text>
-          </View>
-        )}
-
-        <View style={styles.shiftHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.shiftTitle}>{item.title}</Text>
-            <View style={styles.companyRow}>
-              <Text style={styles.companyName}>{company?.companyName}</Text>
-              {company?.rating > 0 && (
-                <View style={styles.ratingBadge}>
-                  <Ionicons name="star" size={12} color={COLORS.star} />
-                  <Text style={styles.ratingText}>{company.rating}</Text>
-                </View>
-              )}
+        <View style={styles.rowTop}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.rowCompany}>
+              <LogoBlock letters={lettersOf(c?.companyName)} size={28} radius={8} />
+              <Text style={styles.companyName} numberOfLines={1}>{c?.companyName || 'Заказчик'}</Text>
             </View>
+            <Text style={styles.shiftTitle} numberOfLines={2}>{item.title}</Text>
           </View>
-          <View style={styles.payBadge}>
-            <View style={styles.payTopRow}>
-              <Text style={styles.payAmount}>{item.pay}</Text>
-              <TouchableOpacity
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                onPress={() => toggleSavedShift(item.id)}
-              >
-                <Ionicons
-                  name={userSaved.includes(item.id) ? 'bookmark' : 'bookmark-outline'}
-                  size={18}
-                  color={userSaved.includes(item.id) ? COLORS.accent : COLORS.textTertiary}
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.payCurrency}>BYN</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.payBig}>{item.pay}</Text>
+            <Text style={styles.payUnit}>BYN · {(item.pay / (item.duration || 8)).toFixed(1)}/ч</Text>
           </View>
         </View>
-
-        <View style={styles.shiftDetails}>
-          <View style={styles.detailRow}>
-            <Ionicons name="calendar-outline" size={15} color={COLORS.textTertiary} />
-            <Text style={styles.detailText}>{formatDate(item.date)}, {item.timeStart}–{item.timeEnd}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={15} color={COLORS.textTertiary} />
-            <Text style={styles.detailText} numberOfLines={1}>{location?.address || 'Адрес'}</Text>
-          </View>
-        </View>
-
-        <View style={styles.shiftTags}>
-          {item.requirements.noExperienceOk && (
-            <View style={[styles.tag, { backgroundColor: '#D1FAE5' }]}>
-              <Text style={[styles.tagText, { color: '#059669' }]}>Без опыта</Text>
-            </View>
-          )}
-          {item.durationHours && (
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{item.durationHours}ч</Text>
-            </View>
-          )}
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>~{item.payPerHour.toFixed(0)} BYN/ч</Text>
-          </View>
-          <View style={styles.spotsTag}>
-            <Text style={styles.spotsText}>
-              {item.spotsTotal - item.spotsTaken}/{item.spotsTotal} мест
-            </Text>
-          </View>
+        <View style={styles.rowMeta}>
+          {item.urgent && <Pill bg={COLORS.live} color={COLORS.white}>Срочно</Pill>}
+          {item.requirements?.noExperienceOk && <Pill bg={COLORS.paperSoft} color={COLORS.fg}>Без опыта</Pill>}
+          <Pill border={COLORS.line} icon="clock">{item.startTime}–{item.endTime}</Pill>
+          <Pill border={COLORS.line} icon="cal">{formatDateLabel(item.date)}</Pill>
+          <Text style={styles.codeText}>SB·{item.id.slice(-4).toUpperCase()}</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
+  const ListHeader = (
+    <View>
+      {/* Top bar */}
+      <View style={styles.topBar}>
         <View>
-          <Text style={styles.greeting}>Смены</Text>
-          <Text style={styles.city}>
-            <Ionicons name="location" size={13} color={COLORS.accent} /> {currentUser?.city || 'Минск'}
-          </Text>
+          <Text style={styles.topMono}>{dayName} · {currentUser?.city || 'Минск'}</Text>
+          <Text style={styles.topGreeting}>Привет, {currentUser?.firstName || 'друг'}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.notifBtn}
-          onPress={() => navigation.navigate('Notifications')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="notifications-outline" size={24} color={COLORS.textPrimary} />
-          {unreadCount > 0 && (
-            <View style={styles.notifDot}>
-              <Text style={styles.notifDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <IconButton icon="search" onPress={() => setShowSearch(s => !s)} />
+          <IconButton icon="bell" />
+        </View>
       </View>
 
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchBar}>
-          <Feather name="search" size={18} color={COLORS.textTertiary} />
+      {/* Display heading */}
+      <View style={styles.heroBlock}>
+        <Text style={styles.h1}>
+          Смены{'\n'}<Text style={styles.serif}>на сегодня</Text>
+        </Text>
+        <View style={styles.h1Meta}>
+          <Text style={styles.metaLabel}>В ЛЕНТЕ</Text>
+          <Text style={styles.metaCount}>{filteredShifts.length}</Text>
+          <Text style={styles.metaLabel}>· обновлено сейчас</Text>
+        </View>
+      </View>
+
+      {/* Search input — appears when toggled */}
+      {showSearch && (
+        <View style={styles.searchWrap}>
+          <Icon name="search" size={18} color={COLORS.fgMuted} />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Поиск смен..."
-            placeholderTextColor={COLORS.textTertiary}
             value={search}
             onChangeText={setSearch}
+            placeholder="Поиск по названию, компании…"
+            placeholderTextColor={COLORS.fgFaint}
+            style={styles.searchInput}
           />
-          {search.length > 0 && (
+          {search ? (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={COLORS.textTertiary} />
+              <Icon name="x" size={18} color={COLORS.fgMuted} />
             </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
-          style={[styles.filterBtn, (showFilters || activeFilterCount > 0) && styles.filterBtnActive]}
-          onPress={() => setShowFilters(!showFilters)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="options-outline" size={20} color={(showFilters || activeFilterCount > 0) ? COLORS.white : COLORS.accent} />
-          {activeFilterCount > 0 && !showFilters && (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Advanced Filters */}
-      {showFilters && (
-        <View style={styles.advFilters}>
-          {/* Category */}
-          <Text style={[styles.advSectionTitle, { marginTop: 0 }]}>Категория</Text>
-          <View style={styles.advChipsWrap}>
-            {CATEGORY_FILTERS.map(f => (
-              <TouchableOpacity
-                key={f.key}
-                style={[styles.advCatChip, categoryFilter === f.key && styles.advCatChipActive]}
-                onPress={() => setCategoryFilter(f.key)}
-              >
-                <Ionicons name={f.icon} size={14} color={categoryFilter === f.key ? COLORS.white : COLORS.textSecondary} />
-                <Text style={[styles.advCatText, categoryFilter === f.key && styles.advCatTextActive]}>{f.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Pay */}
-          <Text style={styles.advSectionTitle}>Оплата</Text>
-          <View style={styles.advRow}>
-            <Text style={styles.advLabel}>от</Text>
-            <TextInput
-              style={styles.advInput}
-              value={payMin}
-              onChangeText={setPayMin}
-              placeholder="0"
-              placeholderTextColor={COLORS.textTertiary}
-              keyboardType="number-pad"
-            />
-            <Text style={styles.advUnit}>BYN</Text>
-          </View>
-
-          {/* Toggles */}
-          <Text style={styles.advSectionTitle}>Условия</Text>
-          <View style={styles.advChipsWrap}>
-            <TouchableOpacity
-              style={[styles.advToggle, noExpOnly && styles.advToggleActive]}
-              onPress={() => setNoExpOnly(!noExpOnly)}
-            >
-              <Ionicons name="school-outline" size={14} color={noExpOnly ? COLORS.white : COLORS.textSecondary} />
-              <Text style={[styles.advToggleText, noExpOnly && styles.advToggleTextActive]}>Без опыта</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.advToggle, urgentOnly && styles.advToggleActive]}
-              onPress={() => setUrgentOnly(!urgentOnly)}
-            >
-              <Ionicons name="flash-outline" size={14} color={urgentOnly ? COLORS.white : COLORS.textSecondary} />
-              <Text style={[styles.advToggleText, urgentOnly && styles.advToggleTextActive]}>Срочные</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.advToggle, noMedBook && styles.advToggleActive]}
-              onPress={() => setNoMedBook(!noMedBook)}
-            >
-              <Ionicons name="medkit-outline" size={14} color={noMedBook ? COLORS.white : COLORS.textSecondary} />
-              <Text style={[styles.advToggleText, noMedBook && styles.advToggleTextActive]}>Без медкнижки</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Reset */}
-          {activeFilterCount > 0 && (
-            <TouchableOpacity
-              style={styles.advReset}
-              onPress={() => { setCategoryFilter('all'); setPayMin(''); setNoExpOnly(false); setUrgentOnly(false); setNoMedBook(false); }}
-            >
-              <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
-              <Text style={styles.advResetText}>Сбросить фильтры</Text>
-            </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       )}
 
-      {/* Date Filters */}
-      <FlatList
-        data={DATE_FILTERS}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.quickFilters}
-        keyExtractor={item => item}
-        renderItem={({ item }) => (
+      {/* Category chips */}
+      <View style={styles.chipsRow}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 22, gap: 8 }}
+          data={CATEGORY_FILTERS}
+          keyExtractor={(c) => c.key}
+          renderItem={({ item }) => (
+            <Chip active={categoryFilter === item.key} icon={item.icon} onPress={() => setCategoryFilter(item.key)}>
+              {item.label}
+            </Chip>
+          )}
+        />
+      </View>
+
+      {/* HERO card — first shift */}
+      {hero && (
+        <View style={{ paddingHorizontal: 18, paddingBottom: 14 }}>
           <TouchableOpacity
-            style={[styles.quickChip, dateFilter === item && styles.quickChipActive]}
-            onPress={() => setDateFilter(item)}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('ShiftDetail', { shiftId: hero.id })}
+            style={styles.heroCard}
           >
-            <Text style={[styles.quickChipText, dateFilter === item && styles.quickChipTextActive]}>
-              {item}
-            </Text>
+            {/* Signal corner — yellow rounded triangle */}
+            <View style={styles.signalCorner}>
+              <Text style={styles.signalCornerLabel}>В ЧАС</Text>
+              <Text style={styles.signalCornerValue}>{(hero.pay / (hero.duration || 8)).toFixed(1)}</Text>
+              <Text style={styles.signalCornerUnit}>BYN/Ч</Text>
+            </View>
+
+            {hero.urgent && (
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.livePillText}>СРОЧНО · СЕГОДНЯ</Text>
+              </View>
+            )}
+
+            <Text style={styles.heroTitle} numberOfLines={3}>{hero.title}</Text>
+            <Text style={styles.heroSubtitle}>{getCompany(hero.companyId)?.companyName || 'Заказчик'}</Text>
+
+            <View style={styles.heroPayRow}>
+              <Money amount={String(hero.pay)} size={50} color={COLORS.signal} />
+              <View style={{ marginLeft: 8 }}>
+                <Text style={styles.heroPayLabel}>ЗА СМЕНУ</Text>
+                <Text style={styles.heroPayValue}>{hero.startTime}–{hero.endTime}</Text>
+              </View>
+            </View>
+
+            <View style={styles.heroFooter}>
+              <Text style={styles.heroCode}>SB·{hero.id.slice(-4).toUpperCase()}</Text>
+              <View style={styles.heroArrow}>
+                <Icon name="arrow" size={18} color={COLORS.ink} strokeWidth={2.2} />
+              </View>
+            </View>
           </TouchableOpacity>
-        )}
-      />
+        </View>
+      )}
 
-      {/* Results count */}
-      <Text style={styles.resultsCount}>{filteredShifts.length} смен найдено</Text>
+      {/* Section header */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Подобрано для тебя</Text>
+        <Text style={styles.sectionMono}>СОРТ. ↓ СТАВКА</Text>
+      </View>
+    </View>
+  );
 
-      {/* Shifts List */}
+  const EmptyComponent = (
+    <View style={styles.empty}>
+      <Text style={styles.emptyTitle}>Нет подходящих смен</Text>
+      <Text style={styles.emptyText}>Попробуй сменить категорию или сбросить поиск</Text>
+    </View>
+  );
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.paper} />
       <FlatList
-        data={filteredShifts}
+        data={rest}
+        keyExtractor={(item) => item.id}
         renderItem={renderShift}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={!hero ? EmptyComponent : null}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100, paddingHorizontal: 14 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.ink} />}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={8}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />
-        }
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="search-outline" size={48} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>Нет подходящих смен</Text>
-            <Text style={styles.emptySubtitle}>Попробуйте изменить фильтры</Text>
-          </View>
-        }
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SIZES.lg, paddingVertical: SIZES.sm,
-  },
-  greeting: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  city: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2 },
-  notifBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white,
-    justifyContent: 'center', alignItems: 'center', ...SHADOWS.sm,
-  },
-  notifDot: {
-    position: 'absolute', top: 6, right: 6, minWidth: 18, height: 18,
-    borderRadius: 9, backgroundColor: COLORS.error, justifyContent: 'center', alignItems: 'center',
-    paddingHorizontal: 4, borderWidth: 1.5, borderColor: COLORS.white,
-  },
-  notifDotText: { fontSize: 10, ...FONTS.bold, color: COLORS.white },
+  container: { flex: 1, backgroundColor: COLORS.paper },
+
+  // Top bar
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 14 },
+  topMono: { fontFamily: FAMILIES.mono, fontSize: 10, color: COLORS.fgMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  topGreeting: { fontFamily: FAMILIES.textSemi, fontSize: 14, color: COLORS.ink, marginTop: 2 },
+
+  // Hero block
+  heroBlock: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 18 },
+  h1: { fontFamily: FAMILIES.display, fontSize: 42, lineHeight: 40, letterSpacing: -2, color: COLORS.ink },
+  serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.fgFaint },
+  h1Meta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 14 },
+  metaLabel: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  metaCount: { fontFamily: FAMILIES.display, fontSize: 18, color: COLORS.ink, letterSpacing: -0.5 },
 
   // Search
-  searchRow: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginTop: SIZES.sm },
-  searchBar: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white,
-    borderRadius: SIZES.radiusMd, paddingHorizontal: SIZES.md, height: 44, ...SHADOWS.sm,
+  searchWrap: {
+    marginHorizontal: 22, marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
+    borderWidth: 1, borderColor: COLORS.line,
+    paddingHorizontal: 14, height: 44,
   },
-  searchInput: { flex: 1, fontSize: SIZES.body, color: COLORS.textPrimary, marginLeft: SIZES.sm, letterSpacing: 0 },
-  filterBtn: {
-    width: 44, height: 44, borderRadius: SIZES.radiusMd,
-    backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center',
-  },
-  filterBtnActive: { backgroundColor: COLORS.accent },
-  filterBadge: {
-    position: 'absolute', top: 4, right: 4,
-    width: 16, height: 16, borderRadius: 8,
-    backgroundColor: COLORS.error, justifyContent: 'center', alignItems: 'center',
-  },
-  filterBadgeText: { fontSize: 9, ...FONTS.bold, color: COLORS.white },
+  searchInput: { flex: 1, fontFamily: FAMILIES.text, fontSize: 14, color: COLORS.ink, padding: 0 },
 
-  // Advanced Filters
-  advFilters: {
-    marginHorizontal: SIZES.lg, marginTop: SIZES.sm, marginBottom: SIZES.xs,
+  // Chips
+  chipsRow: { paddingBottom: 16 },
+
+  // Hero card
+  heroCard: {
+    backgroundColor: COLORS.graphite, borderRadius: SIZES.radiusBlock,
+    padding: 22, paddingTop: 20, position: 'relative', overflow: 'hidden',
+  },
+  signalCorner: {
+    position: 'absolute', top: 0, right: 0, width: 110, height: 110,
+    backgroundColor: COLORS.signal, borderBottomLeftRadius: 60,
+    paddingTop: 16, paddingRight: 14, alignItems: 'flex-end', justifyContent: 'flex-start',
+  },
+  signalCornerLabel: { fontFamily: FAMILIES.mono, fontSize: 9, color: COLORS.signalDeep, letterSpacing: 1, textTransform: 'uppercase' },
+  signalCornerValue: { fontFamily: FAMILIES.display, fontSize: 22, color: COLORS.ink, letterSpacing: -1, lineHeight: 22, marginTop: 2 },
+  signalCornerUnit: { fontFamily: FAMILIES.mono, fontSize: 9, color: COLORS.signalDeep, letterSpacing: 0.8 },
+
+  livePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+    backgroundColor: COLORS.live, paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 999, maxWidth: 200,
+  },
+  liveDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: COLORS.white },
+  livePillText: { fontFamily: FAMILIES.textBold, fontSize: 10, color: COLORS.white, letterSpacing: 0.5 },
+
+  heroTitle: { fontFamily: FAMILIES.display, fontSize: 26, lineHeight: 28, letterSpacing: -1.2, color: COLORS.fgInv, marginTop: 14, maxWidth: '70%' },
+  heroSubtitle: { fontFamily: FAMILIES.text, fontSize: 13, color: COLORS.fgInvMuted, marginTop: 6 },
+
+  heroPayRow: { flexDirection: 'row', alignItems: 'flex-end', marginTop: 22 },
+  heroPayLabel: { fontFamily: FAMILIES.mono, fontSize: 9.5, color: COLORS.fgInvMuted, letterSpacing: 1, textTransform: 'uppercase' },
+  heroPayValue: { fontFamily: FAMILIES.textSemi, fontSize: 12, color: COLORS.fgInv, marginTop: 2 },
+
+  heroFooter: {
+    marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(244,241,234,0.12)',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  heroCode: { fontFamily: FAMILIES.mono, fontSize: 10, color: COLORS.fgInvMuted, letterSpacing: 1 },
+  heroArrow: { width: 36, height: 36, borderRadius: 999, backgroundColor: COLORS.signal, alignItems: 'center', justifyContent: 'center' },
+
+  // Section header
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 22, paddingTop: 14, paddingBottom: 8 },
+  sectionTitle: { fontFamily: FAMILIES.display, fontSize: 18, color: COLORS.ink, letterSpacing: -0.6 },
+  sectionMono: { fontFamily: FAMILIES.mono, fontSize: 10, color: COLORS.fgMuted, letterSpacing: 1 },
+
+  // Row card
+  row: {
     backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg,
-    padding: SIZES.base, ...SHADOWS.md, zIndex: 10,
+    padding: 14, gap: 10, borderWidth: 1, borderColor: COLORS.lineSoft,
   },
-  advSectionTitle: {
-    fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.textTertiary,
-    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: SIZES.sm, marginTop: SIZES.sm,
-  },
-  advChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, marginBottom: SIZES.xs },
-  advCatChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm,
-    borderRadius: SIZES.radiusFull, backgroundColor: COLORS.surface,
-  },
-  advCatChipActive: { backgroundColor: COLORS.accent },
-  advCatText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  advCatTextActive: { color: COLORS.white },
-  advRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginBottom: SIZES.sm },
-  advLabel: { fontSize: SIZES.small, color: COLORS.textSecondary },
-  advInput: {
-    width: 80, height: 36, backgroundColor: COLORS.surface, borderRadius: SIZES.radiusSm,
-    paddingHorizontal: SIZES.sm, fontSize: SIZES.body, color: COLORS.textPrimary, textAlign: 'center',
-  },
-  advUnit: { fontSize: SIZES.small, color: COLORS.textSecondary },
-  advToggle: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull,
-    backgroundColor: COLORS.surface,
-  },
-  advToggleActive: { backgroundColor: COLORS.accent },
-  advToggleText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  advToggleTextActive: { color: COLORS.white },
-  advReset: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.xs,
-    marginTop: SIZES.md, paddingVertical: SIZES.sm,
-  },
-  advResetText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
+  rowTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  rowCompany: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  companyName: { fontFamily: FAMILIES.textMed, fontSize: 12, color: COLORS.fgMuted, flex: 1 },
+  shiftTitle: { fontFamily: FAMILIES.display, fontSize: 17, lineHeight: 20, letterSpacing: -0.6, color: COLORS.ink },
+  payBig: { fontFamily: FAMILIES.display, fontSize: 24, color: COLORS.ink, letterSpacing: -1, lineHeight: 24 },
+  payUnit: { fontFamily: FAMILIES.mono, fontSize: 9, color: COLORS.fgMuted, letterSpacing: 0.6, marginTop: 2, textTransform: 'uppercase' },
+  rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  codeText: { marginLeft: 'auto', fontFamily: FAMILIES.mono, fontSize: 10, color: COLORS.fgFaint, letterSpacing: 0.8 },
 
-  // Quick Filters
-  quickFilters: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, gap: SIZES.sm, alignItems: 'center' },
-  quickChip: {
-    paddingHorizontal: SIZES.md, height: 34, justifyContent: 'center', borderRadius: SIZES.radiusFull,
-    backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border,
-  },
-  quickChipActive: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },
-  quickChipText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  quickChipTextActive: { color: COLORS.white },
-
-  resultsCount: {
-    fontSize: SIZES.caption, color: COLORS.textTertiary, paddingHorizontal: SIZES.lg,
-    marginBottom: SIZES.sm,
-  },
-
-  // Shift Card
-  listContent: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES.tabBarHeight + SIZES.xl },
-  shiftCard: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base,
-    marginBottom: SIZES.md, ...SHADOWS.sm,
-  },
-  urgentBadge: {
-    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 4,
-    backgroundColor: COLORS.error, paddingHorizontal: SIZES.sm, paddingVertical: 3,
-    borderRadius: SIZES.radiusSm, marginBottom: SIZES.sm,
-  },
-  urgentText: { fontSize: 11, ...FONTS.semibold, color: COLORS.white },
-  shiftHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  shiftTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  companyRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginTop: 3 },
-  companyName: { fontSize: SIZES.small, color: COLORS.textSecondary },
-  ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  ratingText: { fontSize: SIZES.caption, ...FONTS.medium, color: COLORS.textSecondary },
-  payBadge: { alignItems: 'flex-end' },
-  payTopRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
-  payAmount: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.success },
-  payCurrency: { fontSize: SIZES.caption, color: COLORS.textTertiary },
-  shiftDetails: { marginTop: SIZES.md, gap: SIZES.sm },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
-  detailText: { fontSize: SIZES.small, color: COLORS.textSecondary, flex: 1 },
-  shiftTags: { flexDirection: 'row', flexWrap: 'wrap', marginTop: SIZES.md, gap: SIZES.sm },
-  tag: {
-    paddingHorizontal: SIZES.sm, paddingVertical: 3, borderRadius: SIZES.radiusSm,
-    backgroundColor: COLORS.surface,
-  },
-  tagText: { fontSize: 11, ...FONTS.medium, color: COLORS.textSecondary },
-  spotsTag: {
-    paddingHorizontal: SIZES.sm, paddingVertical: 3, borderRadius: SIZES.radiusSm,
-    backgroundColor: COLORS.accentSoft,
-  },
-  spotsText: { fontSize: 11, ...FONTS.medium, color: COLORS.accent },
-
-  // Empty
-  empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
-  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
-  emptySubtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
+  empty: { alignItems: 'center', padding: 40, marginTop: 20 },
+  emptyTitle: { fontFamily: FAMILIES.display, fontSize: 22, color: COLORS.ink, letterSpacing: -0.8 },
+  emptyText: { fontFamily: FAMILIES.text, fontSize: 13, color: COLORS.fgMuted, marginTop: 8, textAlign: 'center' },
 });

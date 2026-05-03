@@ -1,50 +1,30 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, Platform, Alert, ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
+import { Icon, MonoTag, Money, Pill, PrimaryButton, GhostButton } from '../../components/ui/Atoms';
 import { signInWithGoogle, signInWithApple } from '../../services/auth';
 
 export default function RoleSelectScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [selectedRole, setSelectedRole] = useState(null); // 'worker' | 'employer'
+  const [selectedRole, setSelectedRole] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const openAuthChoice = (role) => {
-    setSelectedRole(role);
-  };
-
+  const openAuthChoice = (role) => setSelectedRole(role);
   const handlePhone = () => {
-    setSelectedRole(null);
     const screen = selectedRole === 'worker' ? 'RegisterWorker' : 'RegisterEmployer';
+    setSelectedRole(null);
     navigation.navigate(screen, { authMethod: 'phone' });
   };
 
-  const handleGoogle = async () => {
+  const socialFlow = async (provider) => {
     setLoading(true);
     try {
-      const result = await signInWithGoogle();
-      if (result.cancelled) { setLoading(false); return; }
-      setSelectedRole(null);
+      const result = provider === 'google' ? await signInWithGoogle() : await signInWithApple();
+      if (result.cancelled) return setLoading(false);
       const screen = selectedRole === 'worker' ? 'RegisterWorker' : 'RegisterEmployer';
-      navigation.navigate(screen, { authMethod: 'google', socialData: result });
-    } catch (e) {
-      Alert.alert('Ошибка', e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApple = async () => {
-    setLoading(true);
-    try {
-      const result = await signInWithApple();
-      if (result.cancelled) { setLoading(false); return; }
       setSelectedRole(null);
-      const screen = selectedRole === 'worker' ? 'RegisterWorker' : 'RegisterEmployer';
-      navigation.navigate(screen, { authMethod: 'apple', socialData: result });
+      navigation.navigate(screen, { authMethod: provider, socialData: result });
     } catch (e) {
       Alert.alert('Ошибка', e.message);
     } finally {
@@ -53,89 +33,72 @@ export default function RoleSelectScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + SIZES['3xl'] }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.paper} />
 
-      <View style={styles.header}>
-        <Text style={styles.logo}>СменаБел</Text>
-        <Text style={styles.subtitle}>Маркетплейс посменных подработок</Text>
+      {/* Wordmark + edition */}
+      <View style={styles.topBar}>
+        <Text style={styles.wordmark}>смена<Text style={styles.dot}>·</Text>бел</Text>
+        <MonoTag>Шаг 01 · Роль</MonoTag>
       </View>
 
-      <View style={styles.cards}>
-        <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.7}
+      {/* Heading */}
+      <View style={styles.headingBlock}>
+        <Text style={styles.heading}>
+          Кто ты{'\n'}<Text style={styles.serif}>сегодня</Text>?
+        </Text>
+        <Text style={styles.subheading}>Выбери роль — её можно сменить позже.</Text>
+      </View>
+
+      {/* Two cards — asymmetric */}
+      <View style={{ paddingHorizontal: 18, gap: 14, flex: 1 }}>
+        <RoleCard
+          numero="01"
+          letters="W"
+          title="Ищу подработку"
+          desc="Смены рядом, отклик в один тап."
+          accentBg={COLORS.signal}
+          accentColor={COLORS.ink}
+          stat="142"
+          statLabel="Смен сегодня"
           onPress={() => openAuthChoice('worker')}
-        >
-          <View style={[styles.iconWrap, { backgroundColor: '#EEF2FF' }]}>
-            <Ionicons name="person-outline" size={32} color={COLORS.accent} />
-          </View>
-          <Text style={styles.cardTitle}>Ищу подработку</Text>
-          <Text style={styles.cardDesc}>
-            Находите смены рядом с вами и зарабатывайте
-          </Text>
-          <View style={styles.cardArrow}>
-            <Ionicons name="arrow-forward" size={20} color={COLORS.accent} />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.7}
+        />
+        <RoleCard
+          numero="02"
+          letters="E"
+          title="Ищу сотрудников"
+          desc="Публикуй смены, отбирай исполнителей."
+          accentBg={COLORS.graphite}
+          accentColor={COLORS.signal}
+          stat="04"
+          statLabel="Минут на публикацию"
+          dark
           onPress={() => openAuthChoice('employer')}
-        >
-          <View style={[styles.iconWrap, { backgroundColor: '#FEF3C7' }]}>
-            <Ionicons name="business-outline" size={32} color="#D97706" />
-          </View>
-          <Text style={styles.cardTitle}>Ищу сотрудников</Text>
-          <Text style={styles.cardDesc}>
-            Публикуйте смены и находите исполнителей
-          </Text>
-          <View style={styles.cardArrow}>
-            <Ionicons name="arrow-forward" size={20} color={COLORS.accent} />
-          </View>
-        </TouchableOpacity>
+        />
       </View>
 
-      <TouchableOpacity
-        style={styles.loginLink}
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={styles.loginText}>Уже есть аккаунт? </Text>
-        <Text style={styles.loginTextAccent}>Войти</Text>
+      {/* Footer login link */}
+      <TouchableOpacity onPress={() => navigation.navigate('Login')} style={[styles.loginLink, { paddingBottom: insets.bottom + 16 }]}>
+        <Text style={styles.loginText}>Уже зарегистрирован? </Text>
+        <Text style={styles.loginAccent}>Войти →</Text>
       </TouchableOpacity>
 
       {/* Auth method modal */}
-      <Modal visible={!!selectedRole} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => !loading && setSelectedRole(null)}
-        >
-          <View style={[styles.modal, { paddingBottom: insets.bottom + SIZES.lg }]}>
-            <Text style={styles.modalTitle}>Как вы хотите зарегистрироваться?</Text>
-            <Text style={styles.modalHint}>
-              Для работы в приложении потребуется верификация по номеру телефона
+      <Modal visible={!!selectedRole} transparent animationType="slide" onRequestClose={() => !loading && setSelectedRole(null)}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => !loading && setSelectedRole(null)}>
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + 18 }]}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>
+              Регистрация{'\n'}<Text style={styles.serif}>{selectedRole === 'worker' ? 'исполнителя' : 'заказчика'}</Text>
             </Text>
+            <MonoTag style={{ marginBottom: 18 }}>выбери способ входа</MonoTag>
 
-            <TouchableOpacity style={styles.phoneBtn} onPress={handlePhone} disabled={loading}>
-              <Ionicons name="call-outline" size={20} color={COLORS.white} />
-              <Text style={styles.phoneBtnText}>По номеру телефона</Text>
-            </TouchableOpacity>
+            <PrimaryButton title="По номеру телефона" icon="call" onPress={handlePhone} style={{ marginBottom: 10 }} />
+            <GhostButton title="Через Google" icon="google" onPress={() => socialFlow('google')} style={{ marginBottom: 10 }} />
+            {Platform.OS === 'ios' && <GhostButton title="Через Apple" icon="apple" onPress={() => socialFlow('apple')} />}
 
-            <TouchableOpacity style={styles.googleBtn} onPress={handleGoogle} disabled={loading}>
-              {loading ? <ActivityIndicator color="#DB4437" /> : <Ionicons name="logo-google" size={20} color="#DB4437" />}
-              <Text style={styles.socialText}>Продолжить с Google</Text>
-            </TouchableOpacity>
-
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity style={styles.appleBtn} onPress={handleApple} disabled={loading}>
-                {loading ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name="logo-apple" size={22} color={COLORS.white} />}
-                <Text style={styles.appleText}>Продолжить с Apple</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setSelectedRole(null)} disabled={loading}>
+            {loading && <ActivityIndicator color={COLORS.fg} style={{ marginTop: 14 }} />}
+            <TouchableOpacity onPress={() => setSelectedRole(null)} disabled={loading} style={{ alignItems: 'center', paddingTop: 18 }}>
               <Text style={styles.cancelText}>Отмена</Text>
             </TouchableOpacity>
           </View>
@@ -145,63 +108,70 @@ export default function RoleSelectScreen({ navigation }) {
   );
 }
 
+function RoleCard({ numero, letters, title, desc, accentBg, accentColor, stat, statLabel, dark, onPress }) {
+  return (
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}
+      style={[styles.card, dark && { backgroundColor: COLORS.graphite }]}
+    >
+      <View style={styles.cardHeader}>
+        <View style={[styles.letterBadge, { backgroundColor: accentBg }]}>
+          <Text style={[styles.letterText, { color: accentColor }]}>{letters}</Text>
+        </View>
+        <Text style={[styles.cardNum, dark && { color: 'rgba(244,241,234,0.5)' }]}>№ {numero}</Text>
+      </View>
+      <Text style={[styles.cardTitle, dark && { color: COLORS.fgInv }]}>{title}</Text>
+      <Text style={[styles.cardDesc, dark && { color: 'rgba(244,241,234,0.62)' }]}>{desc}</Text>
+
+      <View style={styles.cardFooter}>
+        <View>
+          <Text style={[styles.cardStatLabel, dark && { color: 'rgba(244,241,234,0.5)' }]}>{statLabel}</Text>
+          <Text style={[styles.cardStat, dark && { color: COLORS.signal }]}>{stat}</Text>
+        </View>
+        <View style={[styles.arrowCircle, { backgroundColor: dark ? COLORS.signal : COLORS.ink }]}>
+          <Icon name="arrow" size={18} color={dark ? COLORS.ink : COLORS.signal} strokeWidth={2} />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: SIZES.lg },
-  header: { alignItems: 'center', marginBottom: SIZES['3xl'] },
-  logo: { fontSize: 36, ...FONTS.bold, color: COLORS.accent, letterSpacing: -1 },
-  subtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
-  cards: { gap: SIZES.base },
+  container: { flex: 1, backgroundColor: COLORS.paper },
+  topBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 22, paddingVertical: 14,
+  },
+  wordmark: { fontFamily: FAMILIES.display, fontSize: 18, color: COLORS.ink, letterSpacing: -0.6 },
+  dot: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.live },
+
+  headingBlock: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 },
+  heading: { fontFamily: FAMILIES.display, fontSize: 44, lineHeight: 44, letterSpacing: -2, color: COLORS.ink },
+  serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic' },
+  subheading: { fontFamily: FAMILIES.text, fontSize: 14, color: COLORS.fgMuted, marginTop: 12 },
+
   card: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.lg,
-    ...SHADOWS.md, position: 'relative',
+    flex: 1, backgroundColor: COLORS.white, borderRadius: SIZES.radiusBlock,
+    padding: 20, borderWidth: 1, borderColor: COLORS.lineSoft,
   },
-  iconWrap: {
-    width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center',
-    marginBottom: SIZES.md,
-  },
-  cardTitle: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  cardDesc: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs, paddingRight: 40 },
-  cardArrow: {
-    position: 'absolute', right: SIZES.lg, bottom: SIZES.lg,
-    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.accentSoft,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  loginLink: {
-    flexDirection: 'row', justifyContent: 'center', marginTop: SIZES['2xl'],
-    padding: SIZES.base,
-  },
-  loginText: { fontSize: SIZES.body, color: COLORS.textSecondary },
-  loginTextAccent: { fontSize: SIZES.body, ...FONTS.semibold, color: COLORS.accent },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  letterBadge: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  letterText: { fontFamily: FAMILIES.display, fontSize: 22, letterSpacing: -1 },
+  cardNum: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgFaint, letterSpacing: 1 },
+  cardTitle: { fontFamily: FAMILIES.display, fontSize: 26, color: COLORS.ink, letterSpacing: -1, lineHeight: 28 },
+  cardDesc: { fontFamily: FAMILIES.text, fontSize: 13, color: COLORS.fgMuted, marginTop: 8, lineHeight: 18 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: 18 },
+  cardStatLabel: { fontFamily: FAMILIES.mono, fontSize: 9.5, color: COLORS.fgFaint, letterSpacing: 1, textTransform: 'uppercase' },
+  cardStat: { fontFamily: FAMILIES.display, fontSize: 30, color: COLORS.ink, letterSpacing: -1.5, marginTop: 4 },
+  arrowCircle: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modal: {
-    backgroundColor: COLORS.white, borderTopLeftRadius: SIZES.radiusXl, borderTopRightRadius: SIZES.radiusXl,
-    padding: SIZES.lg,
-  },
-  modalTitle: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary, textAlign: 'center' },
-  modalHint: { fontSize: SIZES.small, color: COLORS.textTertiary, textAlign: 'center', marginTop: SIZES.sm, marginBottom: SIZES.xl, lineHeight: 18 },
+  loginLink: { flexDirection: 'row', justifyContent: 'center', paddingTop: 22 },
+  loginText: { fontFamily: FAMILIES.text, fontSize: 13, color: COLORS.fgMuted },
+  loginAccent: { fontFamily: FAMILIES.textBold, fontSize: 13, color: COLORS.ink },
 
-  phoneBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm,
-    height: SIZES.buttonHeight, backgroundColor: COLORS.accent, borderRadius: SIZES.radiusMd,
-    marginBottom: SIZES.sm,
-  },
-  phoneBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.white },
-
-  googleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm,
-    height: SIZES.buttonHeight, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    borderWidth: 1, borderColor: COLORS.border, marginBottom: SIZES.sm,
-  },
-  socialText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.textPrimary },
-
-  appleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm,
-    height: SIZES.buttonHeight, backgroundColor: '#000', borderRadius: SIZES.radiusMd,
-    marginBottom: SIZES.sm,
-  },
-  appleText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.white },
-
-  cancelBtn: { alignItems: 'center', paddingVertical: SIZES.md },
-  cancelText: { fontSize: SIZES.body, color: COLORS.textSecondary },
+  // Bottom sheet
+  overlay: { flex: 1, backgroundColor: 'rgba(14,15,12,0.45)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: COLORS.paper, paddingHorizontal: 22, paddingTop: 12, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  sheetHandle: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: COLORS.line, marginBottom: 18 },
+  sheetTitle: { fontFamily: FAMILIES.display, fontSize: 30, lineHeight: 32, letterSpacing: -1.2, color: COLORS.ink, marginBottom: 6 },
+  cancelText: { fontFamily: FAMILIES.textSemi, fontSize: 14, color: COLORS.fgMuted },
 });

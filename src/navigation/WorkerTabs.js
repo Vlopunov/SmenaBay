@@ -1,9 +1,9 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../constants/theme';
+import { COLORS, FAMILIES } from '../constants/theme';
+import { Icon } from '../components/ui/Atoms';
 import useStore from '../store/useStore';
 
 import FeedScreen from '../screens/worker/FeedScreen';
@@ -15,12 +15,45 @@ import WorkerProfileScreen from '../screens/worker/WorkerProfileScreen';
 const Tab = createBottomTabNavigator();
 
 const TABS = {
-  Feed:    { active: 'search',        inactive: 'search-outline',        label: 'Поиск' },
-  Map:     { active: 'map',           inactive: 'map-outline',           label: 'Карта' },
-  MyShifts:{ active: 'calendar',      inactive: 'calendar-outline',      label: 'Мои смены' },
-  Chat:    { active: 'chatbubbles',   inactive: 'chatbubbles-outline',   label: 'Чат' },
-  WorkerProfile: { active: 'person',  inactive: 'person-outline',        label: 'Профиль' },
+  Feed:          { icon: 'search', label: 'Лента' },
+  Map:           { icon: 'map',    label: 'Карта' },
+  MyShifts:      { icon: 'cal',    label: 'Мои' },
+  Chat:          { icon: 'chat',   label: 'Чат' },
+  WorkerProfile: { icon: 'user',   label: 'Я' },
 };
+
+function TabIcon({ focused, route, badge }) {
+  const tab = TABS[route];
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+      <View
+        style={{
+          width: 36, height: 36, borderRadius: 999,
+          backgroundColor: focused ? COLORS.ink : 'transparent',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <Icon
+          name={tab.icon}
+          size={20}
+          color={focused ? COLORS.signal : COLORS.fgMuted}
+          strokeWidth={focused ? 2 : 1.6}
+        />
+      </View>
+      {badge > 0 && (
+        <View style={{
+          position: 'absolute', top: 0, right: -4,
+          minWidth: 16, height: 16, paddingHorizontal: 4,
+          borderRadius: 999, backgroundColor: COLORS.live,
+          alignItems: 'center', justifyContent: 'center',
+          borderWidth: 2, borderColor: COLORS.paper,
+        }}>
+          <Text style={{ fontFamily: FAMILIES.textBold, fontSize: 9, color: COLORS.white }}>{badge}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function WorkerTabs() {
   const insets = useSafeAreaInsets();
@@ -31,50 +64,42 @@ export default function WorkerTabs() {
     .reduce((total, c) => total + c.messages.filter(m => m.senderId !== currentUser?.id && !m.read).length, 0);
 
   const bottomPadding = Math.max(insets.bottom, 12);
-  const tabBarHeight = 56 + bottomPadding;
+  const tabBarHeight = 60 + bottomPadding;
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused, color }) => {
-          const tab = TABS[route.name];
-          return <Ionicons name={focused ? tab.active : tab.inactive} size={24} color={color} />;
-        },
-        tabBarLabel: TABS[route.name]?.label,
-        tabBarActiveTintColor: COLORS.accent,
-        tabBarInactiveTintColor: COLORS.textTertiary,
-        tabBarLabelStyle: { fontSize: 11, ...FONTS.medium, marginTop: -2 },
+        tabBarIcon: ({ focused }) => (
+          <TabIcon focused={focused} route={route.name} badge={route.name === 'Chat' ? unreadChat : 0} />
+        ),
+        tabBarLabel: ({ focused }) => (
+          <Text style={{
+            fontFamily: focused ? FAMILIES.textSemi : FAMILIES.textMed,
+            fontSize: 10,
+            color: focused ? COLORS.ink : COLORS.fgFaint,
+            letterSpacing: 0.2,
+            marginTop: -2,
+          }}>
+            {TABS[route.name]?.label}
+          </Text>
+        ),
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: COLORS.white,
-          borderTopWidth: 0,
+          backgroundColor: COLORS.paper,
+          borderTopWidth: 1,
+          borderTopColor: COLORS.line,
           height: tabBarHeight,
           paddingTop: 8,
           paddingBottom: bottomPadding,
-          ...SHADOWS.lg,
+          elevation: 0,
         },
       })}
     >
       <Tab.Screen name="Feed" component={FeedScreen} />
       <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="MyShifts" component={MyShiftsScreen} />
-      <Tab.Screen
-        name="Chat"
-        component={ChatListScreen}
-        options={{
-          tabBarBadge: unreadChat > 0 ? unreadChat : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: COLORS.error,
-            fontSize: 10,
-            fontWeight: '700',
-            minWidth: 18,
-            height: 18,
-            lineHeight: 17,
-            borderRadius: 9,
-          },
-        }}
-      />
+      <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="WorkerProfile" component={WorkerProfileScreen} />
     </Tab.Navigator>
   );

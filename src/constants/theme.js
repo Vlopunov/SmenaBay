@@ -1,124 +1,157 @@
-// ServiceHub Design System
-// Style: Clean Minimalism (Airbnb/Apple-inspired)
-// Platform: React Native (iOS + Android)
+// ───────────────────────────────────────────────────────────────
+// СменаБел design system — "Editorial Workforce"
+// ───────────────────────────────────────────────────────────────
+// Original aesthetic — NOT a clone of Wolt/Uber/Avito.
+// Brutally large display type, signal-yellow as the "money/urgent"
+// accent, deep graphite surfaces, ticker-style numerals,
+// monospaced labels for IDs and meta. Custom 1.5px line iconography.
 
 export const COLORS = {
-  // Primary brand
-  primary: '#1A1A2E',
-  primaryLight: '#2D2D44',
-  primarySoft: '#F0F0F5',
+  // Surfaces — warm graphite, not flat black
+  ink:        '#0E0F0C',
+  graphite:   '#15171A',
+  charcoal:   '#1F2125',
+  paper:      '#F4F1EA',
+  paperSoft:  '#EAE6DC',
+  paperDeep:  '#DDD7C8',
+  white:      '#FFFCF5',
+  line:       'rgba(14,15,12,0.10)',
+  lineSoft:   'rgba(14,15,12,0.06)',
 
-  // Accent
-  accent: '#4F46E5',
-  accentLight: '#818CF8',
-  accentSoft: '#EEF2FF',
+  // Type
+  fg:         '#0E0F0C',
+  fgMuted:    '#5C5A52',
+  fgFaint:    '#8C887E',
+  fgInv:      '#F4F1EA',
+  fgInvMuted: 'rgba(244,241,234,0.62)',
 
-  // Success / Transaction
-  success: '#059669',
-  successLight: '#D1FAE5',
+  // Signal — canary yellow ("money", confirm, primary CTA)
+  signal:     '#F2E94E',
+  signalDark: '#D5CB1F',
+  signalDeep: '#7A720E',
+  // Live — coral ("urgent / live shift")
+  live:       '#FF6B3D',
+  liveSoft:   '#FFE4D9',
+  // Info
+  info:       '#3A6FE0',
+  infoSoft:   '#DEE7FB',
+  // Completed
+  mint:       '#A9E3B5',
+  mintDeep:   '#2D6E3D',
 
-  // Warning
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
+  // Legacy aliases — keep existing screens rendering until fully migrated
+  primary:        '#0E0F0C',
+  primaryLight:   '#1F2125',
+  primarySoft:    '#F4F1EA',
+  accent:         '#0E0F0C',
+  accentLight:    '#5C5A52',
+  accentSoft:     '#F4F1EA',
+  success:        '#2D6E3D',
+  successLight:   '#D1F0D6',
+  warning:        '#F2E94E',
+  warningLight:   '#FAF6C2',
+  error:          '#FF6B3D',
+  errorLight:     '#FFE4D9',
+  background:     '#F4F1EA',
+  card:           '#FFFCF5',
+  surface:        '#EAE6DC',
+  border:         'rgba(14,15,12,0.10)',
+  borderLight:    'rgba(14,15,12,0.06)',
+  divider:        'rgba(14,15,12,0.10)',
+  textPrimary:    '#0E0F0C',
+  textSecondary:  '#5C5A52',
+  textTertiary:   '#8C887E',
+  textInverse:    '#F4F1EA',
+  textAccent:     '#0E0F0C',
+  online:         '#FF6B3D',
+  star:           '#0E0F0C',
+  skeleton:       '#EAE6DC',
+};
 
-  // Error
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-
-  // Neutral
-  white: '#FFFFFF',
-  background: '#FAFAFA',
-  card: '#FFFFFF',
-  surface: '#F5F5F7',
-  border: '#E5E5EA',
-  borderLight: '#F2F2F7',
-  divider: '#E5E5EA',
-
-  // Text
-  textPrimary: '#1A1A2E',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
-  textInverse: '#FFFFFF',
-  textAccent: '#4F46E5',
-
-  // Specific
-  online: '#22C55E',
-  star: '#FBBF24',
-  skeleton: '#E5E5EA',
+// Font family names — must match keys registered in App.js useFonts()
+export const FAMILIES = {
+  display:     'Unbounded_700Bold',
+  displaySemi: 'Unbounded_600SemiBold',
+  serifItalic: 'BonaNova_400Regular_Italic',
+  text:        'Onest_400Regular',
+  textMed:     'Onest_500Medium',
+  textSemi:    'Onest_600SemiBold',
+  textBold:    'Onest_700Bold',
+  mono:        'SpaceMono_400Regular',
 };
 
 export const FONTS = {
-  // Using system fonts for best native feel
-  regular: { fontFamily: 'System', fontWeight: '400' },
-  medium: { fontFamily: 'System', fontWeight: '500' },
-  semibold: { fontFamily: 'System', fontWeight: '600' },
-  bold: { fontFamily: 'System', fontWeight: '700' },
+  display:     { fontFamily: FAMILIES.display,     letterSpacing: -0.5 },
+  displayBig:  { fontFamily: FAMILIES.display,     letterSpacing: -1 },
+  regular:     { fontFamily: FAMILIES.text },
+  medium:      { fontFamily: FAMILIES.textMed },
+  semibold:    { fontFamily: FAMILIES.textSemi },
+  bold:        { fontFamily: FAMILIES.textBold },
+  serifItalic: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic' },
+  mono:        { fontFamily: FAMILIES.mono, letterSpacing: 1 },
 };
 
 export const SIZES = {
   // Spacing (4pt grid)
+  xxs: 2,
   xs: 4,
   sm: 8,
   md: 12,
   base: 16,
-  lg: 20,
-  xl: 24,
-  '2xl': 32,
-  '3xl': 40,
-  '4xl': 48,
-  '5xl': 64,
+  lg: 22,
+  xl: 28,
+  '2xl': 36,
+  '3xl': 48,
+  '4xl': 64,
 
-  // Typography
-  caption: 12,
-  small: 13,
-  body: 15,
-  bodyLarge: 17,
-  subtitle: 16,
-  title: 20,
-  heading: 24,
-  largeTitle: 34,
-  display: 40,
+  // Type
+  micro: 9.5,
+  caption: 11,
+  small: 12,
+  body: 14,
+  bodyLarge: 15,
+  title: 18,
+  h3: 22,
+  h2: 28,
+  h1: 42,
+  hero: 56,
 
-  // Border radius
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 16,
-  radiusXl: 20,
-  radiusFull: 50,
+  // Radii — varied, not one-size
+  radiusTight: 8,
+  radiusSm: 10,
+  radiusMd: 14,
+  radiusLg: 18,
+  radiusXl: 24,
+  radiusBlock: 28,
+  radiusPill: 999,
 
-  // Component sizes
+  // Components
   buttonHeight: 52,
-  inputHeight: 48,
-  avatarSm: 36,
-  avatarMd: 48,
-  avatarLg: 64,
-  avatarXl: 80,
-  iconSm: 20,
-  iconMd: 24,
-  iconLg: 28,
-  tabBarHeight: 84,
+  inputHeight: 52,
+  headerHeight: 64,
+  tabBarHeight: 76,
 };
 
 export const SHADOWS = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: COLORS.ink,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 1,
   },
   md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: COLORS.ink,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowRadius: 12,
     elevation: 3,
   },
   lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 5,
+    shadowColor: COLORS.ink,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.10,
+    shadowRadius: 24,
+    elevation: 6,
   },
 };

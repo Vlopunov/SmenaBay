@@ -1,155 +1,143 @@
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, StatusBar, Animated,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
+import { MonoTag, Money, PrimaryButton } from '../../components/ui/Atoms';
 
-const { width } = Dimensions.get('window');
-
-const SLIDES = [
-  {
-    icon: 'search',
-    color: '#4F46E5',
-    bg: '#EEF2FF',
-    title: 'Найдите подработку рядом',
-    desc: 'Сотни смен в вашем городе: ПВЗ, HoReCa, склады, ритейл и другие. Фильтруйте по категории, оплате и расположению.',
-  },
-  {
-    icon: 'flash',
-    color: '#F59E0B',
-    bg: '#FEF3C7',
-    title: 'Откликайтесь в 1 тап',
-    desc: 'Выберите смену, нажмите «Откликнуться» — и ждите подтверждения. Общайтесь с заказчиком прямо в чате.',
-  },
-  {
-    icon: 'shield-checkmark',
-    color: '#059669',
-    bg: '#D1FAE5',
-    title: 'Безопасно и прозрачно',
-    desc: 'Рейтинги, отзывы и верификация. Видите репутацию заказчика до отклика. Ваши данные защищены.',
-  },
-];
-
+/**
+ * Editorial-style welcome screen.
+ * Big "00" canary signal in the corner, layered headline with serif italic accent.
+ */
 export default function OnboardingScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-
-  const onViewableItemsChanged = useRef(({ viewableItems }) => {
-    if (viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index || 0);
-    }
-  }).current;
-
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
-  const handleNext = () => {
-    if (currentIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-    } else {
-      navigation.replace('RoleSelect');
-    }
-  };
-
-  const handleSkip = () => {
-    navigation.replace('RoleSelect');
-  };
-
-  const renderSlide = ({ item, index }) => (
-    <View style={[styles.slide, { width }]}>
-      <View style={[styles.iconCircle, { backgroundColor: item.bg }]}>
-        <Ionicons name={item.icon} size={64} color={item.color} />
-      </View>
-      <Text style={styles.slideTitle}>{item.title}</Text>
-      <Text style={styles.slideDesc}>{item.desc}</Text>
-    </View>
-  );
-
-  const isLast = currentIndex === SLIDES.length - 1;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.paper} />
 
-      {/* Skip */}
-      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-        <Text style={styles.skipText}>{isLast ? '' : 'Пропустить'}</Text>
-      </TouchableOpacity>
+      <View style={styles.topBar}>
+        <Text style={styles.wordmark}>
+          смена<Text style={styles.dot}>·</Text>бел
+        </Text>
+        <MonoTag>Издание №01 · Минск</MonoTag>
+      </View>
 
-      {/* Slides */}
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        renderItem={renderSlide}
-        keyExtractor={(_, i) => String(i)}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
-      />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={styles.hero}>
+          <View style={styles.heroNumber}>
+            <Text style={styles.heroDigits}>00</Text>
+          </View>
 
-      {/* Bottom */}
-      <View style={styles.bottom}>
-        {/* Dots */}
-        <View style={styles.dots}>
-          {SLIDES.map((_, i) => {
-            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({ inputRange, outputRange: [8, 24, 8], extrapolate: 'clamp' });
-            const opacity = scrollX.interpolate({ inputRange, outputRange: [0.3, 1, 0.3], extrapolate: 'clamp' });
-            return (
-              <Animated.View
-                key={i}
-                style={[styles.dot, { width: dotWidth, opacity, backgroundColor: COLORS.accent }]}
-              />
-            );
-          })}
+          <Text style={styles.heroH1}>
+            Получай{'\n'}
+            <Text style={styles.serif}>деньги</Text> за{'\n'}свою смену.
+          </Text>
+
+          <View style={styles.heroMeta}>
+            <Text style={styles.metaLabel}>в среднем</Text>
+            <Money amount="68" size={28} color={COLORS.fg} />
+            <Text style={styles.metaLabel}>· за смену</Text>
+          </View>
         </View>
 
-        {/* Button */}
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.7}>
-          {isLast ? (
-            <Text style={styles.nextBtnText}>Начать</Text>
-          ) : (
-            <Ionicons name="arrow-forward" size={24} color={COLORS.white} />
-          )}
-        </TouchableOpacity>
+        <View style={styles.features}>
+          <Feature num="01" title="Найди смену рядом" text="Сотни смен в Минске и других городах: ПВЗ, общепит, склад, ритейл, клининг." />
+          <Feature
+            num="02"
+            title={<>Откликнись в <Text style={styles.serif}>один тап</Text></>}
+            text="Выбираешь смену, отправляешь заявку. Работодатель отвечает в чате."
+          />
+          <Feature num="03" title="Получай за смену" text="Прозрачная оплата, рейтинги, отзывы. Без серых схем." />
+        </View>
+
+        <View style={styles.ticker}>
+          <View style={styles.tickerRow}>
+            <View>
+              <Text style={styles.tickerLabel}>СМЕН В ЛЕНТЕ</Text>
+              <Text style={styles.tickerValue}>142</Text>
+            </View>
+            <View>
+              <Text style={styles.tickerLabel}>СРОЧНЫХ</Text>
+              <Text style={[styles.tickerValue, { color: COLORS.live }]}>09</Text>
+            </View>
+            <View>
+              <Text style={styles.tickerLabel}>ВЫПЛАТА</Text>
+              <Text style={[styles.tickerValue, { color: COLORS.signal, fontSize: 22 }]}>сразу</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={[styles.ctaBar, { paddingBottom: insets.bottom + SIZES.md }]}>
+        <PrimaryButton title="Начать" icon="arrow" onPress={() => navigation.replace('RoleSelect')} />
+        <View style={styles.legal}>
+          <Text style={styles.legalText}>Продолжая, ты соглашаешься с </Text>
+          <Text style={styles.legalLink}>условиями</Text>
+          <Text style={styles.legalText}> и </Text>
+          <Text style={styles.legalLink}>политикой</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Feature({ num, title, text }) {
+  return (
+    <View style={styles.feature}>
+      <Text style={styles.featureNum}>{num}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.featureTitle}>{title}</Text>
+        <Text style={styles.featureText}>{text}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  skipBtn: { alignSelf: 'flex-end', paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
-  skipText: { fontSize: SIZES.body, color: COLORS.textTertiary, ...FONTS.medium },
+  container: { flex: 1, backgroundColor: COLORS.paper },
 
-  slide: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SIZES['2xl'] },
-  iconCircle: {
-    width: 140, height: 140, borderRadius: 70,
-    justifyContent: 'center', alignItems: 'center', marginBottom: SIZES['2xl'],
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingVertical: 14,
   },
-  slideTitle: {
-    fontSize: 28, ...FONTS.bold, color: COLORS.textPrimary,
-    textAlign: 'center', letterSpacing: -0.5,
-  },
-  slideDesc: {
-    fontSize: SIZES.bodyLarge, color: COLORS.textSecondary,
-    textAlign: 'center', marginTop: SIZES.md, lineHeight: 24,
-  },
+  wordmark: { fontFamily: FAMILIES.display, fontSize: 18, color: COLORS.ink, letterSpacing: -0.6 },
+  dot: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.live },
 
-  bottom: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES.xl },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: SIZES.xl },
-  dot: { height: 8, borderRadius: 4 },
-
-  nextBtn: {
-    height: 56, backgroundColor: COLORS.accent, borderRadius: 28,
-    justifyContent: 'center', alignItems: 'center',
+  hero: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 28 },
+  heroNumber: {
+    position: 'absolute',
+    top: 4,
+    right: 18,
+    width: 140,
+    height: 140,
+    borderRadius: 999,
+    backgroundColor: COLORS.signal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '6deg' }],
   },
-  nextBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.bold, color: COLORS.white },
+  heroDigits: { fontFamily: FAMILIES.display, fontSize: 86, color: COLORS.ink, letterSpacing: -4, lineHeight: 86 },
+  heroH1: { fontFamily: FAMILIES.display, fontSize: 44, lineHeight: 44, letterSpacing: -2, color: COLORS.ink, marginTop: 8, maxWidth: '80%' },
+  serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.ink },
+  heroMeta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 24 },
+  metaLabel: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgMuted, letterSpacing: 1, textTransform: 'uppercase' },
+
+  features: { paddingHorizontal: 22, paddingTop: 20, gap: 22 },
+  feature: { flexDirection: 'row', alignItems: 'flex-start', gap: 18 },
+  featureNum: { fontFamily: FAMILIES.mono, fontSize: 13, color: COLORS.fgFaint, letterSpacing: 0.5, paddingTop: 4 },
+  featureTitle: { fontFamily: FAMILIES.display, fontSize: 22, letterSpacing: -0.8, color: COLORS.ink, lineHeight: 24 },
+  featureText: { fontFamily: FAMILIES.text, fontSize: 14, color: COLORS.fgMuted, lineHeight: 20, marginTop: 6 },
+
+  ticker: { marginHorizontal: 22, marginTop: 32, backgroundColor: COLORS.graphite, borderRadius: SIZES.radiusBlock, padding: 20 },
+  tickerRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  tickerLabel: { fontFamily: FAMILIES.mono, fontSize: 9.5, color: 'rgba(244,241,234,0.55)', letterSpacing: 1, textTransform: 'uppercase' },
+  tickerValue: { fontFamily: FAMILIES.display, fontSize: 32, color: COLORS.fgInv, letterSpacing: -1, marginTop: 6 },
+
+  ctaBar: { paddingHorizontal: 22, paddingTop: 12, backgroundColor: COLORS.paper, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.line },
+  legal: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 12 },
+  legalText: { fontFamily: FAMILIES.text, fontSize: 11, color: COLORS.fgFaint },
+  legalLink: { fontFamily: FAMILIES.textSemi, fontSize: 11, color: COLORS.ink, textDecorationLine: 'underline' },
 });

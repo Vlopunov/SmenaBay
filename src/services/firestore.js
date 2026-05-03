@@ -23,7 +23,7 @@ export const USE_FIRESTORE = true;
 
 export async function getUser(userId) {
   const snap = await db.collection('users').doc(userId).get();
-  return snap.exists ? { id: snap.id, ...snap.data() } : null;
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
 export async function getUserByPhone(phone) {
@@ -73,7 +73,7 @@ export async function getShifts(filters = {}) {
 
 export async function getShift(shiftId) {
   const snap = await db.collection('shifts').doc(shiftId).get();
-  return snap.exists ? { id: snap.id, ...snap.data() } : null;
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
 export async function createShift(data) {

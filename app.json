@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "description": "СменаБел — платформа подработок и посменной работы в Беларуси. Для соискателей — быстрый поиск смен рядом. Для работодателей — публикация вакансий и отбор кандидатов.",
     "primaryColor": "#4F46E5",
     "splash": {
@@ -34,7 +34,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.smenabay.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

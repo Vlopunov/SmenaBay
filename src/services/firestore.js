@@ -226,28 +226,48 @@ export async function markAllNotificationsRead(userId) {
 
 // ===== REAL-TIME LISTENERS =====
 
+const onError = (label) => (err) => console.warn(`[firestore ${label}]`, err?.message || err);
+
 export function onShiftsChange(callback) {
-  return db.collection('shifts')
-    .where('status', '==', 'active')
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  try {
+    return db.collection('shifts')
+      .where('status', '==', 'active')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        snap => {
+          if (!snap) return;
+          callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        },
+        onError('shifts')
+      );
+  } catch (e) { onError('shifts')(e); return () => {}; }
 }
 
 export function onConversationsChange(userId, callback) {
-  return db.collection('conversations')
-    .where('workerId', '==', userId)
-    .onSnapshot(snap => {
-      callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  try {
+    return db.collection('conversations')
+      .where('workerId', '==', userId)
+      .onSnapshot(
+        snap => {
+          if (!snap) return;
+          callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        },
+        onError('conversations')
+      );
+  } catch (e) { onError('conversations')(e); return () => {}; }
 }
 
 export function onNotificationsChange(userId, callback) {
-  return db.collection('notifications')
-    .where('userId', '==', userId)
-    .orderBy('createdAt', 'desc')
-    .onSnapshot(snap => {
-      callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  try {
+    return db.collection('notifications')
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        snap => {
+          if (!snap) return;
+          callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        },
+        onError('notifications')
+      );
+  } catch (e) { onError('notifications')(e); return () => {}; }
 }

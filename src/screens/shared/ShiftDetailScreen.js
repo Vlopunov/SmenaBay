@@ -57,9 +57,11 @@ export default function ShiftDetailScreen({ route, navigation }) {
 
   const handleApply = () => {
     const result = applyToShift(shiftId);
-    if (result?.error === 'phone_not_verified') {
-      setShowVerify(true);
-    }
+    if (!result) return;
+    if (result.error === 'phone_not_verified') return setShowVerify(true);
+    if (result.error === 'shift_full') return Alert.alert('Смена заполнена', 'Все места уже заняты.');
+    if (result.error === 'shift_not_active') return Alert.alert('Смена недоступна', 'Эта смена больше не активна.');
+    if (result.error === 'already_applied') return Alert.alert('Уже отправлено', 'Вы уже откликнулись на эту смену.');
   };
 
   return (

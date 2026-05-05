@@ -819,11 +819,38 @@ const useStore = create(
       name: 'smenabel-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        // Auth + per-user prefs
         currentUser: state.currentUser,
         isAuthenticated: state.isAuthenticated,
         favorites: state.favorites,
         savedShifts: state.savedShifts,
+        // Persist registered users + content created in-app so they
+        // survive logout / app restart. Without this, registering a
+        // worker or employer would set currentUser but the workers/
+        // companies arrays would reset to MOCK_* on next launch,
+        // causing "Профиль не найден" on subsequent login.
+        workers: state.workers,
+        companies: state.companies,
+        shifts: state.shifts,
+        applications: state.applications,
+        reviews: state.reviews,
+        conversations: state.conversations,
+        notifications: state.notifications,
       }),
+      // Self-heal users registered before workers/companies were persisted:
+      // if currentUser exists but is missing from the directory arrays,
+      // add them back so the next login(phone) call can find them.
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const cu = state.currentUser;
+        if (!cu) return;
+        if (cu.role === 'worker' && !state.workers.some(w => w.id === cu.id || w.phone === cu.phone)) {
+          state.workers = [...state.workers, cu];
+        }
+        if (cu.role === 'employer' && !state.companies.some(c => c.id === cu.id || c.phone === cu.phone)) {
+          state.companies = [...state.companies, cu];
+        }
+      },
     },
   ),
 );

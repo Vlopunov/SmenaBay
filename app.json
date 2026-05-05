@@ -17,8 +17,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smenabay.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "usesAppleSignIn": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат.",
@@ -34,7 +35,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.smenabay.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 14,
+      "versionCode": 15,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",

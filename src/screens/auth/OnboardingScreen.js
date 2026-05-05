@@ -25,10 +25,10 @@ export default function OnboardingScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={styles.hero}>
           <View style={styles.heroNumber}>
-            <Text style={styles.heroDigits}>00</Text>
+            <Text style={styles.heroDigits} adjustsFontSizeToFit numberOfLines={1}>00</Text>
           </View>
 
-          <Text style={styles.heroH1}>
+          <Text style={styles.heroH1} adjustsFontSizeToFit numberOfLines={3}>
             Получай{'\n'}
             <Text style={styles.serif}>деньги</Text> за{'\n'}свою смену.
           </Text>
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     transform: [{ rotate: '6deg' }],
   },
-  heroDigits: { fontFamily: FAMILIES.display, fontSize: 86, color: COLORS.ink, letterSpacing: -4, lineHeight: 86 },
-  heroH1: { fontFamily: FAMILIES.display, fontSize: 44, lineHeight: 44, letterSpacing: -2, color: COLORS.ink, marginTop: 8, maxWidth: '80%' },
+  heroDigits: { fontFamily: FAMILIES.display, fontSize: 78, color: COLORS.ink, letterSpacing: -3, lineHeight: 80, includeFontPadding: false },
+  heroH1: { fontFamily: FAMILIES.display, fontSize: 38, lineHeight: 40, letterSpacing: -1.5, color: COLORS.ink, marginTop: 8, maxWidth: '78%' },
   serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.ink },
   heroMeta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 24 },
   metaLabel: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgMuted, letterSpacing: 1, textTransform: 'uppercase' },
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   ticker: { marginHorizontal: 22, marginTop: 32, backgroundColor: COLORS.graphite, borderRadius: SIZES.radiusBlock, padding: 20 },
   tickerRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   tickerLabel: { fontFamily: FAMILIES.mono, fontSize: 9.5, color: 'rgba(244,241,234,0.55)', letterSpacing: 1, textTransform: 'uppercase' },
-  tickerValue: { fontFamily: FAMILIES.display, fontSize: 32, color: COLORS.fgInv, letterSpacing: -1, marginTop: 6 },
+  tickerValue: { fontFamily: FAMILIES.display, fontSize: 30, color: COLORS.fgInv, letterSpacing: -0.8, marginTop: 6 },
 
   ctaBar: { paddingHorizontal: 22, paddingTop: 12, backgroundColor: COLORS.paper, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.line },
   legal: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 12 },

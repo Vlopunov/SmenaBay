@@ -44,7 +44,7 @@ export default function RoleSelectScreen({ navigation }) {
 
       {/* Heading */}
       <View style={styles.headingBlock}>
-        <Text style={styles.heading}>
+        <Text style={styles.heading} adjustsFontSizeToFit numberOfLines={2}>
           Кто ты{'\n'}<Text style={styles.serif}>сегодня</Text>?
         </Text>
         <Text style={styles.subheading}>Выбери роль — её можно сменить позже.</Text>
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   dot: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.live },
 
   headingBlock: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 24 },
-  heading: { fontFamily: FAMILIES.display, fontSize: 44, lineHeight: 44, letterSpacing: -2, color: COLORS.ink },
+  heading: { fontFamily: FAMILIES.display, fontSize: 38, lineHeight: 40, letterSpacing: -1.5, color: COLORS.ink },
   serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic' },
   subheading: { fontFamily: FAMILIES.text, fontSize: 14, color: COLORS.fgMuted, marginTop: 12 },
 
@@ -157,11 +157,11 @@ const styles = StyleSheet.create({
   letterBadge: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   letterText: { fontFamily: FAMILIES.display, fontSize: 22, letterSpacing: -1 },
   cardNum: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgFaint, letterSpacing: 1 },
-  cardTitle: { fontFamily: FAMILIES.display, fontSize: 26, color: COLORS.ink, letterSpacing: -1, lineHeight: 28 },
+  cardTitle: { fontFamily: FAMILIES.display, fontSize: 22, color: COLORS.ink, letterSpacing: -0.8, lineHeight: 24 },
   cardDesc: { fontFamily: FAMILIES.text, fontSize: 13, color: COLORS.fgMuted, marginTop: 8, lineHeight: 18 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: 18 },
   cardStatLabel: { fontFamily: FAMILIES.mono, fontSize: 9.5, color: COLORS.fgFaint, letterSpacing: 1, textTransform: 'uppercase' },
-  cardStat: { fontFamily: FAMILIES.display, fontSize: 30, color: COLORS.ink, letterSpacing: -1.5, marginTop: 4 },
+  cardStat: { fontFamily: FAMILIES.display, fontSize: 26, color: COLORS.ink, letterSpacing: -1, marginTop: 4 },
   arrowCircle: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
 
   loginLink: { flexDirection: 'row', justifyContent: 'center', paddingTop: 22 },
@@ -172,6 +172,6 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(14,15,12,0.45)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: COLORS.paper, paddingHorizontal: 22, paddingTop: 12, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   sheetHandle: { alignSelf: 'center', width: 44, height: 4, borderRadius: 2, backgroundColor: COLORS.line, marginBottom: 18 },
-  sheetTitle: { fontFamily: FAMILIES.display, fontSize: 30, lineHeight: 32, letterSpacing: -1.2, color: COLORS.ink, marginBottom: 6 },
+  sheetTitle: { fontFamily: FAMILIES.display, fontSize: 26, lineHeight: 30, letterSpacing: -1, color: COLORS.ink, marginBottom: 6 },
   cancelText: { fontFamily: FAMILIES.textSemi, fontSize: 14, color: COLORS.fgMuted },
 });

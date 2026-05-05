@@ -116,6 +116,14 @@ export const SIZES = {
   h1: 42,
   hero: 56,
 
+  // Legacy-screen aliases — keep older screens (Profile, MyShifts,
+  // RegisterWorker etc.) rendering correctly. Without these, references
+  // like SIZES.heading evaluate to `undefined`, which makes Text invisible.
+  heading: 28,
+  largeTitle: 32,
+  '5xl': 80,
+  radiusFull: 999,
+
   // Radii — varied, not one-size
   radiusTight: 8,
   radiusSm: 10,

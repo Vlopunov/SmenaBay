@@ -167,7 +167,7 @@ export default function VerifyPhoneModal({ visible, onClose, onVerified }) {
                 onChangeText={setCode}
                 keyboardType="number-pad"
                 maxLength={6}
-                placeholder="••••"
+                placeholder="······"
                 placeholderTextColor={COLORS.textTertiary}
                 autoFocus
                 editable={!loading}

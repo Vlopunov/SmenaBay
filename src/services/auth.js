@@ -67,8 +67,8 @@ export async function verifyCode(verification, code) {
 
   if (verification.mock) {
     await new Promise(r => setTimeout(r, 500));
-    if (code.length >= 4) return { success: true, uid: 'mock_uid_' + Date.now() };
-    throw new Error('Введите 4-значный код');
+    if (code.length >= 6) return { success: true, uid: 'mock_uid_' + Date.now() };
+    throw new Error('Введите 6-значный код');
   }
 
   try {

@@ -100,7 +100,7 @@ export default function FeedScreen({ navigation }) {
             <Text style={styles.shiftTitle} numberOfLines={2}>{item.title}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.payBig}>{item.pay}</Text>
+            <Text style={styles.payBig} adjustsFontSizeToFit numberOfLines={1}>{item.pay}</Text>
             <Text style={styles.payUnit}>BYN · {(item.pay / (item.durationHours || 8)).toFixed(1)}/ч</Text>
           </View>
         </View>
@@ -131,7 +131,7 @@ export default function FeedScreen({ navigation }) {
 
       {/* Display heading */}
       <View style={styles.heroBlock}>
-        <Text style={styles.h1}>
+        <Text style={styles.h1} adjustsFontSizeToFit numberOfLines={2}>
           Смены{'\n'}<Text style={styles.serif}>на сегодня</Text>
         </Text>
         <View style={styles.h1Meta}>
@@ -198,7 +198,7 @@ export default function FeedScreen({ navigation }) {
               </View>
             )}
 
-            <Text style={styles.heroTitle} numberOfLines={3}>{hero.title}</Text>
+            <Text style={styles.heroTitle} numberOfLines={3} adjustsFontSizeToFit>{hero.title}</Text>
             <Text style={styles.heroSubtitle}>{getCompany(hero.companyId)?.companyName || 'Заказчик'}</Text>
 
             <View style={styles.heroPayRow}>
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
 
   // Hero block
   heroBlock: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 18 },
-  h1: { fontFamily: FAMILIES.display, fontSize: 42, lineHeight: 40, letterSpacing: -2, color: COLORS.ink },
+  h1: { fontFamily: FAMILIES.display, fontSize: 36, lineHeight: 38, letterSpacing: -1.5, color: COLORS.ink },
   serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic', color: COLORS.fgFaint },
   h1Meta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 14 },
   metaLabel: { fontFamily: FAMILIES.mono, fontSize: 11, color: COLORS.fgMuted, letterSpacing: 1, textTransform: 'uppercase' },

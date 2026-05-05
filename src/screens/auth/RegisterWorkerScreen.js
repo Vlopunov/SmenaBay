@@ -134,7 +134,7 @@ export default function RegisterWorkerScreen({ navigation, route }) {
             onChangeText={setSmsCode}
             keyboardType="number-pad"
             maxLength={6}
-            placeholder="0000"
+            placeholder="······"
             placeholderTextColor={COLORS.textTertiary}
             autoFocus
             editable={!loading}

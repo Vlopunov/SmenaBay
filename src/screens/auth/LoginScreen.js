@@ -129,7 +129,7 @@ export default function LoginScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* Heading */}
-        <Text style={styles.heading}>
+        <Text style={styles.heading} adjustsFontSizeToFit numberOfLines={2}>
           {step === 1 ? <>С возвращением,{'\n'}<Text style={styles.serif}>исполнитель</Text></> : <>Введи код{'\n'}<Text style={styles.serif}>из СМС</Text></>}
         </Text>
         <Text style={styles.subheading}>
@@ -193,7 +193,7 @@ export default function LoginScreen({ navigation }) {
               <TextInput
                 value={smsCode}
                 onChangeText={setSmsCode}
-                style={[styles.input, { fontFamily: FAMILIES.display, fontSize: 32, letterSpacing: 8 }]}
+                style={[styles.input, { fontFamily: FAMILIES.display, fontSize: 28, letterSpacing: 4, textAlign: 'center' }]}
                 keyboardType="number-pad"
                 placeholder="······"
                 placeholderTextColor={COLORS.fgFaint}
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 40 },
 
-  heading: { fontFamily: FAMILIES.display, fontSize: 36, lineHeight: 38, letterSpacing: -1.6, color: COLORS.ink, marginTop: 8 },
+  heading: { fontFamily: FAMILIES.display, fontSize: 30, lineHeight: 34, letterSpacing: -1.2, color: COLORS.ink, marginTop: 8 },
   serif: { fontFamily: FAMILIES.serifItalic, fontStyle: 'italic' },
   subheading: { fontFamily: FAMILIES.text, fontSize: 14, color: COLORS.fgMuted, marginTop: 10 },
 

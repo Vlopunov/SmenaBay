@@ -65,7 +65,7 @@ Productivity
 
 - **Price:** Free
 - **Availability:** All territories (или начни с Belarus + Russia + Kazakhstan + Ukraine)
-- **In-App Purchases:** None
+- **In-App Purchases:** None — на iOS экран тарифов информационный, без цен и кнопок покупки
 
 ---
 
@@ -103,11 +103,31 @@ Productivity
 **Yes** — приложение требует логин.
 
 ### Demo Account для review-команды Apple
-Создай тестовый аккаунт в проде и заполни:
-- **Username:** `+375291234567` (или e-mail демо-аккаунта)
-- **Password:** *6-значный SMS-код или фиксированный пароль*
 
-> Apple-ревьюер должен иметь возможность зайти. В review notes укажи: «Use demo phone +375291234567. SMS code 123456 (mock fallback). Or use any registered demo account from login screen.»
+⚠️ **Кнопки демо-аккаунтов убраны из релизной сборки** (Guideline 2.2 — в
+опубликованном приложении не должно быть демо/бета-функциональности). Они
+остались только под `__DEV__`.
+
+Вместо них доступ ревьюеру даётся через **тестовые номера Firebase** — SMS
+реально не отправляется, код фиксированный.
+
+**Что сделать до отправки (обязательно):**
+
+1. Firebase Console → проект `smenabay` → Authentication → Sign-in method →
+   Phone → раскрыть **Phone numbers for testing**.
+2. Добавить пары «номер → код»:
+
+   | Номер | Код | Кто это в приложении |
+   |---|---|---|
+   | `+375 29 123 45 67` | `123456` | Алексей Ковалёв — исполнитель |
+   | `+375 29 100 10 10` | `123456` | ШаурМания — заказчик |
+
+3. В App Store Connect → App Review Information заполнить:
+   - **Username:** `+375291234567`
+   - **Password:** `123456`
+
+Номера совпадают с профилями в приложении, поэтому после ввода кода ревьюер
+сразу попадает в готовый аккаунт с историей смен, откликами и чатами.
 
 ### Contact Information
 - **First name:** Vlad
@@ -119,16 +139,31 @@ Productivity
 ```
 СменаБел — платформа подработок и посменной работы в Беларуси.
 Для соискателей — поиск смен рядом, подача заявок в один тап,
-чат с работодателем. Для работодателей — публикация смен,
+чат с работодателем. Для работодателей — публикация смен и
 управление откликами.
 
-Для ревью можно использовать демо-аккаунты, доступные на экране
-входа: исполнители (+375291234567, +375337654321) и заказчики
-(+375291001010, +375293003030). После ввода номера в demo-режиме
-SMS-код любой 6-значный.
+HOW TO SIGN IN
+Phone number: +375291234567
+Verification code: 123456
+This is a Firebase test number — no real SMS is sent. It signs you in
+as a job-seeker account with existing shifts, applications and chats.
+For the employer side use +375291001010 with the same code 123456.
 
-Sign in with Apple интегрирован согласно требованиям Guideline 4.8.
-Phone Auth работает через Firebase Auth + Play Integrity / SafetyNet.
+ACCOUNT DELETION (Guideline 5.1.1(v))
+Profile tab (Я / Профиль) → scroll to the bottom → "Удалить аккаунт".
+Two confirmations, then the account and all related data are erased.
+
+USER SAFETY (Guideline 1.2)
+Every chat, shift and public profile has a "···" menu in the header with
+"Пожаловаться" (report, with reason picker) and "Заблокировать" (block).
+Blocked users disappear from the feed, chat list, map and directory.
+
+PAYMENTS
+There are no in-app purchases. The iOS build shows no prices and no
+purchase controls — employer billing is handled outside the app.
+
+Sign in with Apple is offered alongside Google per Guideline 4.8.
+Phone Auth uses Firebase Auth (APNs silent verification on iOS).
 ```
 
 ---
@@ -186,9 +221,12 @@ Phone Auth работает через Firebase Auth + Play Integrity / SafetyNe
 
 ### Support URL
 ```
-https://smenabel.by/support
+https://smenabel.by
 ```
-> Если не существует — временно поставь главную: `https://smenabel.by`
+> ⚠️ Проверено 09.09.2026: `https://smenabel.by/support` отдаёт **404**.
+> Apple открывает этот URL при ревью, битая ссылка = metadata rejection.
+> Пока страницы поддержки нет — ставим главную (отвечает 200).
+> В приложении та же ссылка берётся из `src/constants/links.js`.
 
 ### Marketing URL (не обязательно)
 ```
@@ -220,24 +258,57 @@ https://smenabel.by/privacy
 
 ---
 
-## 7. Что нужно ещё подготовить (вне Listing)
+## 7. Скриншоты
+
+Сняты **с работающего приложения** в симуляторе (Release-сборка, без
+dev-баннеров) — `store-assets/screenshots/ios-iphone69/`, 1320×2868,
+это размер iPhone 16 Pro Max, принимается как «6.9 inch Display».
+
+| Файл | Экран |
+|---|---|
+| `01-onboarding.png` | Первый экран — оффер и как это работает |
+| `02-roles.png` | Выбор роли: исполнитель / заказчик |
+| `03-feed.png` | Лента смен с фильтрами |
+| `04-shift.png` | Карточка смены: оплата, время, адрес, требования |
+| `05-map.png` | Карта смен рядом |
+| `06-chat.png` | Чат с работодателем |
+| `07-profile.png` | Профиль, рейтинг, бейджи |
+| `08-employer.png` | Дашборд заказчика |
+
+> Старые папки `ios-iphone67/`, `ios-iphone65/`, `ios-ipad13/`, `phone/`,
+> `tablet7/`, `tablet10/` — это **нарисованные макеты** в устаревшем
+> фиолетовом дизайне, сгенерированные `make_screenshots.py`. Они не
+> соответствуют приложению (Guideline 2.3.3) — **не загружать**.
+
+С осени 2024 Apple требует только один набор iPhone (6.9") — 6.5"
+подтягивается автоматически. Набор для iPad нужен **только если**
+в App Store Connect указана поддержка iPad; в `app.json` сейчас
+`supportsTablet: true`, значит iPad-скриншоты обязательны — либо снять
+их, либо выключить поддержку планшетов.
+
+## 8. Что нужно ещё подготовить (вне Listing)
 
 - ✅ App Privacy анкета — заполни как в #3
 - ✅ Age Rating анкета — как в #1
-- ⚠️ Скриншоты — см. отдельно `IOS_SCREENSHOTS.md`
-- ⚠️ App Icon в Assets — Apple извлекает его из IPA автоматически (у нас он уже есть в проекте)
-- ⚠️ Демо-аккаунт для ревью — убедись что демо-телефоны на экране входа работают
+- ✅ Скриншоты — см. #7
+- ✅ App Icon — Apple извлекает его из IPA автоматически (1024×1024, без альфа-канала — проверено)
+- ⚠️ Тестовые номера в Firebase Console — см. #4, без них ревьюер не войдёт
 
 ---
 
 ## Чек-лист отправки на ревью
 
+- [ ] Тестовые номера добавлены в Firebase Console (#4) — **делать первым**
 - [ ] App Information заполнено (#1)
 - [ ] Pricing — Free, страны (#2)
 - [ ] App Privacy анкета (#3)
-- [ ] App Review Information с демо-аккаунтом (#4)
+- [ ] App Review Information: логин, код, Notes for Reviewer (#4)
 - [ ] Version 1.0.0 описание + keywords (#5)
-- [ ] Скриншоты загружены (минимум 6.7" iPhone + iPad 13")
+- [ ] Скриншоты 6.9" загружены из `ios-iphone69/` (#7)
+- [ ] Решено, что делать с iPad: снять скриншоты или `supportsTablet: false`
 - [ ] Build выбран и привязан к версии 1.0.0
 - [ ] Export Compliance отвечен
 - [ ] Submit for Review нажато
+
+См. также `store-assets/SUBMISSION_STATUS.md` — что уже починено и что
+осталось.

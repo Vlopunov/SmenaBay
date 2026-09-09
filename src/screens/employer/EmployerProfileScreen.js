@@ -9,6 +9,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
 import Avatar from '../../components/Avatar';
+import DeleteAccountButton from '../../components/DeleteAccountButton';
 
 const PLAN_LABELS = { free: 'Старт (бесплатно)', business: 'Бизнес', premium: 'Премиум' };
 
@@ -138,6 +139,8 @@ export default function EmployerProfileScreen({ navigation }) {
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
+
+        <DeleteAccountButton />
 
         <Text style={styles.version}>СменаБел v1.0.0</Text>
         <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />

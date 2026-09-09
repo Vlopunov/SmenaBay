@@ -14,6 +14,7 @@ import { formatDate } from '../../utils/formatDate';
 export default function WorkerDirectoryScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const workers = useStore(s => s.workers);
+  const blockedUsers = useStore(s => s.blockedUsers);
   const currentUser = useStore(s => s.currentUser);
   const toggleFavorite = useStore(s => s.toggleFavorite);
   const isFavorite = useStore(s => s.isFavorite);
@@ -31,7 +32,8 @@ export default function WorkerDirectoryScreen({ navigation }) {
   );
 
   const filteredWorkers = useMemo(() => {
-    let result = workers;
+    // Blocked workers are hidden from the directory (Guideline 1.2).
+    let result = workers.filter(w => !blockedUsers.includes(w.id));
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(w =>
@@ -43,7 +45,7 @@ export default function WorkerDirectoryScreen({ navigation }) {
       result = result.filter(w => w.categories?.includes(categoryFilter));
     }
     return result.sort((a, b) => b.rating - a.rating);
-  }, [workers, search, categoryFilter]);
+  }, [workers, search, categoryFilter, blockedUsers]);
 
   const handleInvite = (shiftId) => {
     const result = inviteWorkerToShift(inviteWorkerId, shiftId);

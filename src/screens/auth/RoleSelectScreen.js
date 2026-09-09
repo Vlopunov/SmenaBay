@@ -4,9 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
 import { Icon, MonoTag, Money, Pill, PrimaryButton, GhostButton } from '../../components/ui/Atoms';
 import { signInWithGoogle, signInWithApple } from '../../services/auth';
+import useStore from '../../store/useStore';
 
 export default function RoleSelectScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+
+  // Real count of shifts open today — the card used to show a fixed "142".
+  const shifts = useStore(s => s.shifts);
+  const today = new Date().toISOString().split('T')[0];
+  const shiftsToday = shifts.filter(s => s.status === 'active' && s.date === today).length;
   const [selectedRole, setSelectedRole] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -59,7 +65,7 @@ export default function RoleSelectScreen({ navigation }) {
           desc="Смены рядом, отклик в один тап."
           accentBg={COLORS.signal}
           accentColor={COLORS.ink}
-          stat="142"
+          stat={String(shiftsToday).padStart(2, '0')}
           statLabel="Смен сегодня"
           onPress={() => openAuthChoice('worker')}
         />

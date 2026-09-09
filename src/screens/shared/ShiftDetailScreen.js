@@ -8,6 +8,7 @@ import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
 import Avatar from '../../components/Avatar';
 import VerifyPhoneModal from '../../components/VerifyPhoneModal';
+import ReportMenu from '../../components/ReportMenu';
 
 let WebView;
 if (Platform.OS !== 'web') {
@@ -75,13 +76,22 @@ export default function ShiftDetailScreen({ route, navigation }) {
         </TouchableOpacity>
         <Text style={styles.navTitle}>Детали смены</Text>
         {isWorker ? (
-          <TouchableOpacity style={styles.backBtn} onPress={() => toggleSavedShift(shiftId)}>
-            <Ionicons
-              name={isSavedShift(shiftId) ? 'bookmark' : 'bookmark-outline'}
-              size={22}
-              color={isSavedShift(shiftId) ? COLORS.accent : COLORS.textPrimary}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => toggleSavedShift(shiftId)}>
+              <Ionicons
+                name={isSavedShift(shiftId) ? 'bookmark' : 'bookmark-outline'}
+                size={22}
+                color={isSavedShift(shiftId) ? COLORS.accent : COLORS.textPrimary}
+              />
+            </TouchableOpacity>
+            <ReportMenu
+              targetType="shift"
+              targetId={shiftId}
+              targetName={shift.title}
+              blockUserId={company.id}
+              style={styles.backBtn}
             />
-          </TouchableOpacity>
+          </View>
         ) : (
           <View style={{ width: 44 }} />
         )}

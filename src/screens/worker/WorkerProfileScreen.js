@@ -10,6 +10,7 @@ import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
 import Avatar from '../../components/Avatar';
+import DeleteAccountButton from '../../components/DeleteAccountButton';
 
 const STATS_CONFIG = [
   { key: 'shiftsCompleted', label: 'Смен' },
@@ -179,6 +180,8 @@ export default function WorkerProfileScreen({ navigation }) {
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutText}>Выйти из аккаунта</Text>
         </TouchableOpacity>
+
+        <DeleteAccountButton />
 
         <Text style={styles.version}>СменаБел v1.0.0</Text>
         <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />

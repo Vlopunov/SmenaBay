@@ -10,6 +10,7 @@ import useStore from '../../store/useStore';
 import { formatDateShort } from '../../utils/formatDate';
 import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
 import Avatar from '../../components/Avatar';
+import ReportMenu from '../../components/ReportMenu';
 
 const RATING_LABELS = {
   conditions: 'Условия', descriptionMatch: 'Описание',
@@ -52,7 +53,12 @@ export default function PublicCompanyProfileScreen({ route, navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.navTitle}>Профиль компании</Text>
-        <View style={{ width: 44 }} />
+        <ReportMenu
+          targetType="user"
+          targetId={companyId}
+          targetName={company.companyName}
+          style={styles.backBtn}
+        />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>

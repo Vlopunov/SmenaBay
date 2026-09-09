@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smenabay.app",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
@@ -56,7 +56,8 @@
         "expo-image-picker",
         {
           "photosPermission": "СменаБел запрашивает доступ к фото, чтобы вы могли установить фото профиля и отправлять изображения в чат.",
-          "cameraPermission": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат."
+          "cameraPermission": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат.",
+          "microphonePermission": false
         }
       ],
       "expo-apple-authentication",

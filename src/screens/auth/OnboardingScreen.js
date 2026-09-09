@@ -1,15 +1,27 @@
 import React from 'react';
-import { View, Text, StyleSheet, StatusBar, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, FAMILIES } from '../../constants/theme';
 import { MonoTag, Money, PrimaryButton } from '../../components/ui/Atoms';
+import { LINKS, openLink } from '../../constants/links';
+import useStore from '../../store/useStore';
 
 /**
  * Editorial-style welcome screen.
  * Big "00" canary signal in the corner, layered headline with serif italic accent.
  */
+// Two-digit minimum keeps the ticker's typographic rhythm ("09", not "9").
+const pad = (n) => String(n).padStart(2, '0');
+
 export default function OnboardingScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+
+  // Real counts, not decorative numbers — a store listing screenshot or a
+  // reviewer tapping through should see figures that match the actual feed.
+  const shifts = useStore(s => s.shifts);
+  const activeShifts = shifts.filter(s => s.status === 'active');
+  const activeCount = activeShifts.length;
+  const urgentCount = activeShifts.filter(s => s.urgent).length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -54,11 +66,11 @@ export default function OnboardingScreen({ navigation }) {
           <View style={styles.tickerRow}>
             <View>
               <Text style={styles.tickerLabel}>СМЕН В ЛЕНТЕ</Text>
-              <Text style={styles.tickerValue}>142</Text>
+              <Text style={styles.tickerValue}>{pad(activeCount)}</Text>
             </View>
             <View>
               <Text style={styles.tickerLabel}>СРОЧНЫХ</Text>
-              <Text style={[styles.tickerValue, { color: COLORS.live }]}>09</Text>
+              <Text style={[styles.tickerValue, { color: COLORS.live }]}>{pad(urgentCount)}</Text>
             </View>
             <View>
               <Text style={styles.tickerLabel}>ВЫПЛАТА</Text>
@@ -72,9 +84,13 @@ export default function OnboardingScreen({ navigation }) {
         <PrimaryButton title="Начать" icon="arrow" onPress={() => navigation.replace('RoleSelect')} />
         <View style={styles.legal}>
           <Text style={styles.legalText}>Продолжая, ты соглашаешься с </Text>
-          <Text style={styles.legalLink}>условиями</Text>
+          <TouchableOpacity onPress={() => openLink(LINKS.terms)} accessibilityRole="link">
+            <Text style={styles.legalLink}>условиями</Text>
+          </TouchableOpacity>
           <Text style={styles.legalText}> и </Text>
-          <Text style={styles.legalLink}>политикой</Text>
+          <TouchableOpacity onPress={() => openLink(LINKS.privacy)} accessibilityRole="link">
+            <Text style={styles.legalLink}>политикой</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>

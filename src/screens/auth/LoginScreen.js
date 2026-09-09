@@ -12,6 +12,7 @@ import { sendVerificationCode, verifyCode, isMockAuth, signInWithGoogle, signInW
 export default function LoginScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const login = useStore((s) => s.login);
+  const loginBySocial = useStore((s) => s.loginBySocial);
 
   const [phone, setPhone] = useState('+375');
   const [step, setStep] = useState(1);
@@ -85,12 +86,36 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  /**
+   * Shared tail for Google / Apple sign-in.
+   *
+   * Firebase authenticating the user is only half the job — we still have to
+   * put them into the app. If no profile matches the credential we send them
+   * to registration rather than leaving them stranded on this screen.
+   */
+  const finishSocialLogin = (result) => {
+    const user = loginBySocial({ uid: result.uid, email: result.email });
+    if (user) return;
+
+    Alert.alert(
+      'Профиль не найден',
+      'С этой учётной записью ещё нет профиля в СменаБел. Давай создадим его — это займёт минуту.',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Создать профиль',
+          onPress: () => navigation.navigate('RoleSelect', { socialData: result }),
+        },
+      ]
+    );
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true); setError('');
     try {
       const result = await signInWithGoogle();
-      if (result.cancelled) return setLoading(false);
-      Alert.alert('Google', `Вошли как ${result.displayName || result.email}`);
+      if (result.cancelled) return;
+      finishSocialLogin(result);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -99,8 +124,8 @@ export default function LoginScreen({ navigation }) {
     setLoading(true); setError('');
     try {
       const result = await signInWithApple();
-      if (result.cancelled) return setLoading(false);
-      Alert.alert('Apple', `Вошли как ${result.displayName || result.email}`);
+      if (result.cancelled) return;
+      finishSocialLogin(result);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -172,16 +197,23 @@ export default function LoginScreen({ navigation }) {
             <GhostButton title="Войти через Google" icon="google" onPress={handleGoogleLogin} style={{ marginBottom: 10 }} />
             {Platform.OS === 'ios' && <GhostButton title="Войти через Apple" icon="apple" onPress={handleAppleLogin} />}
 
-            {/* Demo accounts — editorial style */}
-            <View style={styles.demoBlock}>
-              <MonoTag style={{ marginBottom: 10 }}>Демо-аккаунты</MonoTag>
-              <DemoRow label="Артём · исполнитель" phone="+375291234567" onPress={quickLogin} />
-              <DemoRow label="Дарья · исполнитель" phone="+375337654321" onPress={quickLogin} />
-              <DemoRow label="Олег · исполнитель" phone="+375441112233" onPress={quickLogin} />
-              <DemoRow label="ШаурМания · заказчик" phone="+375291001010" onPress={quickLogin} variant="employer" />
-              <DemoRow label="Кофемания · заказчик" phone="+375293003030" onPress={quickLogin} variant="employer" />
-              <DemoRow label="BarBQ · заказчик" phone="+375295005050" onPress={quickLogin} variant="employer" />
-            </View>
+            {/* Demo accounts — development builds only.
+                A one-tap login into a seeded account is debug functionality;
+                shipping it would fail App Store Review Guideline 2.2
+                (no demo/trial/beta functionality in released apps). __DEV__
+                is compile-time constant, so this whole block is stripped
+                from release bundles. */}
+            {__DEV__ && (
+              <View style={styles.demoBlock}>
+                <MonoTag style={{ marginBottom: 10 }}>Демо-аккаунты (только dev)</MonoTag>
+                <DemoRow label="Артём · исполнитель" phone="+375291234567" onPress={quickLogin} />
+                <DemoRow label="Дарья · исполнитель" phone="+375337654321" onPress={quickLogin} />
+                <DemoRow label="Олег · исполнитель" phone="+375441112233" onPress={quickLogin} />
+                <DemoRow label="ШаурМания · заказчик" phone="+375291001010" onPress={quickLogin} variant="employer" />
+                <DemoRow label="Кофемания · заказчик" phone="+375293003030" onPress={quickLogin} variant="employer" />
+                <DemoRow label="BarBQ · заказчик" phone="+375295005050" onPress={quickLogin} variant="employer" />
+              </View>
+            )}
           </>
         )}
 

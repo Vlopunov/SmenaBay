@@ -187,6 +187,40 @@ export async function signOut() {
 }
 
 /**
+ * Permanently delete the signed-in Firebase user.
+ *
+ * Required by App Store Review Guideline 5.1.1(v): an app that lets users
+ * create an account must let them initiate deletion of that account from
+ * inside the app.
+ *
+ * Firebase requires a recent login for `delete()`. If the credential is
+ * stale it throws auth/requires-recent-login — we surface that so the UI
+ * can ask the user to sign in again. If there is no Firebase user at all
+ * (demo/local session) we treat deletion as successful so the caller can
+ * still wipe local data.
+ */
+export async function deleteAccount() {
+  const user = auth().currentUser;
+  if (!user) return { success: true, local: true };
+
+  try {
+    await user.delete();
+    try {
+      if (googleSigninConfigured) await GoogleSignin.signOut();
+    } catch (e) {
+      // ignore
+    }
+    return { success: true };
+  } catch (error) {
+    if (error?.code === 'auth/requires-recent-login') {
+      return { success: false, requiresRecentLogin: true };
+    }
+    console.warn('[deleteAccount]', error?.code, error?.message);
+    return { success: false, message: 'Не удалось удалить аккаунт. Попробуйте позже.' };
+  }
+}
+
+/**
  * Listen to auth state changes.
  */
 export function onAuthStateChanged(cb) {

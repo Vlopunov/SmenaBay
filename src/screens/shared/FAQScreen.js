@@ -5,6 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import { LINKS, openLink } from '../../constants/links';
 
 const FAQ_DATA = [
   {
@@ -86,8 +87,26 @@ export default function FAQScreen({ navigation }) {
         <View style={styles.contactCard}>
           <Ionicons name="chatbubble-ellipses-outline" size={24} color={COLORS.accent} />
           <Text style={styles.contactTitle}>Не нашли ответ?</Text>
-          <Text style={styles.contactText}>Telegram: @smenabel</Text>
-          <Text style={styles.contactText}>Email: support@smenabel.by</Text>
+          <TouchableOpacity onPress={() => openLink('https://t.me/smenabel')} accessibilityRole="link">
+            <Text style={[styles.contactText, styles.contactLink]}>Telegram: @smenabel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openLink(LINKS.supportEmail)} accessibilityRole="link">
+            <Text style={[styles.contactText, styles.contactLink]}>Email: support@smenabel.by</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Legal — a reviewer must be able to reach these from inside the app */}
+        <View style={styles.legalCard}>
+          <TouchableOpacity onPress={() => openLink(LINKS.terms)} style={styles.legalRow} accessibilityRole="link">
+            <Ionicons name="document-text-outline" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.legalLabel}>Условия использования</Text>
+            <Ionicons name="open-outline" size={16} color={COLORS.textTertiary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openLink(LINKS.privacy)} style={styles.legalRow} accessibilityRole="link">
+            <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.legalLabel}>Политика конфиденциальности</Text>
+            <Ionicons name="open-outline" size={16} color={COLORS.textTertiary} />
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: SIZES['3xl'] }} />
@@ -98,6 +117,16 @@ export default function FAQScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  contactLink: { textDecorationLine: 'underline' },
+  legalCard: {
+    backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg,
+    marginTop: SIZES.base, overflow: 'hidden', ...SHADOWS.sm,
+  },
+  legalRow: {
+    flexDirection: 'row', alignItems: 'center', gap: SIZES.md,
+    paddingVertical: SIZES.md, paddingHorizontal: SIZES.base,
+  },
+  legalLabel: { flex: 1, fontSize: SIZES.body, color: COLORS.textPrimary, ...FONTS.regular },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
   backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },

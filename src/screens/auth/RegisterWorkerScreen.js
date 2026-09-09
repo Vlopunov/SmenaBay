@@ -57,8 +57,16 @@ export default function RegisterWorkerScreen({ navigation, route }) {
     if (!validate()) return;
 
     if (authMethod !== 'phone') {
-      // Social auth: skip SMS, register directly (phone not verified)
-      registerWorker({ ...form, phoneVerified: false, authMethod });
+      // Social auth: skip SMS, register directly (phone not verified).
+      // Persist the Firebase uid + email so a later Google/Apple sign-in
+      // can find this profile again instead of creating a duplicate.
+      registerWorker({
+        ...form,
+        phoneVerified: false,
+        authMethod,
+        authUid: socialData.uid || null,
+        email: socialData.email || null,
+      });
       return;
     }
 

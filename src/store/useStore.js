@@ -10,7 +10,7 @@ import {
   syncCreateReview, syncCreateUser, syncUpdateUser, syncCreateNotification, syncSendMessage,
   loadFromFirestore, setupRealtimeListeners,
 } from '../services/firestoreSync';
-import { signOut as authSignOut } from '../services/auth';
+import { signOut as authSignOut, deleteAccount as authDeleteAccount } from '../services/auth';
 
 const useStore = create(
   persist(
@@ -73,6 +73,45 @@ const useStore = create(
     return null;
   },
 
+  /**
+   * Sign in an existing profile after a successful Google / Apple auth.
+   *
+   * Matches on the Firebase uid first (stable), then falls back to email
+   * for profiles created before the uid was persisted. Returns null when
+   * no profile exists yet, so the caller can send the user to registration
+   * instead of silently doing nothing.
+   */
+  loginBySocial: ({ uid, email }) => {
+    const matches = (u) =>
+      (uid && u.authUid === uid) ||
+      (email && u.email && u.email.toLowerCase() === email.toLowerCase());
+
+    const now = new Date().toISOString();
+    const worker = get().workers.find(matches);
+    if (worker) {
+      const updated = { ...worker, authUid: uid || worker.authUid, lastSeen: now };
+      set(s => ({
+        currentUser: updated,
+        isAuthenticated: true,
+        workers: s.workers.map(w => (w.id === worker.id ? updated : w)),
+      }));
+      return updated;
+    }
+
+    const company = get().companies.find(matches);
+    if (company) {
+      const updated = { ...company, authUid: uid || company.authUid, lastSeen: now };
+      set(s => ({
+        currentUser: updated,
+        isAuthenticated: true,
+        companies: s.companies.map(c => (c.id === company.id ? updated : c)),
+      }));
+      return updated;
+    }
+
+    return null;
+  },
+
   registerWorker: (data) => {
     const newWorker = {
       id: 'w_' + Date.now(),
@@ -126,6 +165,95 @@ const useStore = create(
     authSignOut().catch(() => {});
   },
   // Note: favorites are not cleared on logout — they persist per-user
+
+  /**
+   * Permanently delete the current account and everything attached to it.
+   *
+   * Required by App Store Review Guideline 5.1.1(v). Deletes the Firebase
+   * Auth user first; if that fails we abort so the user is never left with
+   * local data wiped but a live credential still able to sign in.
+   *
+   * Returns { success } or { requiresRecentLogin } / { message }.
+   */
+  deleteAccount: async () => {
+    const user = get().currentUser;
+    if (!user) return { success: false, message: 'Вы не авторизованы' };
+
+    const result = await authDeleteAccount();
+    if (!result.success) return result;
+
+    const uid = user.id;
+    const isWorker = user.role === 'worker';
+
+    // Shifts published by this employer, needed to cascade applications.
+    const ownShiftIds = isWorker
+      ? []
+      : get().shifts.filter(s => s.companyId === uid).map(s => s.id);
+
+    set(state => ({
+      currentUser: null,
+      isAuthenticated: false,
+      workers: isWorker ? state.workers.filter(w => w.id !== uid) : state.workers,
+      companies: isWorker ? state.companies : state.companies.filter(c => c.id !== uid),
+      shifts: isWorker ? state.shifts : state.shifts.filter(s => s.companyId !== uid),
+      applications: state.applications.filter(
+        a => a.workerId !== uid && !ownShiftIds.includes(a.shiftId)
+      ),
+      // Drop reviews written by the user and reviews about the user.
+      reviews: state.reviews.filter(r => r.authorId !== uid && r.targetId !== uid),
+      conversations: state.conversations.filter(
+        c => c.workerId !== uid && c.companyId !== uid
+      ),
+      notifications: state.notifications.filter(n => n.userId !== uid),
+      favorites: state.favorites.filter(id => id !== uid),
+      savedShifts: [],
+      blockedUsers: [],
+    }));
+
+    return { success: true };
+  },
+
+  // ===== SAFETY: BLOCKING & REPORTING (App Store Guideline 1.2) =====
+  // Chat messages, reviews and profiles are user-generated content, so the
+  // app must let people block abusive users and report objectionable
+  // content. Blocked users' content is filtered out of the current user's
+  // feed, chat list and directory.
+  blockedUsers: [],
+  reports: [],
+
+  isBlocked: (userId) => get().blockedUsers.includes(userId),
+
+  blockUser: (userId) => {
+    if (!userId || userId === get().currentUser?.id) return;
+    set(state => (
+      state.blockedUsers.includes(userId)
+        ? {}
+        : { blockedUsers: [...state.blockedUsers, userId] }
+    ));
+  },
+
+  unblockUser: (userId) => {
+    set(state => ({ blockedUsers: state.blockedUsers.filter(id => id !== userId) }));
+  },
+
+  /**
+   * Record a report of objectionable content or behaviour.
+   * `targetType` is one of 'user' | 'shift' | 'message' | 'review'.
+   */
+  reportContent: ({ targetType, targetId, reason, details = '' }) => {
+    const reporterId = get().currentUser?.id || null;
+    const report = {
+      id: 'r_' + Date.now(),
+      reporterId,
+      targetType,
+      targetId,
+      reason,
+      details,
+      createdAt: new Date().toISOString(),
+    };
+    set(state => ({ reports: [...state.reports, report] }));
+    return report;
+  },
 
   updateProfile: (updates) => {
     const user = get().currentUser;
@@ -824,6 +952,10 @@ const useStore = create(
         isAuthenticated: state.isAuthenticated,
         favorites: state.favorites,
         savedShifts: state.savedShifts,
+        // Safety state must survive restarts — a blocked user staying
+        // blocked is a Guideline 1.2 requirement, not a preference.
+        blockedUsers: state.blockedUsers,
+        reports: state.reports,
         // Persist registered users + content created in-app so they
         // survive logout / app restart. Without this, registering a
         // worker or employer would set currentUser but the workers/

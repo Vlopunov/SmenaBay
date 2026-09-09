@@ -26,6 +26,7 @@ export default function FeedScreen({ navigation }) {
   const currentUser = useStore(s => s.currentUser);
   const shifts = useStore(s => s.shifts);
   const companies = useStore(s => s.companies);
+  const blockedUsers = useStore(s => s.blockedUsers);
 
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -35,7 +36,10 @@ export default function FeedScreen({ navigation }) {
   const getCompany = useCallback((id) => companies.find(c => c.id === id), [companies]);
 
   const filteredShifts = useMemo(() => {
-    let result = shifts.filter(s => s.status === 'active');
+    // Blocked employers disappear from the feed entirely (Guideline 1.2).
+    let result = shifts.filter(
+      s => s.status === 'active' && !blockedUsers.includes(s.companyId)
+    );
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(s => {
@@ -63,7 +67,7 @@ export default function FeedScreen({ navigation }) {
       if (!a.urgent && b.urgent) return 1;
       return new Date(a.date) - new Date(b.date);
     });
-  }, [shifts, search, categoryFilter, getCompany]);
+  }, [shifts, search, categoryFilter, getCompany, blockedUsers]);
 
   const onRefresh = () => {
     setRefreshing(true);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  StatusBar, Switch, Alert,
+  StatusBar, Switch, Alert, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,10 +83,20 @@ export default function CreateShiftScreen({ navigation, route }) {
       return;
     }
     if (result.error === 'limit') {
-      Alert.alert('Лимит исчерпан', 'Лимит бесплатного тарифа исчерпан. Обновите тариф для публикации новых смен.', [
-        { text: 'Тарифы', onPress: () => navigation.navigate('Plans') },
-        { text: 'OK' },
-      ]);
+      // No upsell into a purchase flow on iOS (Guideline 3.1.1) — just
+      // state the limit.
+      Alert.alert(
+        'Лимит исчерпан',
+        Platform.OS === 'ios'
+          ? 'Лимит текущего тарифа на этот месяц исчерпан. Он обновится в начале следующего месяца.'
+          : 'Лимит бесплатного тарифа исчерпан. Обновите тариф для публикации новых смен.',
+        Platform.OS === 'ios'
+          ? [{ text: 'OK' }]
+          : [
+              { text: 'Тарифы', onPress: () => navigation.navigate('Plans') },
+              { text: 'OK' },
+            ]
+      );
       return;
     }
     navigation.goBack();

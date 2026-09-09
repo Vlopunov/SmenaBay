@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
+import Avatar from '../../components/Avatar';
 
 export default function DashboardScreen({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -145,9 +146,11 @@ export default function DashboardScreen({ navigation }) {
                     style={styles.topWorkerCard}
                     onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
                   >
-                    <Image
-                      source={{ uri: worker.avatar || 'https://i.pravatar.cc/200?img=0' }}
-                      style={styles.topWorkerAvatar}
+                    <Avatar
+                      uri={worker.avatar}
+                      name={worker.firstName}
+                      name2={worker.lastName}
+                      size={48}
                     />
                     <Text style={styles.topWorkerName} numberOfLines={1}>{worker.firstName}</Text>
                     <Text style={styles.topWorkerCount}>{count} смен</Text>

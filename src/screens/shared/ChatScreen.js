@@ -12,6 +12,7 @@ import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
 import useStore from '../../store/useStore';
 import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
 import Avatar from '../../components/Avatar';
+import ReportMenu from '../../components/ReportMenu';
 
 const WORKER_QUICK = [
   { text: 'Буду вовремя', icon: 'checkmark-circle-outline' },
@@ -63,6 +64,7 @@ export default function ChatScreen({ route, navigation }) {
 
   if (!conv) return null;
 
+  const partnerId = isWorker ? conv?.companyId : conv?.workerId;
   const partnerName = isWorker
     ? partner?.companyName
     : `${partner?.firstName || ''} ${partner?.lastName || ''}`;
@@ -200,6 +202,12 @@ export default function ChatScreen({ route, navigation }) {
         <TouchableOpacity style={styles.infoBtn} onPress={() => setShowShiftCard(!showShiftCard)}>
           <Ionicons name={showShiftCard ? 'chevron-up' : 'chevron-down'} size={20} color={COLORS.textTertiary} />
         </TouchableOpacity>
+        <ReportMenu
+          targetType="user"
+          targetId={partnerId}
+          targetName={partnerName}
+          style={styles.infoBtn}
+        />
       </View>
 
       {/* Shift card */}

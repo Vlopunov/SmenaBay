@@ -54,7 +54,15 @@ export default function RegisterEmployerScreen({ navigation, route }) {
     if (!validate()) return;
 
     if (authMethod !== 'phone') {
-      registerEmployer({ ...form, phoneVerified: false, authMethod });
+      // Persist the Firebase uid + email so a later Google/Apple sign-in
+      // can find this profile again instead of creating a duplicate.
+      registerEmployer({
+        ...form,
+        phoneVerified: false,
+        authMethod,
+        authUid: socialData.uid || null,
+        email: socialData.email || null,
+      });
       return;
     }
 

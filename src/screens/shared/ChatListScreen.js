@@ -16,12 +16,15 @@ export default function ChatListScreen({ navigation }) {
   const workers = useStore(s => s.workers);
   const companies = useStore(s => s.companies);
   const shifts = useStore(s => s.shifts);
+  const blockedUsers = useStore(s => s.blockedUsers);
 
   const isWorker = currentUser?.role === 'worker';
 
   const chats = useMemo(() => {
     return conversations
       .filter(c => c.workerId === currentUser?.id || c.companyId === currentUser?.id)
+      // Conversations with blocked users are hidden (Guideline 1.2).
+      .filter(c => !blockedUsers.includes(isWorker ? c.companyId : c.workerId))
       .map(c => {
         const shift = shifts.find(s => s.id === c.shiftId);
         const partner = isWorker
@@ -32,7 +35,7 @@ export default function ChatListScreen({ navigation }) {
         return { ...c, shift, partner, lastMsg, unread };
       })
       .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
-  }, [conversations, currentUser, shifts, workers, companies, isWorker]);
+  }, [conversations, currentUser, shifts, workers, companies, isWorker, blockedUsers]);
 
   const formatTime = (isoStr) => {
     if (!isoStr) return '';

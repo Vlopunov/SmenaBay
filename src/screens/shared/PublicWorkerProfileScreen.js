@@ -9,6 +9,7 @@ import { BADGE_INFO } from '../../data/mockData';
 import useStore from '../../store/useStore';
 import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
 import Avatar from '../../components/Avatar';
+import ReportMenu from '../../components/ReportMenu';
 
 export default function PublicWorkerProfileScreen({ route, navigation }) {
   const { workerId } = route.params;
@@ -35,12 +36,19 @@ export default function PublicWorkerProfileScreen({ route, navigation }) {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.navTitle}>Профиль</Text>
-        {isEmployer && (
-          <TouchableOpacity style={styles.favBtn} onPress={() => toggleFavorite(workerId)}>
-            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? COLORS.error : COLORS.textPrimary} />
-          </TouchableOpacity>
-        )}
-        {!isEmployer && <View style={{ width: 44 }} />}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {isEmployer && (
+            <TouchableOpacity style={styles.favBtn} onPress={() => toggleFavorite(workerId)}>
+              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? COLORS.error : COLORS.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <ReportMenu
+            targetType="user"
+            targetId={workerId}
+            targetName={`${worker.firstName} ${worker.lastName}`}
+            style={styles.favBtn}
+          />
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>

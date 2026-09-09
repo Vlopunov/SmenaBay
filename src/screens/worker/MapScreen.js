@@ -35,6 +35,7 @@ export default function MapScreen({ navigation }) {
   const currentUser = useStore(s => s.currentUser);
   const shifts = useStore(s => s.shifts);
   const companies = useStore(s => s.companies);
+  const blockedUsers = useStore(s => s.blockedUsers);
   const webViewRef = useRef(null);
 
   const [category, setCategory] = useState('all');
@@ -65,7 +66,8 @@ export default function MapScreen({ navigation }) {
 
   const activeShifts = useMemo(() => {
     let result = shifts
-      .filter(s => s.status === 'active')
+      // Blocked employers' pins are hidden (Guideline 1.2).
+      .filter(s => s.status === 'active' && !blockedUsers.includes(s.companyId))
       .map(s => {
         const company = companies.find(c => c.id === s.companyId);
         const loc = company?.locations?.find(l => l.id === s.locationId);
@@ -89,7 +91,7 @@ export default function MapScreen({ navigation }) {
     if (extraFilters.includes('highpay')) result = result.filter(s => s.pay >= 70);
 
     return result;
-  }, [shifts, companies, currentUser, category, extraFilters, matchesCategory, today, tomorrow]);
+  }, [shifts, companies, currentUser, category, extraFilters, matchesCategory, today, tomorrow, blockedUsers]);
 
   const markersJson = JSON.stringify(activeShifts.map(s => ({
     id: s.id,

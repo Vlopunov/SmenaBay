@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,6 +53,14 @@ const PLANS = [
   },
 ];
 
+// On iOS the paid tiers are shown for information only — no price, no
+// purchase control. Selling a digital subscription inside the app would
+// require In-App Purchase (Guideline 3.1.1), and the previous behaviour
+// (tap "Выбрать" → plan upgraded for free) was a non-functional payment
+// flow that also breaches Guideline 2.1. Employer billing is handled off
+// the app; Android keeps the existing selector.
+const PURCHASABLE_IN_APP = Platform.OS !== 'ios';
+
 export default function PlansScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const currentUser = useStore(s => s.currentUser);
@@ -73,7 +81,7 @@ export default function PlansScreen({ navigation }) {
         >
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Тарифы и подписка</Text>
+        <Text style={styles.headerTitle}>{PURCHASABLE_IN_APP ? 'Тарифы и подписка' : 'Ваш тариф'}</Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -82,7 +90,9 @@ export default function PlansScreen({ navigation }) {
         contentContainerStyle={styles.scroll}
       >
         <Text style={styles.subtitle}>
-          Выберите подходящий тариф для вашего бизнеса
+          {PURCHASABLE_IN_APP
+            ? 'Выберите подходящий тариф для вашего бизнеса'
+            : 'Ваш текущий тариф и его возможности. По вопросам подключения расширенных тарифов напишите нам: support@smenabel.by'}
         </Text>
 
         {PLANS.map((plan) => {
@@ -123,7 +133,7 @@ export default function PlansScreen({ navigation }) {
                 </View>
                 <View style={styles.cardHeaderText}>
                   <Text style={styles.planName}>{plan.name}</Text>
-                  <Text style={styles.planPrice}>{plan.priceLabel}</Text>
+                  {PURCHASABLE_IN_APP && <Text style={styles.planPrice}>{plan.priceLabel}</Text>}
                 </View>
               </View>
 
@@ -146,7 +156,7 @@ export default function PlansScreen({ navigation }) {
                 <View style={styles.currentBtn}>
                   <Text style={styles.currentBtnText}>Текущий тариф</Text>
                 </View>
-              ) : (
+              ) : PURCHASABLE_IN_APP ? (
                 <TouchableOpacity
                   style={styles.selectBtn}
                   onPress={() => changePlan(plan.id)}
@@ -154,7 +164,7 @@ export default function PlansScreen({ navigation }) {
                 >
                   <Text style={styles.selectBtnText}>Выбрать</Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
           );
         })}

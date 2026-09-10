@@ -1,152 +1,84 @@
+// Help: short answers, real contacts, and the legal documents a reviewer
+// must be able to reach from inside the app.
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, Press, SectionHeader, Separator, SettingRow } from '../../design/ui';
+import { useTheme } from '../../design/theme';
 import { LINKS, openLink } from '../../constants/links';
+import useStore from '../../store/useStore';
 
-const FAQ_DATA = [
-  {
-    category: 'Для исполнителей',
-    items: [
-      { q: 'Как откликнуться на смену?', a: 'Найдите смену в ленте или на карте, откройте детали и нажмите «Откликнуться». Заказчик получит уведомление и примет решение.' },
-      { q: 'Когда я получу подтверждение?', a: 'Обычно заказчики отвечают в течение нескольких часов. Вы получите уведомление и сможете связаться в чате.' },
-      { q: 'Что делать, если я опаздываю?', a: 'Напишите заказчику в чат как можно раньше. Используйте быстрый ответ «Опаздываю» — заказчик сразу увидит.' },
-      { q: 'Как работает рейтинг?', a: 'После каждой завершённой смены заказчик может оставить отзыв. Ваш рейтинг — среднее всех оценок. Высокий рейтинг повышает шансы на одобрение.' },
-      { q: 'Нужна ли медицинская книжка?', a: 'Зависит от смены. В описании указано, требуется ли медкнижка. Используйте фильтр «Без медкнижки» чтобы видеть только подходящие смены.' },
-      { q: 'Могу ли я отменить отклик?', a: 'Да, пока отклик в статусе «Ожидает» — вы можете отменить его в разделе «Мои смены».' },
-    ],
-  },
-  {
-    category: 'Для заказчиков',
-    items: [
-      { q: 'Как создать смену?', a: 'Нажмите «Создать» в нижнем меню. Заполните название, описание, оплату, время и локацию. Можно выбрать несколько дат сразу.' },
-      { q: 'Сколько стоит размещение?', a: 'Бесплатный тариф — до 3 смен в месяц. Тариф Бизнес — до 30 смен. Премиум — без ограничений. Подробнее в Профиль → Тарифы.' },
-      { q: 'Как одобрить исполнителя?', a: 'Откройте смену → вкладка «Новые» → посмотрите профиль и рейтинг → нажмите «Подтвердить». Исполнитель получит уведомление и чат откроется автоматически.' },
-      { q: 'Могу ли я отменить смену?', a: 'Да, в управлении сменой нажмите «Отменить». Все подтверждённые исполнители получат уведомление.' },
-    ],
-  },
-  {
-    category: 'Общие вопросы',
-    items: [
-      { q: 'Как пройти верификацию?', a: 'При попытке откликнуться или создать смену появится окно верификации. Введите номер телефона, получите SMS-код и подтвердите.' },
-      { q: 'Безопасны ли мои данные?', a: 'Да. Номер телефона показывается только если вы разрешили это в настройках. Общение происходит через встроенный чат.' },
-      { q: 'Как связаться с поддержкой?', a: 'Напишите нам в Telegram: @smenabel или на email: support@smenabel.by' },
-    ],
-  },
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const WORKER = [
+  { q: 'Как откликнуться на смену?', a: 'Открой смену и нажми «Откликнуться». Если ты ещё не входил, приложение спросит номер и пришлёт код — это одна минута. Заказчик увидит отклик сразу.' },
+  { q: 'Когда придёт ответ?', a: 'Как только заказчик подтвердит или отклонит отклик, ответ появится в уведомлениях, а подтверждённая смена — в «Моих сменах» с обратным отсчётом.' },
+  { q: 'Можно ли отменить?', a: 'Отклик можно отозвать в меню «···» на экране смены. Подтверждённую смену тоже можно отменить — денежного штрафа нет, но отмена будет видна заказчикам в твоём профиле.' },
+  { q: 'Нужна ли медкнижка?', a: 'Зависит от смены — это написано в требованиях. В фильтрах есть «Без медкнижки», чтобы видеть только подходящие смены.' },
+  { q: 'Как считается рейтинг?', a: 'После каждой смены заказчик ставит оценку. Рейтинг — среднее всех оценок, его видно в каждом отклике.' },
 ];
 
-export default function FAQScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
-  const [expanded, setExpanded] = useState({});
+const EMPLOYER = [
+  { q: 'Как создать смену?', a: 'На «Сводке» нажми круглую кнопку «+» вверху. Форма начинается с оплаты — от неё больше всего зависит, закроется ли смена.' },
+  { q: 'Как выбрать исполнителя?', a: 'Открой смену → «Отклики». У каждого видно рейтинг, число смен и отмен. Подтверди — исполнитель получит уведомление, и откроется чат.' },
+  { q: 'Можно ли отменить смену?', a: 'Да, в меню «···» на экране смены. Все, кто откликнулся, получат уведомление. Частые отмены видны исполнителям в профиле точки.' },
+  { q: 'Сколько смен можно публиковать?', a: 'Лимит зависит от тарифа — он указан в «Профиль → Тариф» и обновляется первого числа каждого месяца.' },
+];
 
-  const toggle = (key) => {
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
+function Item({ q, a, last }) {
+  const [open, setOpen] = useState(false);
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Помощь</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {FAQ_DATA.map((section, si) => (
-          <View key={si} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.category}</Text>
-            {section.items.map((item, qi) => {
-              const key = `${si}_${qi}`;
-              const isOpen = expanded[key];
-              return (
-                <TouchableOpacity
-                  key={key}
-                  style={styles.faqItem}
-                  onPress={() => toggle(key)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.questionRow}>
-                    <Text style={styles.question}>{item.q}</Text>
-                    <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textTertiary} />
-                  </View>
-                  {isOpen && (
-                    <Text style={styles.answer}>{item.a}</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-
-        <View style={styles.contactCard}>
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color={COLORS.accent} />
-          <Text style={styles.contactTitle}>Не нашли ответ?</Text>
-          <TouchableOpacity onPress={() => openLink('https://t.me/smenabel')} accessibilityRole="link">
-            <Text style={[styles.contactText, styles.contactLink]}>Telegram: @smenabel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => openLink(LINKS.supportEmail)} accessibilityRole="link">
-            <Text style={[styles.contactText, styles.contactLink]}>Email: support@smenabel.by</Text>
-          </TouchableOpacity>
+    <View>
+      <Press
+        feedback="highlight"
+        onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity')); setOpen(!open); }}
+        accessibilityState={{ expanded: open }}
+        style={{ paddingHorizontal: 22, paddingVertical: 14 }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <T v="value" style={{ flex: 1, fontSize: 16, lineHeight: 21 }}>{q}</T>
+          <Icon name={open ? 'chevron.down' : 'chevron.right'} size={13} c="tertiary" weight="semibold" />
         </View>
-
-        {/* Legal — a reviewer must be able to reach these from inside the app */}
-        <View style={styles.legalCard}>
-          <TouchableOpacity onPress={() => openLink(LINKS.terms)} style={styles.legalRow} accessibilityRole="link">
-            <Ionicons name="document-text-outline" size={18} color={COLORS.textSecondary} />
-            <Text style={styles.legalLabel}>Условия использования</Text>
-            <Ionicons name="open-outline" size={16} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => openLink(LINKS.privacy)} style={styles.legalRow} accessibilityRole="link">
-            <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.textSecondary} />
-            <Text style={styles.legalLabel}>Политика конфиденциальности</Text>
-            <Ionicons name="open-outline" size={16} color={COLORS.textTertiary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: SIZES['3xl'] }} />
-      </ScrollView>
+        {open ? <T v="body" c="secondary" style={{ marginTop: 8 }}>{a}</T> : null}
+      </Press>
+      {!last ? <Separator inset /> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  contactLink: { textDecorationLine: 'underline' },
-  legalCard: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg,
-    marginTop: SIZES.base, overflow: 'hidden', ...SHADOWS.sm,
-  },
-  legalRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SIZES.md,
-    paddingVertical: SIZES.md, paddingHorizontal: SIZES.base,
-  },
-  legalLabel: { flex: 1, fontSize: SIZES.body, color: COLORS.textPrimary, ...FONTS.regular },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  scroll: { paddingHorizontal: SIZES.lg },
+export default function FAQScreen({ navigation }) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const role = useStore((s) => s.currentUser?.role);
+  const first = role === 'employer' ? EMPLOYER : WORKER;
+  const second = role === 'employer' ? WORKER : EMPLOYER;
 
-  section: { marginBottom: SIZES.xl },
-  sectionTitle: { fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: SIZES.sm, marginTop: SIZES.md },
+  return (
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar variant="fill" onBack={() => navigation.goBack()} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14 }}>
+          <T v="title" accessibilityRole="header">Помощь</T>
+          <T v="caption" c="secondary" style={{ marginTop: 2 }}>Не нашёл ответ — напиши нам, контакты внизу</T>
+        </View>
+        <SectionHeader title={role === 'employer' ? 'Для заказчиков' : 'Для исполнителей'} />
+        {first.map((x, i) => <Item key={x.q} {...x} last={i === first.length - 1} />)}
+        <SectionHeader title={role === 'employer' ? 'Для исполнителей' : 'Для заказчиков'} />
+        {second.map((x, i) => <Item key={x.q} {...x} last={i === second.length - 1} />)}
 
-  faqItem: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    padding: SIZES.base, marginBottom: SIZES.sm, ...SHADOWS.sm,
-  },
-  questionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  question: { fontSize: SIZES.body, ...FONTS.semibold, color: COLORS.textPrimary, flex: 1, marginRight: SIZES.sm },
-  answer: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.md, lineHeight: 22 },
+        <SectionHeader title="Связаться" />
+        <SettingRow icon="paperplane" title="Telegram" sub="@smenabel" onPress={() => openLink('https://t.me/smenabel')} right={<Icon name="arrow.up.right" size={13} c="tertiary" />} />
+        <SettingRow icon="envelope" title="Почта" sub="support@smenabel.by" onPress={() => openLink(LINKS.supportEmail)} right={<Icon name="arrow.up.right" size={13} c="tertiary" />} last />
 
-  contactCard: {
-    backgroundColor: COLORS.accentSoft, borderRadius: SIZES.radiusLg,
-    padding: SIZES.xl, alignItems: 'center', marginTop: SIZES.md,
-  },
-  contactTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.sm },
-  contactText: { fontSize: SIZES.body, color: COLORS.accent, marginTop: SIZES.xs },
-});
+        <SectionHeader title="Документы" />
+        <SettingRow icon="doc.text" title="Условия использования" onPress={() => openLink(LINKS.terms)} right={<Icon name="arrow.up.right" size={13} c="tertiary" />} />
+        <SettingRow icon="lock.shield" title="Политика конфиденциальности" onPress={() => openLink(LINKS.privacy)} right={<Icon name="arrow.up.right" size={13} c="tertiary" />} last />
+        <Separator />
+      </ScrollView>
+    </View>
+  );
+}

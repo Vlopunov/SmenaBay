@@ -1,237 +1,120 @@
+// Personal data — the same ledger lines employers see in an application.
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  StatusBar, Alert, Switch,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, ScrollView, Switch, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import T from '../../design/Text';
+import FormRow from '../../design/FormRow';
+import { NavBar, Press, SectionHeader, LedgerRow, Chip, PersonAvatar, Separator } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { showActions } from '../../design/ActionSheet';
+import { prettyPhone } from '../../design/PhoneField';
 import { CITIES, WORKER_CATEGORIES } from '../../data/mockData';
 import useStore from '../../store/useStore';
 
 export default function WorkerSettingsScreen({ navigation }) {
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const updateProfile = useStore(s => s.updateProfile);
-
+  const me = useStore((s) => s.currentUser);
+  const updateProfile = useStore((s) => s.updateProfile);
   const [form, setForm] = useState({
-    firstName: currentUser?.firstName || '',
-    lastName: currentUser?.lastName || '',
-    city: currentUser?.city || '',
-    categories: currentUser?.categories || [],
-    avatar: currentUser?.avatar || '',
-    phoneVisible: currentUser?.phoneVisible !== false,
+    firstName: me?.firstName || '',
+    lastName: me?.lastName || '',
+    city: me?.city || 'Минск',
+    categories: me?.categories || [],
+    phoneVisible: me?.phoneVisible !== false,
+    avatar: me?.avatar || null,
+  });
+  const [error, setError] = useState('');
+  if (!me) return null;
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const toggleCat = (cat) => {
+    haptic.selection();
+    set('categories', form.categories.includes(cat) ? form.categories.filter((x) => x !== cat) : [...form.categories, cat]);
+  };
+
+  const save = () => {
+    if (!form.firstName.trim()) { setError('Без имени заказчик не поймёт, кто откликнулся'); haptic.error(); return; }
+    updateProfile({ ...form, firstName: form.firstName.trim(), lastName: form.lastName.trim() });
+    haptic.success();
+    navigation.goBack();
+  };
+
+  const pickPhoto = () => showActions({
+    title: 'Фото профиля',
+    options: [
+      { label: 'Снять фото', onPress: () => pick('camera') },
+      { label: 'Выбрать из галереи', onPress: () => pick('library') },
+      form.avatar ? { label: 'Убрать фото', destructive: true, onPress: () => set('avatar', null) } : null,
+    ].filter(Boolean),
   });
 
-  const [showCities, setShowCities] = useState(false);
-
-  const toggleCategory = (cat) => {
-    setForm(f => ({
-      ...f,
-      categories: f.categories.includes(cat)
-        ? f.categories.filter(c => c !== cat)
-        : [...f.categories, cat],
-    }));
+  const pick = async (source) => {
+    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert('Нет доступа', 'Разреши доступ в Настройках, чтобы поставить фото.'); return; }
+    const r = source === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [1, 1] })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+    if (r.canceled || !r.assets?.[0]) return;
+    const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG });
+    set('avatar', m.uri);
   };
-
-  const handleSave = () => {
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      Alert.alert('Ошибка', 'Имя и фамилия обязательны');
-      return;
-    }
-    if (!form.city) {
-      Alert.alert('Ошибка', 'Выберите город');
-      return;
-    }
-    if (form.categories.length === 0) {
-      Alert.alert('Ошибка', 'Выберите минимум 1 категорию');
-      return;
-    }
-    updateProfile(form);
-    Alert.alert('Готово', 'Данные успешно сохранены');
-  };
-
-  if (!currentUser) return null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar
+        variant="fill"
+        onBack={() => navigation.goBack()}
+        center={<T v="rowTitle">Личные данные</T>}
+        right={<Press feedback="none" onPress={save} hitSlop={10}><T v="bodyStrong" c="accent" style={{ fontSize: 17 }}>Готово</T></Press>}
+      />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
+          <Press feedback="highlight" onPress={pickPhoto} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 16 }} accessibilityLabel="Изменить фото профиля">
+            <PersonAvatar first={form.firstName} last={form.lastName} uri={form.avatar} size={56} />
+            <View style={{ flex: 1 }}>
+              <T v="value">Фото профиля</T>
+              <T v="caption" c="secondary">Фото увидят заказчики в твоём отклике</T>
+            </View>
+            <T v="body" c="accent">{form.avatar ? 'Изменить' : 'Добавить'}</T>
+          </Press>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Личные данные</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* First name */}
-        <Text style={styles.label}>Имя</Text>
-        <TextInput
-          style={styles.input}
-          value={form.firstName}
-          onChangeText={v => setForm(f => ({ ...f, firstName: v }))}
-          placeholder="Ваше имя"
-          placeholderTextColor={COLORS.textTertiary}
-        />
-
-        {/* Last name */}
-        <Text style={styles.label}>Фамилия</Text>
-        <TextInput
-          style={styles.input}
-          value={form.lastName}
-          onChangeText={v => setForm(f => ({ ...f, lastName: v }))}
-          placeholder="Ваша фамилия"
-          placeholderTextColor={COLORS.textTertiary}
-        />
-
-        {/* Phone (read-only) */}
-        <Text style={styles.label}>Телефон</Text>
-        <View style={[styles.input, styles.inputDisabled]}>
-          <Text style={styles.inputDisabledText}>{currentUser.phone}</Text>
-        </View>
-
-        {/* Phone visibility toggle */}
-        <View style={styles.toggleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.toggleLabel}>Показывать номер телефона</Text>
-            <Text style={styles.toggleHint}>Заказчики смогут видеть ваш номер и звонить напрямую</Text>
+          <SectionHeader title="Как тебя видят заказчики" />
+          <FormRow label="Имя" value={form.firstName} onChangeText={(v) => { set('firstName', v); setError(''); }} autoCapitalize="words" textContentType="givenName" error={error} />
+          <FormRow label="Фамилия" value={form.lastName} onChangeText={(v) => set('lastName', v)} autoCapitalize="words" textContentType="familyName" />
+          <LedgerRow label="Телефон" value={me.phone ? prettyPhone(me.phone) : 'Не указан'} sub="Меняется только через поддержку" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 14 }}>
+            <View style={{ flex: 1 }}>
+              <T v="value" style={{ fontSize: 16, lineHeight: 21 }}>Показывать номер</T>
+              <T v="caption" c="secondary">Заказчики смогут позвонить из твоего профиля</T>
+            </View>
+            <Switch
+              value={form.phoneVisible}
+              onValueChange={(v) => { haptic.selection(); set('phoneVisible', v); }}
+              trackColor={{ true: c.accent, false: c.fillSecondary }}
+              ios_backgroundColor={c.fillSecondary}
+              accessibilityLabel="Показывать номер заказчикам"
+            />
           </View>
-          <Switch
-            value={form.phoneVisible}
-            onValueChange={v => setForm(f => ({ ...f, phoneVisible: v }))}
-            trackColor={{ false: COLORS.border, true: COLORS.accent + '60' }}
-            thumbColor={form.phoneVisible ? COLORS.accent : '#f4f3f4'}
-          />
-        </View>
 
-        {/* City */}
-        <Text style={styles.label}>Город</Text>
-        <TouchableOpacity
-          style={[styles.input, styles.selectInput]}
-          onPress={() => setShowCities(!showCities)}
-        >
-          <Text style={form.city ? styles.selectText : styles.selectPlaceholder}>
-            {form.city || 'Выберите город'}
-          </Text>
-          <Ionicons
-            name={showCities ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={COLORS.textTertiary}
-          />
-        </TouchableOpacity>
-
-        {showCities && (
-          <View style={styles.dropdown}>
-            {CITIES.map(city => (
-              <TouchableOpacity
-                key={city}
-                style={[styles.dropdownItem, form.city === city && styles.dropdownItemActive]}
-                onPress={() => { setForm(f => ({ ...f, city })); setShowCities(false); }}
-              >
-                <Text style={[styles.dropdownText, form.city === city && styles.dropdownTextActive]}>
-                  {city}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <SectionHeader title="Город" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
+            {CITIES.map((city) => <Chip key={city} label={city} selected={form.city === city} onPress={() => { haptic.selection(); set('city', city); }} />)}
           </View>
-        )}
 
-        {/* Categories */}
-        <Text style={styles.label}>Категории</Text>
-        <View style={styles.chips}>
-          {WORKER_CATEGORIES.map(cat => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.chip, form.categories.includes(cat) && styles.chipActive]}
-              onPress={() => toggleCategory(cat)}
-            >
-              <Text style={[styles.chipText, form.categories.includes(cat) && styles.chipTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Save */}
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.7}>
-          <Text style={styles.saveBtnText}>Сохранить</Text>
-        </TouchableOpacity>
-
-        <View style={{ height: SIZES['3xl'] }} />
-      </ScrollView>
+          <SectionHeader title="Что умеешь" right={form.categories.length ? `выбрано ${form.categories.length}` : undefined} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
+            {WORKER_CATEGORIES.map((cat) => <Chip key={cat} label={cat} selected={form.categories.includes(cat)} onPress={() => toggleCat(cat)} />)}
+          </View>
+          <Separator />
+          <T v="small" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 12 }}>
+            Категории видят заказчики в каталоге исполнителей — по ним тебя зовут на смены.
+          </T>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm,
-  },
-  backBtn: {
-    width: 44, height: 44, justifyContent: 'center', alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary,
-  },
-  scroll: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES['3xl'] },
-  label: {
-    fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary,
-    marginTop: SIZES.base, marginBottom: SIZES.sm,
-  },
-  input: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    paddingHorizontal: SIZES.base, height: SIZES.inputHeight,
-    fontSize: SIZES.body, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, ...FONTS.regular,
-  },
-  inputDisabled: {
-    backgroundColor: COLORS.surface, justifyContent: 'center',
-  },
-  toggleRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: SIZES.md, marginBottom: SIZES.md,
-    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
-  },
-  toggleLabel: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  toggleHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: 2 },
-  inputDisabledText: {
-    fontSize: SIZES.body, color: COLORS.textSecondary, ...FONTS.regular,
-  },
-  selectInput: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  selectText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  selectPlaceholder: { fontSize: SIZES.body, color: COLORS.textTertiary },
-  dropdown: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    marginTop: SIZES.xs, ...SHADOWS.md, overflow: 'hidden',
-  },
-  dropdownItem: { paddingHorizontal: SIZES.base, paddingVertical: SIZES.md },
-  dropdownItemActive: { backgroundColor: COLORS.accentSoft },
-  dropdownText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  dropdownTextActive: { color: COLORS.accent, ...FONTS.medium },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm },
-  chip: {
-    paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm,
-    borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  chipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  chipText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  chipTextActive: { color: COLORS.white },
-  saveBtn: {
-    backgroundColor: COLORS.accent, borderRadius: SIZES.radiusMd,
-    height: SIZES.buttonHeight, justifyContent: 'center', alignItems: 'center',
-    marginTop: SIZES.xl,
-  },
-  saveBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.white },
-});

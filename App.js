@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Linking, Platform, Settings } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, getStateFromPath as parsePath } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -66,6 +66,14 @@ const linking = {
       RegisterEmployer: 'employer',
     },
   },
+  // «rate/<shift>» without a worker is the worker rating the company. An
+  // employer rates a person, so for them it opens the shift to pick whom.
+  getStateFromPath(path, options) {
+    const rate = path.match(/^\/?rate\/([^/?#]+)(\?.*)?$/);
+    const employer = useStore.getState().currentUser?.role === 'employer';
+    if (rate && employer && !/[?&]workerId=/.test(rate[2] || '')) return parsePath(`manage/${rate[1]}`, options);
+    return parsePath(path, options);
+  },
 };
 
 // Development only: launch arguments open a screen as a given user, so every
@@ -80,6 +88,14 @@ if (__DEV__) {
 }
 
 function DevUser() {
+  // -devPush <route> opens a second screen over the first, the way a tap
+  // would (a modal presented over the tabs, not as the launch screen).
+  useEffect(() => {
+    const push = devArg('devPush');
+    if (!push) return;
+    const t = setTimeout(() => Linking.openURL(`com.smenabay.app://${push}`), 2500);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     const who = devArg('devUser');
     const approve = devArg('devApprove');

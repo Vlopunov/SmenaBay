@@ -1,184 +1,116 @@
-import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Employer profile (handoff screen 16). The company's cancellations are
+// shown as plainly as a worker's in their profile: symmetric rules matter
+// more than one side's comfort.
+import React, { useMemo } from 'react';
+import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { StatRow, FillBanner, SectionHeader, SettingRow, Separator, Monogram } from '../../design/ui';
+import { useNow } from '../../design/PassCard';
+import { useTheme } from '../../design/theme';
+import { useTabBarSpace } from '../../design/TabBar';
+import { plural, monthName, shiftEnd } from '../../design/format';
+import { LINKS, openLink } from '../../constants/links';
+import DeleteAccountRow from '../../components/DeleteAccountButton';
+import { employerSnapshot, PLAN_NAMES, PLAN_LIMITS } from './employerData';
 import useStore from '../../store/useStore';
-import Avatar from '../../components/Avatar';
-import DeleteAccountButton from '../../components/DeleteAccountButton';
-
-const PLAN_LABELS = { free: 'Старт (бесплатно)', business: 'Бизнес', premium: 'Премиум' };
-
-const MENU = [
-  { icon: 'business-outline', label: 'Данные компании', screen: 'Settings' },
-  { icon: 'location-outline', label: 'Управление локациями', screen: 'Locations' },
-  { icon: 'card-outline', label: 'Тарифы и подписка', screen: 'Plans' },
-  { icon: 'search-outline', label: 'Каталог исполнителей', screen: 'WorkerDirectory' },
-  { icon: 'people-outline', label: 'Избранные исполнители', screen: 'Favorites' },
-  { icon: 'notifications-outline', label: 'Уведомления', screen: 'Notifications' },
-  { icon: 'star-outline', label: 'Отзывы о компании', screen: 'CompanyReviews' },
-  { icon: 'help-circle-outline', label: 'Помощь', screen: 'help' },
-];
 
 export default function EmployerProfileScreen({ navigation }) {
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const logout = useStore(s => s.logout);
-  const updateProfile = useStore(s => s.updateProfile);
+  const tabSpace = useTabBarSpace();
+  const now = useNow(60000);
+  const me = useStore((s) => s.currentUser);
+  const shifts = useStore((s) => s.shifts);
+  const applications = useStore((s) => s.applications);
+  const workers = useStore((s) => s.workers);
+  const favorites = useStore((s) => (s.currentUser ? s.favorites[s.currentUser.id] : null));
+  const unread = useStore((s) => s.getUnreadCount());
+  const logout = useStore((s) => s.logout);
+  const snap = useMemo(() => employerSnapshot({ me, shifts, applications, workers, now }), [me, shifts, applications, workers, now]);
+  if (!me) return null;
 
-  const pickLogo = async () => {
-    Alert.alert('Изменить логотип', '', [
-      {
-        text: 'Камера', onPress: async () => {
-          const perm = await ImagePicker.requestCameraPermissionsAsync();
-          if (!perm.granted) return;
-          const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
-          if (!r.canceled && r.assets?.[0]) {
-            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
-            updateProfile({ logo: m.uri });
-          }
-        },
-      },
-      {
-        text: 'Галерея', onPress: async () => {
-          const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!perm.granted) return;
-          const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
-          if (!r.canceled && r.assets?.[0]) {
-            const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
-            updateProfile({ logo: m.uri });
-          }
-        },
-      },
-      { text: 'Отмена', style: 'cancel' },
-    ]);
-  };
-  const getReviewsFor = useStore(s => s.getReviewsFor);
-  const reviews = getReviewsFor(currentUser?.id);
+  const plan = me.plan || 'free';
+  const limit = PLAN_LIMITS[plan];
+  const locations = me.locations || [];
+  const activeAt = (id) => shifts.filter((s) => s.locationId === id && (s.status === 'active' || s.status === 'filled') && shiftEnd(s) > now).length;
 
-  if (!currentUser) return null;
-  const monthsOnPlatform = Math.max(1, Math.floor((new Date() - new Date(currentUser.registeredAt)) / (30*24*60*60*1000)));
+  const confirmLogout = () => Alert.alert('Выйти из аккаунта?', '', [
+    { text: 'Отмена', style: 'cancel' },
+    { text: 'Выйти', onPress: logout },
+  ]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Профиль</Text>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Company Card */}
-        <View style={styles.profileCard}>
-          <TouchableOpacity onPress={pickLogo} activeOpacity={0.7} style={{ position: 'relative' }}>
-            <Avatar uri={currentUser.logo} name={currentUser.companyName} size={64} style={{ borderRadius: 18 }} />
-            <View style={styles.logoEditBadge}>
-              <Ionicons name="camera" size={11} color={COLORS.white} />
-            </View>
-          </TouchableOpacity>
-          <View style={styles.profileInfo}>
-            <Text style={styles.name}>{currentUser.companyName}</Text>
-            <Text style={styles.category}>{currentUser.businessCategory}</Text>
-            <View style={styles.planBadge}>
-              <Ionicons name={currentUser.plan === 'premium' ? 'diamond' : currentUser.plan === 'business' ? 'briefcase' : 'leaf'} size={14} color={COLORS.accent} />
-              <Text style={styles.planText}>{PLAN_LABELS[currentUser.plan]}</Text>
-            </View>
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: tabSpace }}>
+        <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View style={{ flex: 1 }}>
+            <T v="screenTitle" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} accessibilityRole="header">{me.companyName}</T>
+            <T v="caption" c="secondary" style={{ marginTop: 2 }}>{[me.businessCategory, me.unp ? `УНП ${me.unp}` : null].filter(Boolean).join(' · ')}</T>
           </View>
+          <Monogram name={me.companyName} logo={me.logo} size={48} />
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{currentUser.rating > 0 ? currentUser.rating.toFixed(1) : '—'}</Text>
-            <Text style={styles.statLabel}>Рейтинг</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{currentUser.totalShiftsPublished}</Text>
-            <Text style={styles.statLabel}>Смен</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{monthsOnPlatform}</Text>
-            <Text style={styles.statLabel}>Мес.</Text>
-          </View>
-        </View>
+        <StatRow
+          style={{ marginTop: 22 }}
+          items={[
+            { label: 'рейтинг точки', value: me.rating ? me.rating.toFixed(1) : '—' },
+            { label: plural(me.totalShiftsPublished || 0, ['смена', 'смены', 'смен']), value: String(me.totalShiftsPublished || snap.own.length) },
+            { label: 'заполнено', value: `${snap.fillRate}%` },
+            { label: plural(snap.cancelledThisMonth, ['отмена', 'отмены', 'отмен']), value: String(snap.cancelledThisMonth) },
+          ]}
+        />
+        {snap.cancelledThisMonth >= 2 ? (
+          <FillBanner
+            style={{ marginTop: 20 }}
+            icon="exclamationmark.circle"
+            title={`${snap.cancelledThisMonth} ${plural(snap.cancelledThisMonth, ['отмена', 'отмены', 'отмен'])} за ${monthName()}`}
+            text="Исполнители видят число отмен в профиле точки, когда решают, откликаться ли."
+          />
+        ) : <Separator style={{ marginTop: 20 }} />}
 
-        {/* Menu */}
-        <View style={styles.menuCard}>
-          {MENU.map((item, i) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.menuItem, i < MENU.length - 1 && styles.menuBorder]}
-              onPress={() => {
-                if (item.screen === 'CompanyReviews') {
-                  navigation.navigate('PublicCompanyProfile', { companyId: currentUser.id });
-                } else if (item.screen === 'help') {
-                  navigation.navigate('FAQ');
-                } else if (item.screen) {
-                  navigation.navigate(item.screen);
-                }
-              }}
-              activeOpacity={0.6}
-            >
-              <View style={styles.menuLeft}>
-                <View style={styles.menuIconWrap}>
-                  <Ionicons name={item.icon} size={20} color={COLORS.textSecondary} />
-                </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-            </TouchableOpacity>
-          ))}
-        </View>
+        <SectionHeader title="Тариф" top={snap.cancelledThisMonth >= 2} />
+        <SettingRow
+          icon="doc.text"
+          title={`${PLAN_NAMES[plan]} · ${Number.isFinite(limit) ? `до ${limit} ${plural(limit, ['смены', 'смен', 'смен'])} в месяц` : 'без ограничений'}`}
+          sub={`За ${monthName()} опубликовано ${snap.monthCount}${Number.isFinite(limit) ? ` из ${limit}` : ''}`}
+          onPress={() => navigation.navigate('Plans')}
+          last
+        />
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={styles.logoutText}>Выйти из аккаунта</Text>
-        </TouchableOpacity>
+        <SectionHeader title="Точки" right="Добавить" onRightPress={() => navigation.navigate('Locations')} />
+        {locations.length ? locations.map((l, i) => {
+          const n = activeAt(l.id);
+          return (
+            <SettingRow
+              key={l.id}
+              icon="mappin.and.ellipse"
+              title={l.address}
+              sub={n ? `${n} ${plural(n, ['активная смена', 'активные смены', 'активных смен'])}` : 'Смен нет'}
+              onPress={() => navigation.navigate('Locations')}
+              last={i === locations.length - 1}
+            />
+          );
+        }) : <SettingRow icon="plus" title="Добавить первую точку" sub="Без адреса смену не опубликовать" onPress={() => navigation.navigate('Locations')} last />}
 
-        <DeleteAccountButton />
+        <SectionHeader title="Команда и свои люди" />
+        <SettingRow icon="heart" title="Свои люди" sub={favorites?.length ? `${favorites.length} ${plural(favorites.length, ['человек', 'человека', 'человек'])} — зови их первыми` : 'Добавляй тех, кто хорошо отработал'} onPress={() => navigation.navigate('Favorites')} />
+        <SettingRow icon="person.2" title="Каталог исполнителей" sub="Поиск по городу и навыкам" onPress={() => navigation.navigate('WorkerDirectory')} last />
 
-        <Text style={styles.version}>СменаБел v1.0.0</Text>
-        <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
+        <SectionHeader title="Аккаунт" />
+        <SettingRow icon="building.2" title="Данные компании" sub="Название, УНП, контакт, логотип" onPress={() => navigation.navigate('CompanyData')} />
+        <SettingRow icon="bell" title="Уведомления" right={unread ? <T v="caption" c="secondary">{unread} новых</T> : undefined} onPress={() => navigation.navigate('Notifications')} />
+        <SettingRow icon="questionmark.circle" title="Помощь и контакты" onPress={() => navigation.navigate('FAQ')} />
+        <SettingRow icon="doc.text" title="Условия использования" right={<Icon name="arrow.up.right" size={13} c="tertiary" />} onPress={() => openLink(LINKS.terms)} />
+        <SettingRow icon="lock.shield" title="Политика конфиденциальности" right={<Icon name="arrow.up.right" size={13} c="tertiary" />} onPress={() => openLink(LINKS.privacy)} last />
+
+        <Separator style={{ marginTop: 26 }} />
+        <SettingRow icon="rectangle.portrait.and.arrow.right" title="Выйти" destructive onPress={confirmLogout} />
+        <DeleteAccountRow />
+        <Separator />
+        <T v="small" c="secondary" style={{ textAlign: 'center', marginTop: 18 }}>СменаБел 1.0.0</T>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
-  headerTitle: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  scroll: { paddingHorizontal: SIZES.lg },
-  profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.lg, ...SHADOWS.md },
-  logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: COLORS.skeleton },
-  logoEditBadge: {
-    position: 'absolute', bottom: -2, right: -2,
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: COLORS.white,
-  },
-  profileInfo: { flex: 1, marginLeft: SIZES.md },
-  name: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  category: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: 2 },
-  planBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: SIZES.sm },
-  planText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
-  statsRow: { flexDirection: 'row', backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.lg, marginTop: SIZES.md, ...SHADOWS.sm },
-  stat: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  statLabel: { fontSize: SIZES.caption, color: COLORS.textSecondary, marginTop: 2 },
-  statDivider: { width: 1, backgroundColor: COLORS.borderLight },
-  menuCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, ...SHADOWS.sm, marginTop: SIZES.xl, overflow: 'hidden' },
-  menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: SIZES.md, paddingHorizontal: SIZES.base },
-  menuBorder: { borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight },
-  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: SIZES.md },
-  menuIconWrap: { width: 32, height: 32, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { fontSize: SIZES.bodyLarge, color: COLORS.textPrimary },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SIZES.sm, marginTop: SIZES['2xl'], padding: SIZES.md },
-  logoutText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.error },
-  version: { fontSize: SIZES.caption, color: COLORS.textTertiary, textAlign: 'center', marginTop: SIZES.md },
-});

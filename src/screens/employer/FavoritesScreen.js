@@ -1,278 +1,93 @@
+// «Свои люди»: workers the employer marked. Opened with `inviteShiftId`, every
+// line gets «Позвать» for that shift.
 import React, { useMemo, useState } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Modal, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import { NavBar, Press, Separator, PersonAvatar, EmptyState, Button } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { showActions } from '../../design/ActionSheet';
+import { plural, dayLabel, shortDate, timeRange } from '../../design/format';
 import useStore from '../../store/useStore';
-import Avatar from '../../components/Avatar';
-import { formatDate } from '../../utils/formatDate';
 
-export default function FavoritesScreen({ navigation }) {
+export default function FavoritesScreen({ route, navigation }) {
+  const inviteShiftId = route?.params?.inviteShiftId;
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const favorites = useStore(s => s.favorites);
-  const currentUser = useStore(s => s.currentUser);
-  const workers = useStore(s => s.workers);
-  const toggleFavorite = useStore(s => s.toggleFavorite);
-  const shifts = useStore(s => s.shifts);
-  const inviteWorkerToShift = useStore(s => s.inviteWorkerToShift);
-  const [inviteWorkerId, setInviteWorkerId] = useState(null);
+  const me = useStore((s) => s.currentUser);
+  const favMap = useStore((s) => s.favorites);
+  const workers = useStore((s) => s.workers);
+  const applications = useStore((s) => s.applications);
+  const invitations = useStore((s) => s.invitations);
+  const blocked = useStore((s) => s.blockedUsers);
+  const shift = useStore((s) => (inviteShiftId ? s.getShiftById(inviteShiftId) : null));
+  const invite = useStore((s) => s.inviteWorkerToShift);
+  const toggleFavorite = useStore((s) => s.toggleFavorite);
+  const [sent, setSent] = useState({});
 
-  const activeShifts = useMemo(
-    () => shifts.filter(s => s.companyId === currentUser?.id && s.status === 'active'),
-    [shifts, currentUser],
-  );
+  const people = useMemo(() => {
+    const ids = (me && favMap[me.id]) || [];
+    return workers.filter((w) => ids.includes(w.id) && !blocked.includes(w.id));
+  }, [me, favMap, workers, blocked]);
 
-  const userFavorites = favorites[currentUser?.id] || [];
-
-  const handleInvite = (shiftId) => {
-    const result = inviteWorkerToShift(inviteWorkerId, shiftId);
-    setInviteWorkerId(null);
-    if (result?.error === 'already_invited') {
-      Alert.alert('', 'Приглашение уже отправлено');
-    } else {
-      Alert.alert('', 'Приглашение отправлено!');
-    }
-  };
-  const favoriteWorkers = useMemo(
-    () => workers.filter(w => userFavorites.includes(w.id)),
-    [workers, userFavorites],
-  );
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const full = Math.floor(rating);
-    const half = rating - full >= 0.5;
-    for (let i = 0; i < 5; i++) {
-      if (i < full) {
-        stars.push(<Ionicons key={i} name="star" size={13} color={COLORS.star} />);
-      } else if (i === full && half) {
-        stars.push(<Ionicons key={i} name="star-half" size={13} color={COLORS.star} />);
-      } else {
-        stars.push(<Ionicons key={i} name="star-outline" size={13} color={COLORS.star} />);
-      }
-    }
-    return stars;
-  };
-
-  const renderWorker = ({ item: worker }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.7}
-      onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
-    >
-      <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={52} />
-      <View style={styles.workerInfo}>
-        <Text style={styles.workerName} numberOfLines={1}>
-          {worker.firstName} {worker.lastName}
-        </Text>
-        {!!worker.city && (
-          <Text style={styles.cityText} numberOfLines={1}>{worker.city}</Text>
-        )}
-        <View style={styles.ratingRow}>
-          {worker.rating > 0 ? (
-            <>
-              <View style={styles.starsRow}>{renderStars(worker.rating)}</View>
-              <Text style={styles.ratingValue}>{worker.rating.toFixed(1)}</Text>
-            </>
-          ) : (
-            <Text style={styles.noRating}>Нет оценок</Text>
-          )}
-        </View>
-        <Text style={styles.shiftsText}>{worker.shiftsCompleted} смен выполнено</Text>
-      </View>
-      <View style={{ alignItems: 'center', gap: 8 }}>
-        <TouchableOpacity
-          style={styles.heartBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          onPress={() => toggleFavorite(worker.id)}
-        >
-          <Ionicons name="heart" size={22} color={COLORS.error} />
-        </TouchableOpacity>
-        {activeShifts.length > 0 && (
-          <TouchableOpacity
-            style={styles.inviteSmBtn}
-            onPress={() => setInviteWorkerId(worker.id)}
-          >
-            <Ionicons name="paper-plane-outline" size={14} color={COLORS.accent} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+  const cancelsOf = (id) => applications.filter((a) => a.workerId === id && a.status === 'cancelled_by_worker').length;
+  const invited = (id) => sent[id] || invitations.some((i) => i.workerId === id && i.shiftId === inviteShiftId);
+  const applied = (id) => applications.some((a) => a.workerId === id && a.shiftId === inviteShiftId && a.status !== 'cancelled_by_worker');
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Избранные исполнители</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      {/* Invite modal */}
-      <Modal visible={!!inviteWorkerId} transparent animationType="fade">
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInviteWorkerId(null)}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Выберите смену</Text>
-            {activeShifts.map(shift => (
-              <TouchableOpacity key={shift.id} style={styles.modalItem} onPress={() => handleInvite(shift.id)}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.modalItemTitle}>{shift.title}</Text>
-                  <Text style={styles.modalItemSub}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setInviteWorkerId(null)}>
-              <Text style={styles.modalCancelText}>Отмена</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* List */}
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar variant="fill" onBack={() => navigation.goBack()} />
       <FlatList
-        data={favoriteWorkers}
-        renderItem={renderWorker}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="heart-outline" size={56} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>Нет избранных</Text>
-            <Text style={styles.emptySubtitle}>Добавляйте исполнителей в избранное</Text>
-          </View>
-        }
+        data={people}
+        keyExtractor={(w) => w.id}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}
+        ListHeaderComponent={(
+          <>
+            <View style={{ paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14 }}>
+              <T v="title" accessibilityRole="header">{inviteShiftId ? 'Позвать своих' : 'Свои люди'}</T>
+              <T v="caption" c="secondary" style={{ marginTop: 2 }}>
+                {shift ? `${shift.title} · ${dayLabel(shift.date) === 'Сегодня' || dayLabel(shift.date) === 'Завтра' ? dayLabel(shift.date).toLowerCase() : shortDate(shift.date)}, ${timeRange(shift)}` : 'Исполнители, которых ты отметил — зови их первыми'}
+              </T>
+            </View>
+            <Separator />
+          </>
+        )}
+        ListEmptyComponent={(
+          <EmptyState
+            title="Своих людей пока нет"
+            text="Отмечай сердцем тех, кто хорошо отработал, — потом их можно позвать на смену в одно касание."
+            action="Открыть каталог"
+            onAction={() => navigation.navigate('WorkerDirectory')}
+          />
+        )}
+        renderItem={({ item: w, index }) => {
+          const cancels = cancelsOf(w.id);
+          return (
+            <View>
+              <Press
+                feedback="highlight"
+                onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: w.id })}
+                onLongPress={() => showActions({ title: `${w.firstName} ${w.lastName}`, options: [{ label: 'Убрать из своих', destructive: true, onPress: () => { toggleFavorite(w.id); haptic.medium(); } }] })}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingVertical: 12 }}>
+                  <PersonAvatar first={w.firstName} last={w.lastName} uri={w.avatar} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <T v="rowTitle" style={{ fontSize: 16 }}>{w.firstName} {w.lastName}</T>
+                    <T v="caption" c="secondary" numberOfLines={1}>★ {w.rating ? w.rating.toFixed(1) : '—'} · {w.shiftsCompleted} {plural(w.shiftsCompleted, ['смена', 'смены', 'смен'])} · {cancels ? `${cancels} ${plural(cancels, ['отмена', 'отмены', 'отмен'])}` : 'без отмен'}</T>
+                  </View>
+                  {inviteShiftId ? (
+                    applied(w.id) ? <T v="caption" c="secondary">Откликнулся</T>
+                      : invited(w.id) ? <T v="caption" c="secondary">Позвали</T>
+                        : <Button title="Позвать" size="sm" onPress={() => { invite(w.id, inviteShiftId); setSent((x) => ({ ...x, [w.id]: true })); haptic.success(); }} />
+                  ) : null}
+                </View>
+              </Press>
+              {index < people.length - 1 ? <Separator inset /> : null}
+            </View>
+          );
+        }}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-
-  navBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SIZES.sm,
-    paddingVertical: SIZES.sm,
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navTitle: {
-    flex: 1,
-    fontSize: SIZES.bodyLarge,
-    ...FONTS.semibold,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-  },
-
-  list: {
-    paddingHorizontal: SIZES.lg,
-    paddingBottom: SIZES['3xl'],
-    flexGrow: 1,
-  },
-
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: SIZES.radiusLg,
-    padding: SIZES.base,
-    marginBottom: SIZES.md,
-    ...SHADOWS.sm,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.skeleton,
-  },
-  workerInfo: {
-    flex: 1,
-    marginLeft: SIZES.md,
-  },
-  workerName: {
-    fontSize: SIZES.bodyLarge,
-    ...FONTS.semibold,
-    color: COLORS.textPrimary,
-  },
-  cityText: {
-    fontSize: SIZES.small,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 1,
-  },
-  ratingValue: {
-    fontSize: SIZES.small,
-    ...FONTS.medium,
-    color: COLORS.textPrimary,
-    marginLeft: SIZES.xs,
-  },
-  noRating: {
-    fontSize: SIZES.small,
-    color: COLORS.textTertiary,
-  },
-  shiftsText: {
-    fontSize: SIZES.caption,
-    color: COLORS.textTertiary,
-    marginTop: 3,
-  },
-
-  heartBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  empty: {
-    alignItems: 'center',
-    paddingTop: SIZES['5xl'] * 2,
-  },
-  emptyTitle: {
-    fontSize: SIZES.title,
-    ...FONTS.semibold,
-    color: COLORS.textPrimary,
-    marginTop: SIZES.lg,
-  },
-  emptySubtitle: {
-    fontSize: SIZES.body,
-    color: COLORS.textSecondary,
-    marginTop: SIZES.sm,
-  },
-
-  inviteSmBtn: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: COLORS.accentSoft, justifyContent: 'center', alignItems: 'center',
-  },
-
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: COLORS.white, borderTopLeftRadius: SIZES.radiusXl, borderTopRightRadius: SIZES.radiusXl, padding: SIZES.lg, paddingBottom: SIZES['3xl'] },
-  modalTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginBottom: SIZES.md },
-  modalItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: SIZES.md, borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight },
-  modalItemTitle: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  modalItemSub: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2 },
-  modalCancel: { marginTop: SIZES.lg, alignItems: 'center', paddingVertical: SIZES.md },
-  modalCancelText: { fontSize: SIZES.bodyLarge, ...FONTS.medium, color: COLORS.textSecondary },
-});

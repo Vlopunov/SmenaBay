@@ -1,155 +1,93 @@
+// In-app notifications: tiles on the grey `bg`, like the push surfaces in the
+// handoff. Tapping one opens the shift it is about.
 import React, { useMemo } from 'react';
-import {
-  View, Text, StyleSheet, SectionList, TouchableOpacity, StatusBar,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, SectionList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, Press, EmptyState } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { ago, daySection } from '../../design/format';
 import useStore from '../../store/useStore';
 
-const typeIcons = {
-  application_approved: { icon: 'checkmark-circle', color: '#059669' },
-  application_rejected: { icon: 'close-circle', color: '#EF4444' },
-  new_application: { icon: 'person-add', color: '#4F46E5' },
-  shift_reminder: { icon: 'alarm', color: '#F59E0B' },
-  shift_cancelled: { icon: 'close-circle', color: '#EF4444' },
-  shift_invite: { icon: 'paper-plane', color: '#4F46E5' },
-  payment_sent: { icon: 'cash', color: '#059669' },
-  review_received: { icon: 'star', color: '#F59E0B' },
-  nearby_shift: { icon: 'location', color: '#4F46E5' },
-  shift_filled: { icon: 'checkmark-done', color: '#059669' },
-  shift_starting_soon: { icon: 'alarm', color: '#D97706' },
-  plan_expiring: { icon: 'card', color: '#8B5CF6' },
+const ICON = {
+  application_approved: 'checkmark.circle',
+  application_rejected: 'xmark.circle',
+  new_application: 'person.badge.plus',
+  shift_cancelled: 'slash.circle',
+  shift_filled: 'person.2',
+  shift_reminder: 'timer',
+  shift_starting_soon: 'timer',
+  review_received: 'star',
+  shift_invite: 'envelope',
 };
 
 export default function NotificationsScreen({ navigation }) {
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const getNotificationsForUser = useStore(s => s.getNotificationsForUser);
-  const notifications = getNotificationsForUser();
-  const markRead = useStore(s => s.markNotificationRead);
-  const markAllRead = useStore(s => s.markAllRead);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0]; })();
+  const me = useStore((s) => s.currentUser);
+  const all = useStore((s) => s.notifications);
+  const markRead = useStore((s) => s.markNotificationRead);
+  const markAllRead = useStore((s) => s.markAllRead);
 
   const sections = useMemo(() => {
-    const groups = {};
-    notifications.forEach(n => {
-      const date = typeof n.createdAt === 'string' ? n.createdAt.split('T')[0] : n.createdAt;
-      let label;
-      if (date === today) label = 'Сегодня';
-      else if (date === yesterday) label = 'Вчера';
-      else {
-        const d = new Date(date);
-        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-        label = `${d.getDate()} ${months[d.getMonth()]}`;
-      }
-      if (!groups[label]) groups[label] = [];
-      groups[label].push(n);
+    const mine = all.filter((n) => n.userId === me?.id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const groups = new Map();
+    mine.forEach((n) => {
+      const key = daySection(String(n.createdAt).length > 10 ? new Date(n.createdAt) : n.createdAt);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(n);
     });
-    return Object.entries(groups).map(([title, data]) => ({ title, data }));
-  }, [notifications, today, yesterday]);
+    return [...groups.entries()].map(([title, data]) => ({ title, data }));
+  }, [all, me?.id]);
+  const unread = sections.reduce((n, s) => n + s.data.filter((x) => !x.read).length, 0);
 
-  const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const open = (n) => {
+    markRead(n.id);
+    if (!n.relatedShiftId) return;
+    navigation.navigate(me?.role === 'employer' ? 'ShiftManage' : 'ShiftDetail', { shiftId: n.relatedShiftId });
   };
-
-  const handleTap = (notif) => {
-    markRead(notif.id);
-    if (notif.relatedShiftId) {
-      navigation.navigate('ShiftDetail', { shiftId: notif.relatedShiftId });
-    }
-  };
-
-  const renderItem = ({ item }) => {
-    const config = typeIcons[item.type] || { icon: 'notifications', color: COLORS.textTertiary };
-    return (
-      <TouchableOpacity
-        style={[styles.item, !item.read && styles.itemUnread]}
-        onPress={() => handleTap(item)}
-        activeOpacity={0.6}
-      >
-        <View style={[styles.iconWrap, { backgroundColor: config.color + '14' }]}>
-          <Ionicons name={config.icon} size={20} color={config.color} />
-        </View>
-        <View style={styles.itemContent}>
-          <Text style={[styles.itemTitle, !item.read && styles.itemTitleUnread]}>{item.title}</Text>
-          <Text style={styles.itemBody} numberOfLines={2}>{item.body}</Text>
-          <Text style={styles.itemTime}>{formatTime(item.createdAt)}</Text>
-        </View>
-        {!item.read && <View style={styles.unreadDot} />}
-      </TouchableOpacity>
-    );
-  };
-
-  const renderSectionHeader = ({ section }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{section.title}</Text>
-    </View>
-  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Уведомления</Text>
-        {unreadCount > 0 && (
-          <TouchableOpacity onPress={markAllRead}>
-            <Text style={styles.markAll}>Прочитать все</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <NavBar
+        variant="fill"
+        onBack={() => navigation.goBack()}
+        right={unread ? <Press feedback="none" onPress={markAllRead} hitSlop={10}><T v="body" c="accent">Прочитать все</T></Press> : null}
+      />
       <SectionList
         sections={sections}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
+        keyExtractor={(n) => n.id}
         stickySectionHeadersEnabled={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="notifications-off-outline" size={48} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>Нет уведомлений</Text>
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        ListHeaderComponent={(
+          <View style={{ paddingHorizontal: 22, paddingTop: 10, paddingBottom: 6 }}>
+            <T v="title" accessibilityRole="header">Уведомления</T>
+            <T v="caption" c="secondary" style={{ marginTop: 2 }}>{unread ? `${unread} непрочитанных` : 'Всё прочитано'}</T>
           </View>
-        }
+        )}
+        ListEmptyComponent={<EmptyState title="Пока тихо" text={me?.role === 'employer' ? 'Здесь появятся новые отклики и ответы исполнителей.' : 'Здесь появятся ответы на отклики и напоминания о сменах.'} />}
+        renderSectionHeader={({ section }) => <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 18, paddingBottom: 8 }}>{section.title}</T>}
+        renderItem={({ item: n }) => (
+          <Press
+            onPress={() => open(n)}
+            style={{ marginHorizontal: 16, marginBottom: 8, borderRadius: 18, backgroundColor: c.elevated, padding: 14, flexDirection: 'row', gap: 12 }}
+            accessibilityLabel={`${n.read ? '' : 'Новое. '}${n.title}. ${n.body}`}
+          >
+            <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c.fill, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={ICON[n.type] || 'bell'} size={16} c="label" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                <T v="bodyStrong" style={{ flex: 1 }}>{n.title}</T>
+                <T v="small" c="secondary">{ago(n.createdAt)}</T>
+              </View>
+              <T v="caption" c="secondary" style={{ marginTop: 2 }}>{n.body}</T>
+            </View>
+            {!n.read ? <View style={{ position: 'absolute', top: 16, left: 6, width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.accent }} /> : null}
+          </Press>
+        )}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  markAll: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent, paddingRight: SIZES.lg },
-
-  sectionHeader: { paddingHorizontal: SIZES.lg, paddingTop: SIZES.lg, paddingBottom: SIZES.sm },
-  sectionTitle: { fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
-
-  list: { paddingBottom: SIZES['3xl'] },
-  item: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md,
-    borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight,
-  },
-  itemUnread: { backgroundColor: COLORS.accentSoft + '40' },
-  iconWrap: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: SIZES.md },
-  itemContent: { flex: 1 },
-  itemTitle: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  itemTitleUnread: { ...FONTS.semibold },
-  itemBody: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2, lineHeight: 18 },
-  itemTime: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: SIZES.xs },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent, marginTop: 6 },
-
-  empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
-  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
-});

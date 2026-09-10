@@ -373,7 +373,7 @@ export function StatRow({ items, style }) {
         <View key={it.label} style={{ flex: 1, flexDirection: 'row' }}>
           {i > 0 ? <View style={{ width: StyleSheet.hairlineWidth * 2, height: 44, backgroundColor: c.separator, marginRight: 14, marginTop: 4 }} /> : null}
           <View style={{ flex: 1 }}>
-            {it.node ?? <T v="title" c={it.accent ? 'accent' : 'label'} style={{ fontSize: 28, lineHeight: 32, letterSpacing: -1 }}>{it.value}</T>}
+            {it.node ?? <T v="title" c={it.accent ? 'accent' : 'label'} numberOfLines={1} maxFontSizeMultiplier={1.15} style={String(it.value).length > 4 ? { fontSize: 22, letterSpacing: -0.6 } : null}>{it.value}</T>}
             <T v="small" c="secondary" numberOfLines={2}>{it.label}</T>
           </View>
         </View>

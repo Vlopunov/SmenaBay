@@ -1,444 +1,351 @@
-import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  StatusBar, Switch, Alert, Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// New shift (handoff screen 10). The form starts with PAY, not the job title:
+// it is the one field that decides whether the shift fills. Then the ledger —
+// position, category, date, time, seats, address — then requirements as
+// chips. The bottom panel states the payout before «Опубликовать».
+import React, { useMemo, useState } from 'react';
+import { View, ScrollView, Switch, TextInput, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { Press, LedgerRow, Separator, Chip, Button, RoundButton, SectionHeader } from '../../design/ui';
+import FormRow from '../../design/FormRow';
+import Slider from '../../design/Slider';
+import Sheet from '../../design/Sheet';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { money, plural, isoDay, dayLabel, shortDate } from '../../design/format';
 import { SHIFT_TEMPLATES } from '../../data/mockData';
+import PhoneSheet from '../../components/PhoneSheet';
 import useStore from '../../store/useStore';
-import VerifyPhoneModal from '../../components/VerifyPhoneModal';
 
-const TIME_OPTIONS = [];
-for (let h = 0; h < 24; h++) {
-  for (let m = 0; m < 60; m += 30) {
-    TIME_OPTIONS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-  }
+export const CATEGORIES = [
+  { key: 'pvz', label: 'ПВЗ, выдача заказов', symbol: 'shippingbox' },
+  { key: 'warehouse', label: 'Склад, комплектация', symbol: 'tray.2' },
+  { key: 'courier', label: 'Курьер, доставка', symbol: 'bicycle' },
+  { key: 'horeca', label: 'Общепит, кухня, зал', symbol: 'fork.knife' },
+  { key: 'retail', label: 'Магазин, продажи', symbol: 'bag' },
+  { key: 'promo', label: 'Промо, дегустации', symbol: 'megaphone' },
+  { key: 'cleaning', label: 'Уборка, клининг', symbol: 'sparkles' },
+  { key: 'construction', label: 'Стройка, монтаж', symbol: 'hammer' },
+];
+
+function guessCategory(title = '') {
+  const t = title.toLowerCase();
+  if (/пвз|выдач/.test(t)) return 'pvz';
+  if (/склад|грузчик|комплект|сборщик|погрузчик/.test(t)) return 'warehouse';
+  if (/курьер|достав/.test(t)) return 'courier';
+  if (/повар|официант|бармен|кухн/.test(t)) return 'horeca';
+  if (/продав|кассир|консультант/.test(t)) return 'retail';
+  if (/промо/.test(t)) return 'promo';
+  if (/уборщ|клининг/.test(t)) return 'cleaning';
+  if (/строй|монтаж|разнорабоч/.test(t)) return 'construction';
+  return null;
 }
 
-export default function CreateShiftScreen({ navigation, route }) {
-  const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const createShift = useStore(s => s.createShift);
+const TIMES = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
+const hoursBetween = (a, b) => {
+  const [ah, am] = a.split(':').map(Number); const [bh, bm] = b.split(':').map(Number);
+  let d = bh * 60 + bm - (ah * 60 + am); if (d <= 0) d += 24 * 60; return d / 60;
+};
 
-  const template = route?.params?.template;
+const REQS = [
+  { key: 'noExperienceOk', label: 'Без опыта' },
+  { key: 'smartphoneRequired', label: 'Свой смартфон' },
+  { key: 'medicalBookRequired', label: 'Медкнижка' },
+  { key: 'ownClothes', label: 'Своя одежда' },
+  { key: 'adult', label: '18+' },
+];
 
-  const [form, setForm] = useState({
-    title: template?.title || '',
-    description: template?.description || '',
-    locationId: template?.locationId || (currentUser?.locations?.[0]?.id || ''),
-    date: [],
-    timeStart: template?.timeStart || '09:00',
-    timeEnd: template?.timeEnd || '18:00',
-    pay: template?.pay?.toString() || '',
-    spotsTotal: template?.spotsTotal || 1,
-    urgent: template?.urgent || false,
-    requirements: template?.requirements || {
-      noExperienceOk: true, medicalBookRequired: false,
-      smartphoneRequired: false, minAge: 18, ownClothes: false, other: null,
-    },
-  });
-
-  const [errors, setErrors] = useState({});
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showLocations, setShowLocations] = useState(false);
-  const [showTimeStart, setShowTimeStart] = useState(false);
-  const [showTimeEnd, setShowTimeEnd] = useState(false);
-  const [showVerify, setShowVerify] = useState(false);
-
-  const locations = currentUser?.locations || [];
-  const selectedLoc = locations.find(l => l.id === form.locationId);
-
-  const duration = (() => {
-    const [sh, sm] = form.timeStart.split(':').map(Number);
-    const [eh, em] = form.timeEnd.split(':').map(Number);
-    let d = (eh * 60 + em) - (sh * 60 + sm);
-    if (d <= 0) d += 24 * 60;
-    return d / 60;
-  })();
-
-  const payPerHour = form.pay ? (Number(form.pay) / duration).toFixed(1) : '0';
-
-  const validate = () => {
-    const e = {};
-    if (!form.title.trim()) e.title = 'Укажите название';
-    if (form.description.length < 20) e.description = 'Минимум 20 символов';
-    if (!form.locationId) e.locationId = 'Выберите локацию';
-    if (!form.date || form.date.length === 0) e.date = 'Выберите дату';
-    if (!form.pay || Number(form.pay) <= 0) e.pay = 'Укажите оплату';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleCreate = () => {
-    if (!validate()) return;
-    const result = createShift({
-      ...form,
-      pay: Number(form.pay),
-      spotsTotal: form.spotsTotal,
-    });
-    if (result.error === 'phone_not_verified') {
-      setShowVerify(true);
-      return;
-    }
-    if (result.error === 'limit') {
-      // No upsell into a purchase flow on iOS (Guideline 3.1.1) — just
-      // state the limit.
-      Alert.alert(
-        'Лимит исчерпан',
-        Platform.OS === 'ios'
-          ? 'Лимит текущего тарифа на этот месяц исчерпан. Он обновится в начале следующего месяца.'
-          : 'Лимит бесплатного тарифа исчерпан. Обновите тариф для публикации новых смен.',
-        Platform.OS === 'ios'
-          ? [{ text: 'OK' }]
-          : [
-              { text: 'Тарифы', onPress: () => navigation.navigate('Plans') },
-              { text: 'OK' },
-            ]
-      );
-      return;
-    }
-    navigation.goBack();
-  };
-
-  // Generate today + 14 days
-  const dateOptions = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() + i);
-    return d.toISOString().split('T')[0];
-  });
-
-  const formatDateOption = (d) => {
-    const date = new Date(d);
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = (() => { const t = new Date(); t.setDate(t.getDate() + 1); return t.toISOString().split('T')[0]; })();
-    const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-    const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-    if (d === today) return 'Сегодня';
-    if (d === tomorrow) return 'Завтра';
-    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
-  };
-
+function Stepper({ value, onChange, min = 1, max = 20 }) {
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Создать смену</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Title */}
-        <Text style={styles.label}>Название позиции *</Text>
-        <TextInput
-          style={[styles.input, errors.title && styles.inputError]}
-          value={form.title}
-          onChangeText={v => setForm(f => ({ ...f, title: v }))}
-          placeholder="Оператор ПВЗ"
-          placeholderTextColor={COLORS.textTertiary}
-        />
-        <TouchableOpacity onPress={() => setShowTemplates(!showTemplates)}>
-          <Text style={styles.hint}>Выбрать из шаблонов</Text>
-        </TouchableOpacity>
-        {showTemplates && (
-          <View style={styles.templatesRow}>
-            {SHIFT_TEMPLATES.map(t => (
-              <TouchableOpacity key={t} style={styles.templateChip}
-                onPress={() => { setForm(f => ({ ...f, title: t })); setShowTemplates(false); }}
-              >
-                <Text style={styles.templateText}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-        {errors.title && <Text style={styles.error}>{errors.title}</Text>}
-
-        {/* Description */}
-        <Text style={styles.label}>Описание задач * (мин. 20 символов)</Text>
-        <TextInput
-          style={[styles.textarea, errors.description && styles.inputError]}
-          value={form.description}
-          onChangeText={v => setForm(f => ({ ...f, description: v }))}
-          placeholder="Опишите, что нужно делать..."
-          placeholderTextColor={COLORS.textTertiary}
-          multiline numberOfLines={4} textAlignVertical="top"
-        />
-        <Text style={styles.charCount}>{form.description.length} символов</Text>
-        {errors.description && <Text style={styles.error}>{errors.description}</Text>}
-
-        {/* Location */}
-        <Text style={styles.label}>Локация *</Text>
-        <TouchableOpacity
-          style={[styles.input, styles.selectInput, errors.locationId && styles.inputError]}
-          onPress={() => setShowLocations(!showLocations)}
-        >
-          <Text style={selectedLoc ? styles.selectText : styles.selectPlaceholder}>
-            {selectedLoc ? `${selectedLoc.name || selectedLoc.address}` : 'Выберите адрес'}
-          </Text>
-          <Ionicons name="chevron-down" size={18} color={COLORS.textTertiary} />
-        </TouchableOpacity>
-        {showLocations && (
-          <View style={styles.dropdown}>
-            {locations.map(loc => (
-              <TouchableOpacity key={loc.id} style={styles.dropdownItem}
-                onPress={() => { setForm(f => ({ ...f, locationId: loc.id })); setShowLocations(false); }}
-              >
-                <Text style={styles.dropdownText}>{loc.name || loc.address}</Text>
-                <Text style={styles.dropdownSub}>{loc.address}</Text>
-              </TouchableOpacity>
-            ))}
-            {locations.length === 0 && (
-              <Text style={styles.dropdownEmpty}>Нет сохранённых адресов</Text>
-            )}
-          </View>
-        )}
-
-        {/* Date */}
-        <Text style={styles.label}>Даты * (можно выбрать несколько)</Text>
-        <View style={styles.dateActions}>
-          <TouchableOpacity
-            style={styles.dateQuickBtn}
-            onPress={() => {
-              const weekdays = dateOptions.filter(d => {
-                const day = new Date(d).getDay();
-                return day >= 1 && day <= 5;
-              });
-              setForm(f => ({ ...f, date: weekdays }));
-            }}
-          >
-            <Text style={styles.dateQuickText}>Все будни</Text>
-          </TouchableOpacity>
-          {form.date.length > 0 && (
-            <TouchableOpacity
-              style={styles.dateQuickBtn}
-              onPress={() => setForm(f => ({ ...f, date: [] }))}
-            >
-              <Text style={styles.dateQuickText}>Очистить</Text>
-            </TouchableOpacity>
-          )}
-          {form.date.length > 1 && (
-            <Text style={styles.dateCountText}>Выбрано: {form.date.length}</Text>
-          )}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateScroll}>
-          <View style={styles.dateRow}>
-            {dateOptions.map(d => {
-              const isSelected = form.date.includes(d);
-              return (
-                <TouchableOpacity
-                  key={d}
-                  style={[styles.dateChip, isSelected && styles.dateChipActive]}
-                  onPress={() => setForm(f => ({
-                    ...f,
-                    date: isSelected
-                      ? f.date.filter(dd => dd !== d)
-                      : [...f.date, d].sort(),
-                  }))}
-                >
-                  <Text style={[styles.dateChipText, isSelected && styles.dateChipTextActive]}>
-                    {formatDateOption(d)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
-        {errors.date && <Text style={styles.error}>{errors.date}</Text>}
-
-        {/* Time */}
-        <View style={styles.timeRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Начало</Text>
-            <TouchableOpacity style={styles.input} onPress={() => { setShowTimeStart(!showTimeStart); setShowTimeEnd(false); }}>
-              <Text style={styles.selectText}>{form.timeStart}</Text>
-            </TouchableOpacity>
-            {showTimeStart && (
-              <ScrollView style={styles.timeDropdown} nestedScrollEnabled>
-                {TIME_OPTIONS.map(t => (
-                  <TouchableOpacity key={t} style={styles.timeItem}
-                    onPress={() => { setForm(f => ({ ...f, timeStart: t })); setShowTimeStart(false); }}
-                  >
-                    <Text style={[styles.timeText, form.timeStart === t && { color: COLORS.accent, ...FONTS.medium }]}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Окончание</Text>
-            <TouchableOpacity style={styles.input} onPress={() => { setShowTimeEnd(!showTimeEnd); setShowTimeStart(false); }}>
-              <Text style={styles.selectText}>{form.timeEnd}</Text>
-            </TouchableOpacity>
-            {showTimeEnd && (
-              <ScrollView style={styles.timeDropdown} nestedScrollEnabled>
-                {TIME_OPTIONS.map(t => (
-                  <TouchableOpacity key={t} style={styles.timeItem}
-                    onPress={() => { setForm(f => ({ ...f, timeEnd: t })); setShowTimeEnd(false); }}
-                  >
-                    <Text style={[styles.timeText, form.timeEnd === t && { color: COLORS.accent, ...FONTS.medium }]}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-        <Text style={styles.durationText}>Длительность: {duration}ч</Text>
-
-        {/* Pay */}
-        <Text style={styles.label}>Оплата за смену (BYN) *</Text>
-        <View style={styles.payRow}>
-          <TextInput
-            style={[styles.input, { flex: 1 }, errors.pay && styles.inputError]}
-            value={form.pay}
-            onChangeText={v => setForm(f => ({ ...f, pay: v.replace(/[^0-9.]/g, '') }))}
-            placeholder="0"
-            placeholderTextColor={COLORS.textTertiary}
-            keyboardType="numeric"
-          />
-          <Text style={styles.payHint}>≈ {payPerHour} BYN/ч</Text>
-        </View>
-        {errors.pay && <Text style={styles.error}>{errors.pay}</Text>}
-
-        {/* Spots */}
-        <Text style={styles.label}>Количество сотрудников</Text>
-        <View style={styles.counterRow}>
-          <TouchableOpacity
-            style={styles.counterBtn}
-            onPress={() => setForm(f => ({ ...f, spotsTotal: Math.max(1, f.spotsTotal - 1) }))}
-          >
-            <Ionicons name="remove" size={20} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.counterValue}>{form.spotsTotal}</Text>
-          <TouchableOpacity
-            style={styles.counterBtn}
-            onPress={() => setForm(f => ({ ...f, spotsTotal: Math.min(50, f.spotsTotal + 1) }))}
-          >
-            <Ionicons name="add" size={20} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Requirements */}
-        <Text style={styles.label}>Требования</Text>
-        <View style={styles.reqList}>
-          {[
-            ['noExperienceOk', 'Подходит без опыта'],
-            ['medicalBookRequired', 'Медицинская книжка'],
-            ['smartphoneRequired', 'Свой смартфон'],
-            ['ownClothes', 'Своя спецодежда'],
-          ].map(([key, label]) => (
-            <View key={key} style={styles.reqRow}>
-              <Text style={styles.reqLabel}>{label}</Text>
-              <Switch
-                value={form.requirements[key]}
-                onValueChange={v => setForm(f => ({
-                  ...f, requirements: { ...f.requirements, [key]: v },
-                }))}
-                trackColor={{ true: COLORS.accent }}
-              />
-            </View>
-          ))}
-        </View>
-
-        {/* Urgent */}
-        <View style={[styles.reqRow, styles.urgentRow]}>
-          <View>
-            <Text style={styles.reqLabel}>Срочная смена</Text>
-            <Text style={styles.urgentHint}>Выделяется в ленте исполнителей</Text>
-          </View>
-          <Switch
-            value={form.urgent}
-            onValueChange={v => setForm(f => ({ ...f, urgent: v }))}
-            trackColor={{ true: COLORS.error }}
-          />
-        </View>
-
-        {/* Submit */}
-        <TouchableOpacity style={styles.submitBtn} onPress={handleCreate} activeOpacity={0.7}>
-          <Text style={styles.submitBtnText}>Опубликовать смену</Text>
-        </TouchableOpacity>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-
-      <VerifyPhoneModal
-        visible={showVerify}
-        onClose={() => setShowVerify(false)}
-        onVerified={() => {}}
-      />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <RoundButton icon="minus" variant="fill" size={32} iconSize={14} onPress={() => { if (value > min) { haptic.selection(); onChange(value - 1); } }} accessibilityLabel="Меньше мест" />
+      <RoundButton icon="plus" variant="fill" size={32} iconSize={14} onPress={() => { if (value < max) { haptic.selection(); onChange(value + 1); } }} accessibilityLabel="Больше мест" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  navTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  scroll: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES['3xl'] },
+export default function CreateShiftScreen({ navigation, route }) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const me = useStore((s) => s.currentUser);
+  const shifts = useStore((s) => s.shifts);
+  const createShift = useStore((s) => s.createShift);
+  const editShift = useStore((s) => s.editShift);
+  const editing = useStore((s) => (route?.params?.editShiftId ? s.getShiftById(route.params.editShiftId) : null));
+  const template = route?.params?.template;
+  const base = editing || template || {};
+  const locations = me?.locations || [];
 
-  label: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary, marginTop: SIZES.base, marginBottom: SIZES.sm },
-  input: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, paddingHorizontal: SIZES.base,
-    height: SIZES.inputHeight, fontSize: SIZES.body, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center',
-  },
-  inputError: { borderColor: COLORS.error },
-  selectInput: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  selectText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  selectPlaceholder: { fontSize: SIZES.body, color: COLORS.textTertiary },
-  error: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.xs },
-  hint: { fontSize: SIZES.caption, color: COLORS.accent, ...FONTS.medium, marginTop: SIZES.xs },
+  const [pay, setPay] = useState(base.pay || 65);
+  const [title, setTitle] = useState(base.title || '');
+  const [category, setCategory] = useState(base.category || guessCategory(base.title) || null);
+  const [dates, setDates] = useState(editing ? [editing.date] : [isoDay()]);
+  const [timeStart, setTimeStart] = useState(base.timeStart || '10:00');
+  const [timeEnd, setTimeEnd] = useState(base.timeEnd || '18:00');
+  const [spots, setSpots] = useState(base.spotsTotal || 1);
+  const [locationId, setLocationId] = useState(base.locationId || locations[0]?.id || null);
+  const [description, setDescription] = useState(base.description || '');
+  const [urgent, setUrgent] = useState(!!base.urgent);
+  const [req, setReq] = useState(() => {
+    const r = base.requirements || { noExperienceOk: true };
+    return { ...r, adult: r.minAge === 18 };
+  });
+  const [other, setOther] = useState(base.requirements?.other || '');
+  const [sheet, setSheet] = useState(null); // 'title' | 'category' | 'date' | 'time' | 'address' | 'other'
+  const [errors, setErrors] = useState({});
+  const [verify, setVerify] = useState(false);
 
-  textarea: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.base,
-    minHeight: 100, fontSize: SIZES.body, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, textAlignVertical: 'top',
-  },
-  charCount: { fontSize: SIZES.caption, color: COLORS.textTertiary, textAlign: 'right', marginTop: SIZES.xs },
+  const duration = hoursBetween(timeStart, timeEnd);
+  const location = locations.find((l) => l.id === locationId);
+  const market = useMemo(() => {
+    const key = (title || '').split(' ')[0].toLowerCase();
+    if (!key) return null;
+    const similar = shifts.filter((s) => s.id !== editing?.id && s.title.toLowerCase().startsWith(key) && s.status !== 'cancelled');
+    if (similar.length < 2) return null;
+    const pays = similar.map((s) => s.pay).sort((a, b) => a - b);
+    return { min: pays[0], median: pays[Math.floor(pays.length / 2)] };
+  }, [title, shifts]);
 
-  templatesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, marginTop: SIZES.sm },
-  templateChip: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.accentSoft },
-  templateText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
+  const dateOptions = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return isoDay(d); });
+  const dateLabel = (d) => { const l = dayLabel(d); return l === 'Сегодня' || l === 'Завтра' ? `${l}, ${shortDate(d)}` : shortDate(d); };
 
-  dropdown: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, marginTop: SIZES.xs, ...SHADOWS.md, overflow: 'hidden' },
-  dropdownItem: { paddingHorizontal: SIZES.base, paddingVertical: SIZES.md, borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight },
-  dropdownText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  dropdownSub: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: 2 },
-  dropdownEmpty: { padding: SIZES.base, fontSize: SIZES.body, color: COLORS.textTertiary, textAlign: 'center' },
+  const submit = () => {
+    const e = {};
+    if (!title.trim()) e.title = 'Какая работа';
+    if (!locationId) e.address = 'Где смена';
+    if (description.trim().length < 20) e.description = 'Хотя бы пару предложений — минимум 20 символов';
+    if (!dates.length) e.date = 'Выбери день';
+    setErrors(e);
+    if (Object.keys(e).length) { haptic.error(); return; }
 
-  dateScroll: { marginHorizontal: -SIZES.lg },
-  dateRow: { flexDirection: 'row', gap: SIZES.sm, paddingHorizontal: SIZES.lg },
-  dateChip: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  dateChipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  dateChipText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  dateChipTextActive: { color: COLORS.white },
-  dateActions: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginBottom: SIZES.sm },
-  dateQuickBtn: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.xs, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.accentSoft },
-  dateQuickText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
-  dateCountText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
+    const requirements = {
+      noExperienceOk: !!req.noExperienceOk,
+      smartphoneRequired: !!req.smartphoneRequired,
+      medicalBookRequired: !!req.medicalBookRequired,
+      ownClothes: !!req.ownClothes,
+      minAge: req.adult ? 18 : null,
+      other: other.trim() || null,
+    };
+    const data = { title: title.trim(), category, description: description.trim(), locationId, timeStart, timeEnd, pay, spotsTotal: spots, urgent, requirements };
 
-  timeRow: { flexDirection: 'row', gap: SIZES.md },
-  timeDropdown: { maxHeight: 150, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, marginTop: SIZES.xs, ...SHADOWS.md },
-  timeItem: { paddingHorizontal: SIZES.base, paddingVertical: SIZES.sm },
-  timeText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  durationText: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: SIZES.xs },
+    if (editing) {
+      editShift(editing.id, { ...data, date: dates[0], durationHours: duration, payPerHour: +(pay / duration).toFixed(2) });
+      haptic.success();
+      navigation.goBack();
+      return;
+    }
+    const r = createShift({ ...data, date: dates });
+    if (r?.error === 'phone_not_verified') { setVerify(true); return; }
+    if (r?.error === 'limit') {
+      Alert.alert('Лимит на этот месяц исчерпан', 'Лимит текущего тарифа обновится первого числа следующего месяца.', [{ text: 'Понятно' }]);
+      return;
+    }
+    haptic.success();
+    navigation.goBack();
+  };
 
-  payRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.md },
-  payHint: { fontSize: SIZES.small, color: COLORS.success, ...FONTS.medium },
+  const chip = (label, on, onPress, key) => <Chip key={key || label} label={label} selected={on} onPress={() => { haptic.selection(); onPress(); }} tone="sheet" />;
 
-  counterRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.lg },
-  counterBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
-  counterValue: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, minWidth: 30, textAlign: 'center' },
+  return (
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: Platform.OS === 'ios' ? 16 : insets.top + 10, paddingBottom: 10 }}>
+        <Press feedback="none" onPress={() => navigation.goBack()} hitSlop={10}><T v="body" c="accent" style={{ fontSize: 17 }}>Отмена</T></Press>
+        <T v="rowTitle">{editing ? 'Изменить смену' : 'Новая смена'}</T>
+        <View style={{ width: 60 }} />
+      </View>
 
-  reqList: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, overflow: 'hidden', ...SHADOWS.sm },
-  reqRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SIZES.base, paddingVertical: SIZES.md, borderBottomWidth: 0.5, borderBottomColor: COLORS.borderLight },
-  reqLabel: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  urgentRow: { marginTop: SIZES.base, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.base, ...SHADOWS.sm },
-  urgentHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: 2 },
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 150 + insets.bottom }}>
+          <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+            <T v="caption" c="secondary">Оплата за смену</T>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+              <T v="moneyHero">{money(pay)}</T>
+              <T v="rowTitle" c="secondary" style={{ fontSize: 19, letterSpacing: 0 }}>BYN</T>
+              <T v="body" c="secondary" style={{ marginLeft: 4 }}>≈{Math.round(pay / duration)} BYN/ч</T>
+            </View>
+            {market ? (
+              <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}>
+                <Icon name="chart.bar" size={13} c="secondary" style={{ marginTop: 2 }} />
+                <T v="small" c="secondary" style={{ flex: 1 }}>
+                  {`Похожие смены платят от ${market.min} BYN, чаще — ${market.median}.${pay < market.median ? ' С оплатой ниже обычной смена закрывается дольше.' : ''}`}
+                </T>
+              </View>
+            ) : null}
+            <Slider min={45} max={140} step={5} value={Math.min(140, Math.max(45, pay))} onChange={setPay} accessibilityLabel="Оплата за смену" formatValue={(v) => `${v} BYN`} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 }}>
+              <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>45 BYN</T>
+              <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>140 BYN</T>
+            </View>
+          </View>
 
-  submitBtn: { backgroundColor: COLORS.accent, borderRadius: SIZES.radiusMd, height: SIZES.buttonHeight, justifyContent: 'center', alignItems: 'center', marginTop: SIZES['2xl'] },
-  submitBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.white },
-});
+          <Separator style={{ marginTop: 18 }} />
+          <LedgerRow label="Должность" value={title || 'Выбрать'} valueC={title ? 'label' : 'tertiary'} onPress={() => setSheet('title')} chevron alignTop={false} />
+          {errors.title ? <T v="small" c="destructive" style={{ paddingHorizontal: 22, marginTop: -6, marginBottom: 6, marginLeft: 120 }}>{errors.title}</T> : null}
+          <Press feedback="highlight" onPress={() => setSheet('category')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingTop: 13, paddingBottom: 14 }}>
+              <T v="caption" c="secondary" style={{ width: 84 }}>Категория</T>
+              {category ? <Icon name={CATEGORIES.find((x) => x.key === category)?.symbol} size={15} c="label" /> : null}
+              <T v="value" c={category ? 'label' : 'tertiary'} style={{ flex: 1 }}>{CATEGORIES.find((x) => x.key === category)?.label || 'Выбрать'}</T>
+              <Icon name="chevron.right" size={13} c="tertiary" weight="semibold" />
+            </View>
+          </Press>
+          <Separator inset />
+          <LedgerRow label={dates.length > 1 ? 'Даты' : 'Дата'} value={dates.length ? dates.map(dateLabel).join('\n') : 'Выбрать'} sub={dates.length > 1 ? `${dates.length} ${plural(dates.length, ['смена', 'смены', 'смен'])} с одинаковыми условиями` : undefined} onPress={() => setSheet('date')} chevron />
+          <LedgerRow label="Время" value={`${timeStart}–${timeEnd}`} sub={`${duration} ${plural(Math.round(duration), ['час', 'часа', 'часов'])}${duration > 12 ? ' — длинная смена' : ''}`} onPress={() => setSheet('time')} chevron />
+          <LedgerRow label="Мест" alignTop={false} value={String(spots)} right={<Stepper value={spots} onChange={setSpots} />} />
+          <LedgerRow label="Адрес" value={location?.address || 'Выбрать'} valueC={location ? 'label' : errors.address ? 'destructive' : 'tertiary'} sub={location?.name} onPress={() => setSheet('address')} chevron last />
+
+          <SectionHeader title="Задачи" />
+          <View style={{ paddingHorizontal: 22, paddingVertical: 12 }}>
+            <TextInput
+              value={description}
+              onChangeText={(v) => { setDescription(v); if (errors.description) setErrors((x) => ({ ...x, description: undefined })); }}
+              placeholder="Что нужно делать, с кем работать, где вход"
+              placeholderTextColor={c.labelTertiary}
+              multiline
+              style={{ minHeight: 88, borderRadius: 14, backgroundColor: c.fill, paddingHorizontal: 16, paddingTop: 13, paddingBottom: 13, fontSize: 15, lineHeight: 21, color: c.label, textAlignVertical: 'top', borderWidth: errors.description ? 2 : 0, borderColor: c.destructive }}
+              accessibilityLabel="Задачи на смене"
+            />
+            {errors.description ? <T v="small" c="destructive" style={{ marginTop: 6 }}>{errors.description}</T> : null}
+          </View>
+
+          <SectionHeader title="Требования" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
+            {REQS.map((r) => <Chip key={r.key} label={r.label} selected={!!req[r.key]} onPress={() => { haptic.selection(); setReq((x) => ({ ...x, [r.key]: !x[r.key] })); }} />)}
+            <Chip label={other ? other : 'Своё'} icon={other ? undefined : 'plus'} selected={!!other} onPress={() => setSheet('other')} />
+          </View>
+
+          <Separator />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 14 }}>
+            <View style={{ flex: 1 }}>
+              <T v="value" style={{ fontSize: 16, lineHeight: 21 }}>Отметить как срочную</T>
+              <T v="caption" c="secondary">Метка «Срочно» и вкладка «Срочные» в ленте исполнителей</T>
+            </View>
+            <Switch value={urgent} onValueChange={(v) => { haptic.selection(); setUrgent(v); }} trackColor={{ true: c.accent, false: c.fillSecondary }} ios_backgroundColor={c.fillSecondary} accessibilityLabel="Срочная смена" />
+          </View>
+          <Separator />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: insets.bottom + 10, backgroundColor: c.glassFallback, borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: c.glassFallbackBorder }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 10 }}>
+          <T v="caption" c="secondary">К выплате исполнителям</T>
+          <T v="bodyStrong" style={{ fontSize: 16 }}>{money(pay * spots * (editing ? 1 : dates.length))} BYN за {spots * (editing ? 1 : dates.length)} {plural(spots * (editing ? 1 : dates.length), ['место', 'места', 'мест'])}</T>
+        </View>
+        <Button title={editing ? 'Сохранить изменения' : dates.length > 1 ? `Опубликовать ${dates.length} ${plural(dates.length, ['смену', 'смены', 'смен'])}` : 'Опубликовать'} onPress={submit} />
+      </View>
+
+      {/* ── Pickers ─────────────────────────────────────────── */}
+      <Sheet visible={sheet === 'title'} onClose={() => setSheet(null)} title="Должность">
+        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+          <TextInput
+            value={title}
+            onChangeText={(v) => { setTitle(v); if (!category) setCategory(guessCategory(v)); }}
+            placeholder="Например, оператор ПВЗ"
+            placeholderTextColor={c.labelTertiary}
+            autoFocus
+            style={{ height: 54, borderRadius: 27, backgroundColor: c.fillSecondary, paddingHorizontal: 20, fontSize: 17, color: c.label }}
+            returnKeyType="done"
+            onSubmitEditing={() => setSheet(null)}
+          />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 14 }}>
+            {SHIFT_TEMPLATES.map((t) => chip(t, title === t, () => { setTitle(t); setCategory(guessCategory(t)); setSheet(null); }))}
+          </View>
+          <Button title="Готово" style={{ marginTop: 18 }} onPress={() => setSheet(null)} />
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'category'} onClose={() => setSheet(null)} title="Категория">
+        <View style={{ paddingTop: 6 }}>
+          {CATEGORIES.map((cat, i) => (
+            <View key={cat.key}>
+              <Press feedback="highlight" onPress={() => { haptic.selection(); setCategory(cat.key); setSheet(null); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 14 }}>
+                <Icon name={cat.symbol} size={18} c="label" />
+                <T v="value" style={{ flex: 1, fontSize: 16 }}>{cat.label}</T>
+                {category === cat.key ? <Icon name="checkmark" size={15} c="accent" weight="semibold" /> : null}
+              </Press>
+              {i < CATEGORIES.length - 1 ? <Separator inset /> : null}
+            </View>
+          ))}
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'date'} onClose={() => setSheet(null)} title={editing ? 'Дата' : 'Даты'}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+          {!editing ? <T v="caption" c="secondary" style={{ marginBottom: 10 }}>Можно выбрать несколько дней — опубликуем по смене на каждый.</T> : null}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {dateOptions.map((d) => chip(dateLabel(d), dates.includes(d), () => {
+              if (editing) { setDates([d]); return; }
+              setDates((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d].sort()));
+            }, d))}
+          </View>
+          <Button title="Готово" style={{ marginTop: 18 }} disabled={!dates.length} onPress={() => setSheet(null)} />
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'time'} onClose={() => setSheet(null)} title="Время">
+        <View style={{ paddingTop: 8 }}>
+          <T v="section" c="secondary" style={{ paddingHorizontal: 22 }}>Начало</T>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 22, paddingVertical: 10 }}>
+            {TIMES.map((t) => chip(t, timeStart === t, () => setTimeStart(t), `s${t}`))}
+          </ScrollView>
+          <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 8 }}>Конец</T>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 22, paddingVertical: 10 }}>
+            {TIMES.map((t) => chip(t, timeEnd === t, () => setTimeEnd(t), `e${t}`))}
+          </ScrollView>
+          <T v="body" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 6 }}>{timeStart}–{timeEnd} · {duration} ч{hoursBetween(timeStart, timeEnd) && timeEnd <= timeStart ? ' · через полночь' : ''}</T>
+          <View style={{ paddingHorizontal: 22 }}><Button title="Готово" style={{ marginTop: 16 }} onPress={() => setSheet(null)} /></View>
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'address'} onClose={() => setSheet(null)} title="Адрес">
+        <View style={{ paddingTop: 6 }}>
+          {locations.map((l, i) => (
+            <View key={l.id}>
+              <Press feedback="highlight" onPress={() => { haptic.selection(); setLocationId(l.id); setSheet(null); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 13 }}>
+                <View style={{ flex: 1 }}>
+                  <T v="value" style={{ fontSize: 16 }}>{l.address}</T>
+                  {l.name ? <T v="caption" c="secondary">{l.name}</T> : null}
+                </View>
+                {locationId === l.id ? <Icon name="checkmark" size={15} c="accent" weight="semibold" /> : null}
+              </Press>
+              <Separator inset />
+            </View>
+          ))}
+          <Press feedback="highlight" onPress={() => { setSheet(null); navigation.navigate('Locations'); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingVertical: 14 }}>
+            <Icon name="plus" size={15} c="accent" weight="semibold" />
+            <T v="value" c="accent" style={{ fontSize: 16 }}>{locations.length ? 'Добавить адрес' : 'Добавить первый адрес'}</T>
+          </Press>
+        </View>
+      </Sheet>
+
+      <Sheet visible={sheet === 'other'} onClose={() => setSheet(null)} title="Своё требование">
+        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+          <TextInput
+            value={other}
+            onChangeText={setOther}
+            placeholder="Например, закрытая обувь"
+            placeholderTextColor={c.labelTertiary}
+            autoFocus
+            maxLength={60}
+            style={{ height: 54, borderRadius: 27, backgroundColor: c.fillSecondary, paddingHorizontal: 20, fontSize: 17, color: c.label }}
+            returnKeyType="done"
+            onSubmitEditing={() => setSheet(null)}
+          />
+          <Button title="Готово" style={{ marginTop: 14 }} onPress={() => setSheet(null)} />
+        </View>
+      </Sheet>
+
+      <PhoneSheet
+        visible={verify}
+        onClose={() => setVerify(false)}
+        navigation={navigation}
+        title="Подтверди номер"
+        text="Смены публикуются только с подтверждённым номером — так исполнители знают, что за сменой стоит живой человек."
+        note="Номер увидят исполнители, которых ты подтвердишь на смену."
+        intent={{ type: 'verify-phone' }}
+      />
+    </View>
+  );
+}

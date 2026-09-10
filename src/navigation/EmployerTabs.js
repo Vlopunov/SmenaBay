@@ -5,6 +5,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import TabBar from '../design/TabBar';
 import useStore from '../store/useStore';
+import { shiftEnd } from '../design/format';
 
 import DashboardScreen from '../screens/employer/DashboardScreen';
 import EmployerShiftsScreen from '../screens/employer/EmployerShiftsScreen';
@@ -15,10 +16,15 @@ const Tab = createBottomTabNavigator();
 
 export default function EmployerTabs() {
   const unreadChat = useStore((s) => s.getUnreadChatCount());
+  // Same rule as «ждут ответа» on the dashboard: a pending application only
+  // counts while its shift hasn't ended — past ones can't be answered.
   const pending = useStore((s) => {
     const uid = s.currentUser?.id;
-    const own = new Set(s.shifts.filter((sh) => sh.companyId === uid && sh.status === 'active').map((sh) => sh.id));
-    return s.applications.filter((a) => own.has(a.shiftId) && a.status === 'pending').length;
+    const now = new Date();
+    const open = new Set(s.shifts
+      .filter((sh) => sh.companyId === uid && (sh.status === 'active' || sh.status === 'filled') && shiftEnd(sh) > now)
+      .map((sh) => sh.id));
+    return s.applications.filter((a) => open.has(a.shiftId) && a.status === 'pending').length;
   });
 
   const tabs = {

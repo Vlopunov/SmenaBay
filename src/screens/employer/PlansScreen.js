@@ -1,327 +1,78 @@
+// Tariff. On iOS this is information only — no prices, no purchase control:
+// selling a digital subscription in-app would require In-App Purchase
+// (Guideline 3.1.1), and employer billing is handled off the app. Android
+// keeps the selector.
 import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, ScrollView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, Separator, StatusPill, Button } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { plural, monthName } from '../../design/format';
+import { PLAN_NAMES, PLAN_LIMITS } from './employerData';
 import useStore from '../../store/useStore';
 
-const PLANS = [
-  {
-    id: 'free',
-    name: 'Бесплатный',
-    price: 0,
-    priceLabel: '0 BYN/мес',
-    icon: 'leaf',
-    features: [
-      'До 3 смен в месяц',
-      'Базовый поиск исполнителей',
-      'Публикация вакансий',
-      'Отклики и чат',
-    ],
-  },
-  {
-    id: 'business',
-    name: 'Бизнес',
-    price: 49,
-    priceLabel: '49 BYN/мес',
-    icon: 'briefcase',
-    popular: true,
-    features: [
-      'До 15 смен в месяц',
-      'Приоритетная поддержка',
-      'Аналитика и статистика',
-      'Приоритет в поиске',
-      'Отклики и чат',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Премиум',
-    price: 99,
-    priceLabel: '99 BYN/мес',
-    icon: 'diamond',
-    features: [
-      'Безлимитные смены',
-      'Персональный менеджер',
-      'Расширенная аналитика',
-      'Приоритет в поиске',
-      'Все функции платформы',
-      'Приоритетная поддержка',
-    ],
-  },
-];
-
-// On iOS the paid tiers are shown for information only — no price, no
-// purchase control. Selling a digital subscription inside the app would
-// require In-App Purchase (Guideline 3.1.1), and the previous behaviour
-// (tap "Выбрать" → plan upgraded for free) was a non-functional payment
-// flow that also breaches Guideline 2.1. Employer billing is handled off
-// the app; Android keeps the existing selector.
 const PURCHASABLE_IN_APP = Platform.OS !== 'ios';
 
-export default function PlansScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const changePlan = useStore(s => s.changePlan);
+const PLANS = [
+  { id: 'free', price: 0, features: ['Отклики и чат', 'Каталог исполнителей'] },
+  { id: 'business', price: 49, features: ['Отклики и чат', 'Каталог исполнителей', 'Приоритетная поддержка'] },
+  { id: 'premium', price: 99, features: ['Отклики и чат', 'Каталог исполнителей', 'Приоритетная поддержка', 'Персональный менеджер'] },
+];
 
-  const currentPlan = currentUser?.plan || 'free';
+export default function PlansScreen({ navigation }) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const me = useStore((s) => s.currentUser);
+  const shifts = useStore((s) => s.shifts);
+  const changePlan = useStore((s) => s.changePlan);
+  const current = me?.plan || 'free';
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const used = shifts.filter((s) => s.companyId === me?.id && s.createdAt >= monthStart && s.status !== 'cancelled').length;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{PURCHASABLE_IN_APP ? 'Тарифы и подписка' : 'Ваш тариф'}</Text>
-        <View style={styles.backBtn} />
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
-      >
-        <Text style={styles.subtitle}>
-          {PURCHASABLE_IN_APP
-            ? 'Выберите подходящий тариф для вашего бизнеса'
-            : 'Ваш текущий тариф и его возможности. По вопросам подключения расширенных тарифов напишите нам: support@smenabel.by'}
-        </Text>
-
-        {PLANS.map((plan) => {
-          const isCurrent = currentPlan === plan.id;
-
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar variant="fill" onBack={() => navigation.goBack()} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 10, paddingBottom: 14 }}>
+          <T v="title" accessibilityRole="header">{PURCHASABLE_IN_APP ? 'Тариф' : 'Твой тариф'}</T>
+          <T v="caption" c="secondary" style={{ marginTop: 2 }}>
+            {`За ${monthName()} опубликовано ${used}${Number.isFinite(PLAN_LIMITS[current]) ? ` из ${PLAN_LIMITS[current]}` : ''} ${plural(used, ['смена', 'смены', 'смен'])}`}
+          </T>
+        </View>
+        <Separator />
+        {PLANS.map((p, i) => {
+          const on = p.id === current;
+          const limit = PLAN_LIMITS[p.id];
           return (
-            <View
-              key={plan.id}
-              style={[
-                styles.card,
-                isCurrent && styles.cardCurrent,
-                plan.popular && !isCurrent && styles.cardPopular,
-              ]}
-            >
-              {/* Popular badge */}
-              {plan.popular && !isCurrent && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularBadgeText}>Популярный</Text>
+            <View key={p.id}>
+              <View style={{ paddingHorizontal: 22, paddingVertical: 16, backgroundColor: on ? c.fill : 'transparent' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <T v="rowTitle" style={{ flex: 1 }}>{PLAN_NAMES[p.id]}</T>
+                  {on ? <StatusPill status="confirmed" label="Текущий" /> : PURCHASABLE_IN_APP && p.price ? <T v="bodyStrong">{p.price} BYN/мес</T> : null}
                 </View>
-              )}
-
-              {/* Current badge */}
-              {isCurrent && (
-                <View style={styles.currentBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color={COLORS.accent} />
-                  <Text style={styles.currentBadgeText}>Текущий</Text>
+                <T v="value" style={{ marginTop: 4 }}>{Number.isFinite(limit) ? `До ${limit} ${plural(limit, ['смены', 'смен', 'смен'])} в месяц` : 'Без ограничений по сменам'}</T>
+                <View style={{ marginTop: 8, gap: 4 }}>
+                  {p.features.map((f) => (
+                    <View key={f} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Icon name="checkmark" size={12} c="secondary" weight="semibold" />
+                      <T v="caption" c="secondary">{f}</T>
+                    </View>
+                  ))}
                 </View>
-              )}
-
-              {/* Plan header */}
-              <View style={styles.cardHeader}>
-                <View style={[styles.iconWrap, isCurrent && styles.iconWrapCurrent]}>
-                  <Ionicons
-                    name={plan.icon}
-                    size={22}
-                    color={isCurrent ? COLORS.white : COLORS.accent}
-                  />
-                </View>
-                <View style={styles.cardHeaderText}>
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  {PURCHASABLE_IN_APP && <Text style={styles.planPrice}>{plan.priceLabel}</Text>}
-                </View>
+                {PURCHASABLE_IN_APP && !on ? (
+                  <Button title="Выбрать" size="sm" variant="secondary" style={{ alignSelf: 'flex-start', marginTop: 12 }} onPress={() => { haptic.success(); changePlan(p.id); }} />
+                ) : null}
               </View>
-
-              {/* Features */}
-              <View style={styles.featuresList}>
-                {plan.features.map((feature) => (
-                  <View key={feature} style={styles.featureRow}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={18}
-                      color={COLORS.success}
-                    />
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Action button */}
-              {isCurrent ? (
-                <View style={styles.currentBtn}>
-                  <Text style={styles.currentBtnText}>Текущий тариф</Text>
-                </View>
-              ) : PURCHASABLE_IN_APP ? (
-                <TouchableOpacity
-                  style={styles.selectBtn}
-                  onPress={() => changePlan(plan.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.selectBtnText}>Выбрать</Text>
-                </TouchableOpacity>
-              ) : null}
+              {i < PLANS.length - 1 ? <Separator inset={!on} /> : null}
             </View>
           );
         })}
-
-        <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
+        <Separator />
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SIZES.base,
-    paddingVertical: SIZES.md,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: SIZES.radiusFull,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.sm,
-  },
-  headerTitle: {
-    fontSize: SIZES.title,
-    ...FONTS.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.3,
-  },
-  scroll: {
-    paddingHorizontal: SIZES.lg,
-  },
-  subtitle: {
-    fontSize: SIZES.body,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SIZES.xl,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: COLORS.white,
-    borderRadius: SIZES.radiusXl,
-    padding: SIZES.lg,
-    marginBottom: SIZES.base,
-    ...SHADOWS.md,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  cardCurrent: {
-    borderColor: COLORS.accent,
-  },
-  cardPopular: {
-    borderColor: COLORS.accentLight,
-  },
-  popularBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: COLORS.accentSoft,
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.radiusFull,
-    marginBottom: SIZES.md,
-  },
-  popularBadgeText: {
-    fontSize: SIZES.caption,
-    ...FONTS.semibold,
-    color: COLORS.accent,
-  },
-  currentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: COLORS.accentSoft,
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.xs,
-    borderRadius: SIZES.radiusFull,
-    gap: 4,
-    marginBottom: SIZES.md,
-  },
-  currentBadgeText: {
-    fontSize: SIZES.caption,
-    ...FONTS.semibold,
-    color: COLORS.accent,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SIZES.base,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: SIZES.radiusMd,
-    backgroundColor: COLORS.accentSoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconWrapCurrent: {
-    backgroundColor: COLORS.accent,
-  },
-  cardHeaderText: {
-    marginLeft: SIZES.md,
-  },
-  planName: {
-    fontSize: SIZES.bodyLarge,
-    ...FONTS.bold,
-    color: COLORS.textPrimary,
-  },
-  planPrice: {
-    fontSize: SIZES.body,
-    ...FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  featuresList: {
-    marginBottom: SIZES.base,
-    gap: SIZES.sm,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SIZES.sm,
-  },
-  featureText: {
-    fontSize: SIZES.body,
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  selectBtn: {
-    height: SIZES.buttonHeight,
-    backgroundColor: COLORS.accent,
-    borderRadius: SIZES.radiusMd,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectBtnText: {
-    fontSize: SIZES.bodyLarge,
-    ...FONTS.semibold,
-    color: COLORS.textInverse,
-  },
-  currentBtn: {
-    height: SIZES.buttonHeight,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.radiusMd,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  currentBtnText: {
-    fontSize: SIZES.bodyLarge,
-    ...FONTS.medium,
-    color: COLORS.textTertiary,
-  },
-});

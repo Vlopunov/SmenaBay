@@ -1,188 +1,140 @@
-import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// A worker as employers see them: the same four numbers as in their own
+// profile — cancellations shown as plainly as the rating — plus reviews.
+import React, { useMemo } from 'react';
+import { View, ScrollView, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, PersonAvatar, StatRow, FillBanner, SectionHeader, LedgerRow, Separator, EmptyState, Button, RoundButton } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { showActions } from '../../design/ActionSheet';
+import { plural, ago, presence, parseDay, shiftStart, shortDate, timeRange } from '../../design/format';
+import { prettyPhone } from '../../design/PhoneField';
 import { BADGE_INFO } from '../../data/mockData';
-import useStore from '../../store/useStore';
-import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
-import Avatar from '../../components/Avatar';
 import ReportMenu from '../../components/ReportMenu';
+import useStore from '../../store/useStore';
+
+const MONTHS_SINCE = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
 export default function PublicWorkerProfileScreen({ route, navigation }) {
   const { workerId } = route.params;
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const getWorkerById = useStore(s => s.getWorkerById);
-  const getReviewsFor = useStore(s => s.getReviewsFor);
-  const isFavoriteFn = useStore(s => s.isFavorite);
-  const worker = getWorkerById(workerId);
-  const reviews = getReviewsFor(workerId);
-  const companies = useStore(s => s.companies);
-  const currentUser = useStore(s => s.currentUser);
-  const toggleFavorite = useStore(s => s.toggleFavorite);
-  const isFavorite = isFavoriteFn(workerId);
+  const me = useStore((s) => s.currentUser);
+  const worker = useStore((s) => s.getWorkerById(workerId));
+  const applications = useStore((s) => s.applications);
+  const reviewsAll = useStore((s) => s.reviews);
+  const companies = useStore((s) => s.companies);
+  const shifts = useStore((s) => s.shifts);
+  const favorite = useStore((s) => s.isFavorite(workerId));
+  const toggleFavorite = useStore((s) => s.toggleFavorite);
+  const invite = useStore((s) => s.inviteWorkerToShift);
 
-  if (!worker) return null;
-  const isEmployer = currentUser?.role === 'employer';
-  const companyReviews = reviews.filter(r => r.type === 'company_about_worker');
+  const isEmployer = me?.role === 'employer';
+  const reviews = useMemo(() => reviewsAll.filter((r) => r.targetId === workerId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), [reviewsAll, workerId]);
+  const cancels = useMemo(() => applications.filter((a) => a.workerId === workerId && a.status === 'cancelled_by_worker').length, [applications, workerId]);
+  const withMe = useMemo(() => (isEmployer ? applications.filter((a) => a.workerId === workerId && a.status === 'approved' && shifts.find((s) => s.id === a.shiftId)?.companyId === me.id).length : 0), [applications, shifts, workerId, isEmployer, me?.id]);
+  const myOpenShifts = useMemo(() => {
+    if (!isEmployer) return [];
+    const now = new Date();
+    return shifts.filter((s) => s.companyId === me.id && s.status === 'active' && shiftStart(s) > now && s.spotsTaken < s.spotsTotal);
+  }, [shifts, isEmployer, me?.id]);
+
+  if (!worker) return <View style={{ flex: 1, backgroundColor: c.ledger }} />;
+  const self = me?.id === workerId;
+  const since = worker.registeredAt ? (() => { const d = parseDay(worker.registeredAt); return `с ${MONTHS_SINCE[d.getMonth()]} ${d.getFullYear()}`; })() : '';
+  const badges = (worker.badges || []).map((b) => BADGE_INFO[b]?.label).filter(Boolean);
+  const reliable = worker.badges?.includes('no_cancels') && cancels === 0;
+
+  const callOrInvite = () => {
+    if (!myOpenShifts.length) {
+      Alert.alert('Нет открытых смен', 'Создай смену — и сможешь позвать на неё исполнителя.', [
+        { text: 'Не сейчас', style: 'cancel' },
+        { text: 'Создать смену', onPress: () => navigation.navigate('CreateShift') },
+      ]);
+      return;
+    }
+    showActions({
+      title: `Позвать ${worker.firstName} на смену`,
+      options: myOpenShifts.map((s) => ({
+        label: `${s.title} · ${shortDate(s.date)}, ${timeRange(s)}`,
+        onPress: () => {
+          const r = invite(workerId, s.id);
+          if (r?.error === 'already_invited') { Alert.alert('Уже позвали', `${worker.firstName} уже получил(а) приглашение на эту смену.`); return; }
+          haptic.success();
+          Alert.alert('Приглашение отправлено', `${worker.firstName} увидит его в уведомлениях.`);
+        },
+      })),
+    });
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Профиль</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {isEmployer && (
-            <TouchableOpacity style={styles.favBtn} onPress={() => toggleFavorite(workerId)}>
-              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={22} color={isFavorite ? COLORS.error : COLORS.textPrimary} />
-            </TouchableOpacity>
-          )}
-          <ReportMenu
-            targetType="user"
-            targetId={workerId}
-            targetName={`${worker.firstName} ${worker.lastName}`}
-            style={styles.favBtn}
-          />
-        </View>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.profileCard}>
-          <View style={{ alignSelf: 'center' }}>
-            <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={80} />
-            <OnlineDot lastSeen={worker.lastSeen} size={16} />
-          </View>
-          <Text style={styles.name}>{worker.firstName} {worker.lastName}</Text>
-          {formatLastSeen(worker.lastSeen) ? (
-            <Text style={styles.lastSeen}>{formatLastSeen(worker.lastSeen)}</Text>
-          ) : null}
-          <Text style={styles.city}>{worker.city} · На платформе с {new Date(worker.registeredAt).toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' })}</Text>
-          {worker.phoneVisible !== false && worker.phone && isEmployer && (
-            <TouchableOpacity
-              style={styles.phoneBtn}
-              onPress={() => Linking.openURL(`tel:${worker.phone}`)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.phoneBtnText}>{worker.phone}</Text>
-            </TouchableOpacity>
-          )}
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{worker.rating > 0 ? worker.rating.toFixed(1) : '—'}</Text>
-              <Text style={styles.statLabel}>Рейтинг</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{worker.shiftsCompleted}</Text>
-              <Text style={styles.statLabel}>Смен</Text>
-            </View>
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar
+        variant="fill"
+        onBack={() => navigation.goBack()}
+        right={!self ? (
+          <>
+            {isEmployer ? <RoundButton icon={favorite ? 'heart.fill' : 'heart'} variant="fill" onPress={() => { haptic.selection(); toggleFavorite(workerId); }} accessibilityLabel={favorite ? 'Убрать из своих людей' : 'Добавить в свои люди'} /> : null}
+            <ReportMenu targetType="user" targetId={workerId} targetName={`${worker.firstName} ${worker.lastName}`} />
+          </>
+        ) : null}
+      />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + (isEmployer && !self ? 110 : 30) }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 10, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <PersonAvatar first={worker.firstName} last={worker.lastName} uri={worker.avatar} size={60} />
+          <View style={{ flex: 1 }}>
+            <T v="sheetTitle" accessibilityRole="header">{worker.firstName} {worker.lastName}</T>
+            <T v="caption" c="secondary" style={{ marginTop: 2 }}>{[worker.city, since, presence(worker.lastSeen)].filter(Boolean).join(' · ')}</T>
           </View>
         </View>
+        <StatRow
+          style={{ marginTop: 22 }}
+          items={[
+            { label: 'рейтинг', value: worker.rating ? worker.rating.toFixed(1) : '—' },
+            { label: plural(worker.shiftsCompleted || 0, ['смена', 'смены', 'смен']), value: String(worker.shiftsCompleted || 0) },
+            { label: plural(cancels, ['отмена', 'отмены', 'отмен']), value: String(cancels) },
+            isEmployer ? { label: 'у тебя', value: String(withMe) } : { label: plural(reviews.length, ['отзыв', 'отзыва', 'отзывов']), value: String(reviews.length) },
+          ]}
+        />
+        {reliable ? (
+          <FillBanner style={{ marginTop: 20 }} icon="checkmark.shield" title="Надёжный исполнитель" text={`${worker.shiftsCompleted} ${plural(worker.shiftsCompleted, ['смена', 'смены', 'смен'])} и ни одной отмены`} />
+        ) : <Separator style={{ marginTop: 20 }} />}
+        {worker.categories?.length ? <LedgerRow label="Умеет" value={worker.categories.join(', ')} /> : null}
+        {badges.length ? <LedgerRow label="Метки" value={badges.join(', ')} /> : null}
+        <LedgerRow label="Документы" value={[worker.documents?.passport ? 'паспорт' : null, worker.documents?.medicalBook ? 'медкнижка' : null].filter(Boolean).join(', ') || 'не указаны'} valueC={worker.documents?.passport || worker.documents?.medicalBook ? 'label' : 'secondary'} />
+        {isEmployer && worker.phoneVisible !== false && worker.phone ? (
+          <LedgerRow label="Телефон" value={prettyPhone(worker.phone)} alignTop={false} right={<Button title="Позвонить" size="sm" variant="secondary" icon="phone" onPress={() => Linking.openURL(`tel:${worker.phone}`)} />} last />
+        ) : null}
 
-        {/* Badges */}
-        {worker.badges.length > 0 && (
-          <View style={styles.badgesRow}>
-            {worker.badges.map(b => {
-              const info = BADGE_INFO[b];
-              if (!info) return null;
-              return (
-                <View key={b} style={[styles.badge, { backgroundColor: info.color + '14' }]}>
-                  <Ionicons name={info.icon} size={14} color={info.color} />
-                  <Text style={[styles.badgeText, { color: info.color }]}>{info.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Categories */}
-        <View style={styles.categoriesRow}>
-          {worker.categories.map(c => (
-            <View key={c} style={styles.catChip}>
-              <Text style={styles.catText}>{c}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Reviews */}
-        <Text style={styles.sectionTitle}>Отзывы ({companyReviews.length})</Text>
-        {companyReviews.map(r => {
-          const company = companies.find(c => c.id === r.authorId);
+        <SectionHeader title="Отзывы заказчиков" right={reviews.length ? String(reviews.length) : undefined} />
+        {reviews.length ? reviews.map((r, i) => {
+          const author = companies.find((co) => co.id === r.authorId);
           return (
-            <View key={r.id} style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <Text style={styles.reviewAuthor}>{company?.companyName || '—'}</Text>
-                <View style={styles.reviewStars}>
-                  {[1,2,3,4,5].map(s => (
-                    <Ionicons key={s} name={s <= r.overallRating ? 'star' : 'star-outline'} size={14} color={COLORS.star} />
-                  ))}
+            <View key={r.id}>
+              <View style={{ paddingHorizontal: 22, paddingVertical: 13 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icon name="star.fill" size={11} c="label" />
+                  <T v="bodyStrong">{Number(r.overallRating || 0).toFixed(1)}</T>
+                  <T v="caption" c="secondary" style={{ flex: 1 }} numberOfLines={1}>· {author?.companyName || 'Заказчик'}</T>
+                  <T v="small" c="secondary">{ago(r.createdAt)}</T>
                 </View>
+                {r.text ? <T v="body" style={{ marginTop: 4 }}>{r.text}</T> : null}
+                {r.tags?.length ? <T v="small" c="secondary" style={{ marginTop: 4 }}>{r.tags.join(' · ')}</T> : null}
               </View>
-              {r.text && <Text style={styles.reviewText}>{r.text}</Text>}
-              {r.recommendAgain !== null && (
-                <View style={[styles.recBadge, { backgroundColor: r.recommendAgain ? '#D1FAE5' : '#FEE2E2' }]}>
-                  <Ionicons name={r.recommendAgain ? 'thumbs-up' : 'thumbs-down'} size={12} color={r.recommendAgain ? '#059669' : '#EF4444'} />
-                  <Text style={[styles.recText, { color: r.recommendAgain ? '#059669' : '#EF4444' }]}>
-                    {r.recommendAgain ? 'Рекомендует' : 'Не рекомендует'}
-                  </Text>
-                </View>
-              )}
+              {i < reviews.length - 1 ? <Separator inset /> : null}
             </View>
           );
-        })}
-
-        {companyReviews.length === 0 && (
-          <Text style={styles.noReviews}>Пока нет отзывов</Text>
-        )}
-
-        <View style={{ height: 40 }} />
+        }) : <EmptyState title="Отзывов пока нет" text={self ? 'Они появятся после первых смен.' : 'Отзывы появляются после смен.'} />}
+        <Separator />
       </ScrollView>
+
+      {isEmployer && !self ? (
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: insets.bottom + 10, backgroundColor: c.glassFallback, borderTopWidth: 1, borderTopColor: c.glassFallbackBorder }}>
+          <Button title="Позвать на смену" onPress={callOrInvite} />
+        </View>
+      ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  navTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  favBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  scroll: { paddingHorizontal: SIZES.lg },
-  profileCard: { alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.xl, ...SHADOWS.md },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.skeleton },
-  name: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, marginTop: SIZES.md },
-  lastSeen: { fontSize: SIZES.small, color: '#22C55E', marginTop: 2 },
-  city: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
-  phoneBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: SIZES.sm,
-    marginTop: SIZES.md, paddingVertical: SIZES.sm, paddingHorizontal: SIZES.md,
-    backgroundColor: COLORS.accentSoft, borderRadius: SIZES.radiusFull,
-  },
-  phoneBtnText: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.accent },
-  statsRow: { flexDirection: 'row', alignItems: 'center', marginTop: SIZES.lg, gap: SIZES.xl },
-  stat: { alignItems: 'center' },
-  statValue: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  statLabel: { fontSize: SIZES.caption, color: COLORS.textSecondary, marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: COLORS.borderLight },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, marginTop: SIZES.lg },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull },
-  badgeText: { fontSize: SIZES.small, ...FONTS.medium },
-  categoriesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm, marginTop: SIZES.md },
-  catChip: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  catText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textPrimary },
-  sectionTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.xl, marginBottom: SIZES.md },
-  reviewCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.md, marginBottom: SIZES.sm, ...SHADOWS.sm },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  reviewAuthor: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  reviewStars: { flexDirection: 'row', gap: 1 },
-  reviewText: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: SIZES.sm, lineHeight: 20 },
-  recBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', paddingHorizontal: SIZES.sm, paddingVertical: 3, borderRadius: SIZES.radiusSm, marginTop: SIZES.sm },
-  recText: { fontSize: 11, ...FONTS.medium },
-  noReviews: { fontSize: SIZES.body, color: COLORS.textTertiary, textAlign: 'center', paddingVertical: SIZES.xl },
-});

@@ -183,3 +183,22 @@ export function dative(name = '') {
   if (/[бвгджзклмнпрстфхцчшщ]$/i.test(n)) return n + 'у'; // Иван → Ивану
   return n;
 }
+
+/** Gender-neutral presence: «в сети» · «в сети в 18:26» · «в сети вчера» · «в сети 12 сен». */
+export function presence(iso, now = new Date()) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const diff = now - d;
+  if (diff >= 0 && diff < 5 * 60000) return 'в сети';
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const label = dayLabel(d, now);
+  if (label === 'Сегодня') return `в сети в ${hm}`;
+  if (label === 'Вчера') return 'в сети вчера';
+  return `в сети ${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
+}
+
+/** Message timestamp: «09:14». */
+export function clock(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}

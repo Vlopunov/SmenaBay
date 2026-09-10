@@ -35,6 +35,9 @@ export function runIntent(intent, navigation) {
     navigation.navigate('ShiftDetail', { shiftId, applyResult: result?.error || 'sent', t: Date.now() });
     return;
   }
+  // Only confirming a number (e.g. from the new-shift form): go back to the
+  // form with everything still filled in.
+  if (intent?.type === 'verify-phone') { navigation.goBack(); return; }
   navigation.popToTop();
 }
 

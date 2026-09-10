@@ -11,6 +11,7 @@ import {
   loadFromFirestore, setupRealtimeListeners,
 } from '../services/firestoreSync';
 import { signOut as authSignOut, deleteAccount as authDeleteAccount } from '../services/auth';
+import { shortDate } from '../design/format';
 
 const useStore = create(
   persist(
@@ -506,7 +507,7 @@ const useStore = create(
       if (shift) {
         get().addNotification(shift.companyId, 'shift_cancelled',
           'Исполнитель отменил смену',
-          `${worker?.firstName || 'Исполнитель'} не выйдет на «${shift.title}» ${shift.date}, ${shift.timeStart}. Место снова открыто.`,
+          `${worker?.firstName || 'Исполнитель'} не выйдет на «${shift.title}» ${shortDate(shift.date)}, ${shift.timeStart}. Место снова открыто.`,
           shift.id);
       }
     }
@@ -533,7 +534,7 @@ const useStore = create(
     // Auto-create chat conversation with system message
     if (shift) {
       const conv = get().getOrCreateConversation(app.shiftId, app.workerId, shift.companyId);
-      get().sendSystemMessage(conv.id, `Заявка подтверждена! Смена «${shift.title}» — ${shift.date}, ${shift.timeStart}–${shift.timeEnd}`);
+      get().sendSystemMessage(conv.id, `Заявка подтверждена! Смена «${shift.title}» — ${shortDate(shift.date)}, ${shift.timeStart}–${shift.timeEnd}`);
     }
 
     // Check if shift is now filled
@@ -815,7 +816,7 @@ const useStore = create(
       msgs.push({
         id: 'msg_seed_' + convs.length + '_0',
         senderId: 'system',
-        text: `Заявка подтверждена! Смена «${shift.title}» — ${shift.date}, ${shift.timeStart}–${shift.timeEnd}`,
+        text: `Заявка подтверждена! Смена «${shift.title}» — ${shortDate(shift.date)}, ${shift.timeStart}–${shift.timeEnd}`,
         createdAt: new Date(Date.now() - (convs.length + 1) * 3600000 - 60000).toISOString(),
         read: true,
         isSystem: true,

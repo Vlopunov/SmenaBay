@@ -40,7 +40,7 @@ export function Countdown({ shift, size = 'hero' }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: hero ? 7 : 6 }} accessibilityLiveRegion="polite">
       <Icon name="timer" size={hero ? 19 : 15} c="label" weight="semibold" />
-      <T v={hero ? 'countdown' : 'bodyStrong'} style={hero ? null : { lineHeight: 20 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{cd.text}</T>
+      <T v={hero ? 'countdown' : 'bodyStrong'} style={[{ flexShrink: 1 }, hero ? null : { lineHeight: 20 }]} numberOfLines={1}>{cd.text}</T>
     </View>
   );
 }

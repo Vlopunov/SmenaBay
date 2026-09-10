@@ -1,239 +1,103 @@
-import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Company as workers see it: rating by what matters on a shift, its open
+// shifts in the same feed rows, and what other workers wrote.
+import React, { useMemo } from 'react';
+import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
-import { BADGE_INFO } from '../../data/mockData';
-import useStore from '../../store/useStore';
-import { formatDateShort } from '../../utils/formatDate';
-import OnlineDot, { formatLastSeen } from '../../components/OnlineDot';
-import Avatar from '../../components/Avatar';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, Monogram, StatRow, SectionHeader, LedgerRow, Separator, EmptyState } from '../../design/ui';
+import { FeedShiftRow } from '../../design/ShiftRow';
+import { useTheme } from '../../design/theme';
+import { plural, ago, shiftStart } from '../../design/format';
 import ReportMenu from '../../components/ReportMenu';
+import useStore from '../../store/useStore';
 
-const RATING_LABELS = {
-  conditions: 'Условия', descriptionMatch: 'Описание',
-  attitude: 'Отношение', paymentSpeed: 'Оплата',
-};
+const CRITERIA = { conditions: 'Условия', descriptionMatch: 'Как в описании', attitude: 'Отношение', paymentSpeed: 'Оплата вовремя' };
 
 export default function PublicCompanyProfileScreen({ route, navigation }) {
   const { companyId } = route.params;
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const getCompanyById = useStore(s => s.getCompanyById);
-  const getReviewsFor = useStore(s => s.getReviewsFor);
-  const company = getCompanyById(companyId);
-  const reviews = getReviewsFor(companyId);
-  const allShifts = useStore(s => s.shifts);
-  const shifts = allShifts.filter(sh => sh.companyId === companyId && sh.status === 'active');
-  const workers = useStore(s => s.workers);
-  const [filterRating, setFilterRating] = useState(null);
+  const company = useStore((s) => s.getCompanyById(companyId));
+  const shifts = useStore((s) => s.shifts);
+  const reviewsAll = useStore((s) => s.reviews);
+  const workers = useStore((s) => s.workers);
+  const getLocationById = useStore((s) => s.getLocationById);
 
-  if (!company) return null;
+  const reviews = useMemo(() => reviewsAll.filter((r) => r.targetId === companyId).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))), [reviewsAll, companyId]);
+  const open = useMemo(() => {
+    const now = new Date();
+    return shifts.filter((s) => s.companyId === companyId && s.status === 'active' && shiftStart(s) > now).sort((a, b) => (a.date + a.timeStart).localeCompare(b.date + b.timeStart));
+  }, [shifts, companyId]);
+  const cancelled = useMemo(() => shifts.filter((s) => s.companyId === companyId && s.status === 'cancelled').length, [shifts, companyId]);
+  const criteria = useMemo(() => {
+    const sums = {}; const counts = {};
+    reviews.forEach((r) => Object.entries(r.categoryRatings || {}).forEach(([k, v]) => { sums[k] = (sums[k] || 0) + v; counts[k] = (counts[k] || 0) + 1; }));
+    return Object.keys(CRITERIA).filter((k) => counts[k]).map((k) => ({ key: k, label: CRITERIA[k], value: sums[k] / counts[k] }));
+  }, [reviews]);
 
-  // Average category ratings
-  const workerReviews = reviews.filter(r => r.type === 'worker_about_company');
-  const avgCat = {};
-  Object.keys(RATING_LABELS).forEach(key => {
-    const vals = workerReviews.filter(r => r.categoryRatings[key]).map(r => r.categoryRatings[key]);
-    avgCat[key] = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
-  });
-
-  const filtered = filterRating
-    ? workerReviews.filter(r => Math.floor(r.overallRating) === filterRating)
-    : workerReviews;
-
-  const monthsOnPlatform = Math.max(1, Math.floor((new Date() - new Date(company.registeredAt)) / (30*24*60*60*1000)));
+  if (!company) return <View style={{ flex: 1, backgroundColor: c.ledger }} />;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.navTitle}>Профиль компании</Text>
-        <ReportMenu
-          targetType="user"
-          targetId={companyId}
-          targetName={company.companyName}
-          style={styles.backBtn}
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar variant="fill" onBack={() => navigation.goBack()} right={<ReportMenu targetType="user" targetId={companyId} targetName={company.companyName} />} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 10, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Monogram name={company.companyName} logo={company.logo} size={56} />
+          <View style={{ flex: 1 }}>
+            <T v="sheetTitle" accessibilityRole="header">{company.companyName}</T>
+            <T v="caption" c="secondary" style={{ marginTop: 2 }}>{[company.businessCategory, company.city].filter(Boolean).join(' · ')}</T>
+          </View>
+        </View>
+        <StatRow
+          style={{ marginTop: 22 }}
+          items={[
+            { label: 'рейтинг', value: company.rating ? company.rating.toFixed(1) : '—' },
+            { label: plural(company.reviewsCount || 0, ['отзыв', 'отзыва', 'отзывов']), value: String(company.reviewsCount || 0) },
+            { label: plural(company.totalShiftsPublished || 0, ['смена', 'смены', 'смен']), value: String(company.totalShiftsPublished || 0) },
+            { label: plural(cancelled, ['отмена', 'отмены', 'отмен']), value: String(cancelled) },
+          ]}
         />
-      </View>
+        <Separator style={{ marginTop: 20 }} />
+        {company.unp ? <LedgerRow label="УНП" value={company.unp} /> : null}
+        {company.description ? <LedgerRow label="О компании" value={company.description} valueV="body" /> : null}
+        {criteria.map((cr, i) => (
+          <LedgerRow
+            key={cr.key}
+            label={cr.label}
+            alignTop={false}
+            value={cr.value.toFixed(1)}
+            right={<View style={{ flexDirection: 'row', gap: 2 }}>{[1, 2, 3, 4, 5].map((n) => <Icon key={n} name="star.fill" size={11} c={n <= Math.round(cr.value) ? 'label' : 'tertiary'} />)}</View>}
+            last={i === criteria.length - 1}
+          />
+        ))}
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Header */}
-        <View style={styles.profileCard}>
-          <View style={{ alignSelf: 'center' }}>
-            <Avatar uri={company.logo} name={company.companyName} size={80} style={{ borderRadius: 20 }} />
-            <OnlineDot lastSeen={company.lastSeen} size={16} />
-          </View>
-          <Text style={styles.name}>{company.companyName}</Text>
-          {formatLastSeen(company.lastSeen) ? (
-            <Text style={styles.lastSeen}>{formatLastSeen(company.lastSeen)}</Text>
-          ) : null}
-          <Text style={styles.category}>{company.businessCategory} · {company.city}</Text>
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={18} color={COLORS.star} />
-            <Text style={styles.ratingValue}>{company.rating.toFixed(1)}</Text>
-            <Text style={styles.ratingCount}>({company.reviewsCount} отзывов)</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>На платформе {monthsOnPlatform} мес</Text>
-            <Text style={styles.metaDot}>·</Text>
-            <Text style={styles.metaText}>{company.totalShiftsPublished} смен</Text>
-          </View>
-          {company.phoneVisible !== false && company.phone && (
-            <TouchableOpacity
-              style={styles.phoneBtn}
-              onPress={() => Linking.openURL(`tel:${company.phone}`)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.phoneBtnText}>{company.phone}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <SectionHeader title="Открытые смены" right={open.length ? String(open.length) : undefined} />
+        {open.length ? open.map((s, i) => (
+          <FeedShiftRow key={s.id} shift={s} company={company} location={getLocationById(s.locationId)} last={i === open.length - 1} showRating={false} onPress={() => navigation.push('ShiftDetail', { shiftId: s.id })} />
+        )) : <EmptyState title="Сейчас открытых смен нет" text="Новые смены этой компании появятся в ленте." />}
 
-        {/* Category Ratings */}
-        <View style={styles.catRatings}>
-          {Object.entries(RATING_LABELS).map(([key, label]) => (
-            <View key={key} style={styles.catRow}>
-              <Text style={styles.catLabel}>{label}</Text>
-              <View style={styles.catBarBg}>
-                <View style={[styles.catBar, { width: `${(avgCat[key] / 5) * 100}%` }]} />
+        <SectionHeader title="Отзывы исполнителей" right={reviews.length ? String(reviews.length) : undefined} />
+        {reviews.length ? reviews.map((r, i) => {
+          const author = workers.find((w) => w.id === r.authorId);
+          return (
+            <View key={r.id}>
+              <View style={{ paddingHorizontal: 22, paddingVertical: 13 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icon name="star.fill" size={11} c="label" />
+                  <T v="bodyStrong">{Number(r.overallRating || 0).toFixed(1)}</T>
+                  <T v="caption" c="secondary" style={{ flex: 1 }}>· {r.anonymous ? 'Анонимно' : author?.firstName || 'Исполнитель'}</T>
+                  <T v="small" c="secondary">{ago(r.createdAt)}</T>
+                </View>
+                {r.text ? <T v="body" style={{ marginTop: 4 }}>{r.text}</T> : null}
+                {r.tags?.length ? <T v="small" c="secondary" style={{ marginTop: 4 }}>{r.tags.join(' · ')}</T> : null}
               </View>
-              <Text style={styles.catValue}>{avgCat[key]}</Text>
+              {i < reviews.length - 1 ? <Separator inset /> : null}
             </View>
-          ))}
-        </View>
-
-        {/* Active Shifts */}
-        {shifts.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Активные смены ({shifts.length})</Text>
-            {shifts.slice(0, 3).map(s => (
-              <TouchableOpacity
-                key={s.id}
-                style={styles.shiftMini}
-                onPress={() => navigation.navigate('ShiftDetail', { shiftId: s.id })}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.shiftMiniTitle}>{s.title}</Text>
-                  <Text style={styles.shiftMiniDate}>{formatDateShort(s.date)}, {s.timeStart}–{s.timeEnd}</Text>
-                </View>
-                <Text style={styles.shiftMiniPay}>{s.pay} BYN</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Reviews */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Отзывы ({workerReviews.length})</Text>
-
-          {/* Filter */}
-          <View style={styles.reviewFilters}>
-            <TouchableOpacity
-              style={[styles.rFilterChip, !filterRating && styles.rFilterActive]}
-              onPress={() => setFilterRating(null)}
-            >
-              <Text style={[styles.rFilterText, !filterRating && styles.rFilterTextActive]}>Все</Text>
-            </TouchableOpacity>
-            {[5,4,3].map(r => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.rFilterChip, filterRating === r && styles.rFilterActive]}
-                onPress={() => setFilterRating(filterRating === r ? null : r)}
-              >
-                <Ionicons name="star" size={12} color={filterRating === r ? COLORS.white : COLORS.star} />
-                <Text style={[styles.rFilterText, filterRating === r && styles.rFilterTextActive]}>{r}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {filtered.map(r => {
-            const author = workers.find(w => w.id === r.authorId);
-            return (
-              <View key={r.id} style={styles.reviewCard}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewAuthor}>
-                    {r.anonymous ? 'Исполнитель' : (author ? `${author.firstName} ${author.lastName[0]}.` : '—')}
-                  </Text>
-                  <View style={styles.reviewStars}>
-                    {[1,2,3,4,5].map(s => (
-                      <Ionicons key={s} name={s <= r.overallRating ? 'star' : 'star-outline'} size={14} color={COLORS.star} />
-                    ))}
-                  </View>
-                </View>
-                {r.text && <Text style={styles.reviewText}>{r.text}</Text>}
-                <Text style={styles.reviewDate}>{formatDateShort(r.createdAt)}</Text>
-              </View>
-            );
-          })}
-
-          {filtered.length === 0 && (
-            <Text style={styles.noReviews}>Нет отзывов с такой оценкой</Text>
-          )}
-        </View>
-
-        <View style={{ height: 40 }} />
+          );
+        }) : <EmptyState title="Отзывов пока нет" text="Отзывы появляются после смен." />}
+        <Separator />
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  navTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  scroll: { paddingHorizontal: SIZES.lg },
-
-  profileCard: { alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusXl, padding: SIZES.xl, ...SHADOWS.md },
-  logo: { width: 72, height: 72, borderRadius: 20, backgroundColor: COLORS.skeleton },
-  name: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, marginTop: SIZES.md, textAlign: 'center' },
-  lastSeen: { fontSize: SIZES.small, color: '#22C55E', textAlign: 'center', marginTop: 2 },
-  category: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.xs, marginTop: SIZES.md },
-  ratingValue: { fontSize: SIZES.title, ...FONTS.bold, color: COLORS.textPrimary },
-  ratingCount: { fontSize: SIZES.body, color: COLORS.textSecondary },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginTop: SIZES.sm },
-  metaText: { fontSize: SIZES.small, color: COLORS.textTertiary },
-  metaDot: { color: COLORS.textTertiary },
-  phoneBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: SIZES.sm,
-    marginTop: SIZES.md, paddingVertical: SIZES.sm, paddingHorizontal: SIZES.md,
-    backgroundColor: COLORS.accentSoft, borderRadius: SIZES.radiusFull, alignSelf: 'center',
-  },
-  phoneBtnText: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.accent },
-
-  catRatings: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base, marginTop: SIZES.md, ...SHADOWS.sm, gap: SIZES.md },
-  catRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
-  catLabel: { fontSize: SIZES.small, color: COLORS.textSecondary, width: 80 },
-  catBarBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: COLORS.surface },
-  catBar: { height: 6, borderRadius: 3, backgroundColor: COLORS.accent },
-  catValue: { fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.textPrimary, width: 28, textAlign: 'right' },
-
-  section: { marginTop: SIZES.xl },
-  sectionTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary, marginBottom: SIZES.md },
-
-  shiftMini: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.md, marginBottom: SIZES.sm, ...SHADOWS.sm },
-  shiftMiniTitle: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  shiftMiniDate: { fontSize: SIZES.caption, color: COLORS.textSecondary, marginTop: 2 },
-  shiftMiniPay: { fontSize: SIZES.bodyLarge, ...FONTS.bold, color: COLORS.success },
-
-  reviewFilters: { flexDirection: 'row', gap: SIZES.sm, marginBottom: SIZES.md },
-  rFilterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
-  rFilterActive: { backgroundColor: COLORS.textPrimary, borderColor: COLORS.textPrimary },
-  rFilterText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  rFilterTextActive: { color: COLORS.white },
-
-  reviewCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.md, marginBottom: SIZES.sm, ...SHADOWS.sm },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  reviewAuthor: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary },
-  reviewStars: { flexDirection: 'row', gap: 1 },
-  reviewText: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: SIZES.sm, lineHeight: 20 },
-  reviewDate: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: SIZES.sm },
-  noReviews: { fontSize: SIZES.body, color: COLORS.textTertiary, textAlign: 'center', paddingVertical: SIZES.xl },
-});

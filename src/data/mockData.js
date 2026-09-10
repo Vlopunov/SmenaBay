@@ -495,8 +495,6 @@ export const MOCK_NOTIFICATIONS = [
   { id: 'n1', userId: 'w1', type: 'application_approved', title: 'Отклик подтверждён', body: 'Ваш отклик на «Оператор ПВЗ» подтверждён!', relatedShiftId: 's1', read: false, createdAt: addDays(-1) },
   { id: 'n2', userId: 'w1', type: 'shift_reminder', title: 'Напоминание о смене', body: 'Завтра смена «Оператор ПВЗ Wildberries» в 09:00', relatedShiftId: 's4', read: false, createdAt: addDays(0) },
   { id: 'n3', userId: 'w1', type: 'review_received', title: 'Новый отзыв', body: 'Ozon ПВЗ Минск оставил вам отзыв: ★5', relatedShiftId: 's21', read: true, createdAt: addDays(-2) },
-  { id: 'n4', userId: 'w1', type: 'payment_sent', title: 'Оплата отправлена', body: 'Оплата 65 BYN за смену 07 апр отправлена', relatedShiftId: 's21', read: true, createdAt: addDays(-2) },
-  { id: 'n5', userId: 'w1', type: 'nearby_shift', title: 'Смена рядом!', body: 'Новая смена в 1.2 км от вас! Грузчик — 75 BYN', relatedShiftId: 's2', read: false, createdAt: addDays(0) },
 
   // For worker w2
   { id: 'n6', userId: 'w2', type: 'application_approved', title: 'Отклик подтверждён', body: 'Ваш отклик на «Официант» в Кафе Васильки подтверждён!', relatedShiftId: 's3', read: true, createdAt: addDays(-3) },
@@ -524,7 +522,6 @@ export const MOCK_NOTIFICATIONS = [
   { id: 'n18', userId: 'c5', type: 'review_received', title: 'Новый отзыв', body: 'Исполнитель оставил отзыв: ★4', relatedShiftId: 's23', read: true, createdAt: addDays(-6) },
 
   // For employer c8
-  { id: 'n19', userId: 'c8', type: 'plan_expiring', title: 'Подписка', body: 'У вас бесплатный тариф. Обновите для безлимитных смен!', relatedShiftId: null, read: false, createdAt: addDays(-1) },
 
   // For worker w3
   { id: 'n20', userId: 'w3', type: 'review_received', title: 'Новый отзыв', body: 'Склад-Логистик оставил вам отзыв: ★5', relatedShiftId: 's23', read: true, createdAt: addDays(-6) },
@@ -543,17 +540,14 @@ export const BUSINESS_CATEGORIES = [
   'Клининг', 'Производство', 'Ивенты', 'Другое',
 ];
 
+// Only badges the app can derive from its own records are shown. Documents
+// (verification, medical book) aren't checked anywhere, so those ids have no
+// label and never render.
 export const BADGE_INFO = {
-  verified: { label: 'Верифицирован', icon: 'shield-checkmark', color: '#4F46E5' },
-  top10: { label: 'Топ-10%', icon: 'star', color: '#F59E0B' },
-  fifty_shifts: { label: '50+ смен', icon: 'flame', color: '#EF4444' },
-  no_cancels: { label: 'Без отмен', icon: 'diamond', color: '#8B5CF6' },
-  medical_book: { label: 'Медкнижка', icon: 'document-text', color: '#059669' },
-  newbie: { label: 'Новичок', icon: 'leaf', color: '#22C55E' },
-  verified_company: { label: 'Проверенная', icon: 'checkmark-circle', color: '#4F46E5' },
-  top_employer: { label: 'Топ-работодатель', icon: 'star', color: '#F59E0B' },
-  fast_payment: { label: 'Быстрая оплата', icon: 'cash', color: '#059669' },
-  premium_badge: { label: 'Премиум', icon: 'trophy', color: '#8B5CF6' },
+  top10: { label: 'Топ-10%' },
+  fifty_shifts: { label: '50+ смен' },
+  no_cancels: { label: 'Без отмен' },
+  newbie: { label: 'Новичок' },
 };
 
 export const SHIFT_TEMPLATES = [

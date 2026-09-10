@@ -9,10 +9,16 @@ import { Press, Separator } from './ui';
 import { useTheme } from './theme';
 import { money, perHour, timeRange, hours, seats } from './format';
 
+// Sized by length rather than adjustsFontSizeToFit: on the New Architecture a
+// recycled list row can come back shrunk far below minimumFontScale.
+const RAIL_SIZE = { 3: null, 4: { fontSize: 26, letterSpacing: -1.2 }, 5: { fontSize: 23, letterSpacing: -1 } };
+
 export function MoneyRail({ amount, sub, muted, width = 72 }) {
+  const text = money(amount);
+  const fit = text.length <= 3 ? null : RAIL_SIZE[text.length] || { fontSize: 20, letterSpacing: -0.8 };
   return (
     <View style={{ width, alignItems: 'flex-end' }}>
-      <T v="moneyRail" c={muted ? 'secondary' : 'label'} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{money(amount)}</T>
+      <T v="moneyRail" c={muted ? 'secondary' : 'label'} numberOfLines={1} maxFontSizeMultiplier={text.length > 3 ? 1.1 : undefined} style={fit}>{text}</T>
       <T v="unit" c="secondary">BYN</T>
       {sub ? <T v="label" c="secondary" style={{ marginTop: 4 }} numberOfLines={1}>{sub}</T> : null}
     </View>

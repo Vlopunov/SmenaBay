@@ -76,6 +76,9 @@ export default function ShiftManageScreen({ route, navigation }) {
   const cd = countdown(shift, now);
   const over = cd.phase === 'ended' || shift.status === 'completed';
   const cancelled = shift.status === 'cancelled';
+  const live = !over && !cancelled;
+  // Counts what the «Отклики» screen lists: rejected and withdrawn aren't there.
+  const responded = applications.filter((a) => a.status === 'pending' || a.status === 'approved' || a.status === 'completed').length;
 
   const chatWith = (workerId) => {
     const conv = getOrCreateConversation(shift.id, workerId, shift.companyId);
@@ -122,8 +125,7 @@ export default function ShiftManageScreen({ route, navigation }) {
         <LedgerRow label="Мест" alignTop={false} value={`${approved.length} из ${shift.spotsTotal} закрыто`} right={<SeatsBar taken={approved.length} total={shift.spotsTotal} width={shift.spotsTotal > 2 ? 60 : 47} />} />
         <LedgerRow
           label="Отклики"
-          value={`${applications.filter((a) => a.status !== 'cancelled_by_worker').length} ${plural(applications.length, ['отклик', 'отклика', 'откликов'])}${pending.length ? ` · ${pending.length} ждут ответа` : ''}`}
-          sub={market && shift.pay < market.median ? `Похожие смены в городе платят от ${market.min} BYN, чаще — ${market.median}` : undefined}
+          value={`${responded} ${plural(responded, ['отклик', 'отклика', 'откликов'])}${pending.length && live ? ` · ${pending.length} ${plural(pending.length, ['ждёт', 'ждут', 'ждут'])} ответа` : ''}`}
           onPress={() => navigation.navigate('Applications', { shiftId: shift.id })}
           chevron
           last
@@ -167,13 +169,18 @@ export default function ShiftManageScreen({ route, navigation }) {
           ))
           : null}
 
-        <SectionHeader title="Как видят исполнители" />
-        <FeedShiftRow shift={shift} company={company} location={location} last />
-        <Separator />
-        {market && shift.pay < market.median && !over && !cancelled ? (
-          <Note icon="chart.bar" style={{ marginTop: 14 }}>
-            {`У тебя ${shift.pay} BYN, а похожие смены чаще платят ${market.median}. Смены с оплатой ниже рынка закрываются дольше.`}
-          </Note>
+        {/* Only a live shift is in the feed — a finished one has nothing to preview. */}
+        {live ? (
+          <>
+            <SectionHeader title="Как видят исполнители" />
+            <FeedShiftRow shift={shift} company={company} location={location} last />
+            <Separator />
+            {market && shift.pay < market.median ? (
+              <Note icon="chart.bar" style={{ marginTop: 14 }}>
+                {`У тебя ${shift.pay} BYN, а похожие смены чаще платят ${market.median}. Смены с оплатой ниже рынка закрываются дольше.`}
+              </Note>
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
 

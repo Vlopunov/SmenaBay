@@ -1,210 +1,137 @@
-import React from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Employer dashboard (handoff screen 9). The first number — «ждут ответа» —
+// is the only accent one: it is the only thing that needs action now, and it
+// rolls when a new application arrives. Under the numbers, the single most
+// urgent problem with a button; then the shifts at the point; then regulars.
+import React, { useMemo } from 'react';
+import { View, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import { RoundButton, StatRow, FillBanner, SectionHeader, Separator, PersonAvatar, Press, EmptyState } from '../../design/ui';
+import Odometer from '../../design/Odometer';
+import { useNow } from '../../design/PassCard';
+import { useTheme } from '../../design/theme';
+import { useTabBarSpace } from '../../design/TabBar';
+import { haptic } from '../../design/haptics';
+import { showActions } from '../../design/ActionSheet';
+import { plural, dayLabel, shortDate, timeRange } from '../../design/format';
+import ShiftTimeRow from './ShiftTimeRow';
+import { employerSnapshot, PLAN_NAMES } from './employerData';
 import useStore from '../../store/useStore';
-import Avatar from '../../components/Avatar';
+import { Alert } from 'react-native';
+
+function span(ms) {
+  const m = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(m / 60);
+  return h ? `${h} ч ${m % 60} мин` : `${m} мин`;
+}
 
 export default function DashboardScreen({ navigation }) {
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const getCompanyStats = useStore(s => s.getCompanyStats);
-  const getCompanyShifts = useStore(s => s.getCompanyShifts);
-  const stats = getCompanyStats();
-  const companyShifts = getCompanyShifts();
-  const applications = useStore(s => s.applications);
-  const shifts = useStore(s => s.shifts); // subscribe for re-render on shift changes
-  const notifications = useStore(s => s.notifications); // subscribe for unread count
-  const getUnreadCount = useStore(s => s.getUnreadCount);
+  const tabSpace = useTabBarSpace();
+  const now = useNow(30000);
+  const me = useStore((s) => s.currentUser);
+  const shifts = useStore((s) => s.shifts);
+  const applications = useStore((s) => s.applications);
+  const workers = useStore((s) => s.workers);
+  const unread = useStore((s) => s.getUnreadCount());
+  const invite = useStore((s) => s.inviteWorkerToShift);
 
-  const activeShifts = companyShifts.filter(s => ['active', 'in_progress', 'filled'].includes(s.status)).slice(0, 5);
-  const unreadCount = getUnreadCount();
+  const snap = useMemo(() => employerSnapshot({ me, shifts, applications, workers, now }), [me, shifts, applications, workers, now]);
+  if (!me) return null;
 
-  const today = new Date().toISOString().split('T')[0];
-  const formatDate = (d) => {
-    if (d === today) return 'Сегодня';
-    const date = new Date(d);
-    const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-    return `${date.getDate()} ${months[date.getMonth()]}`;
+  const openShifts = snap.upcoming.filter((s) => s.status === 'active' && s.spotsTaken < s.spotsTotal);
+  const inviteTo = (w) => {
+    if (!openShifts.length) { navigation.navigate('CreateShift'); return; }
+    showActions({
+      title: `Позвать ${w.firstName}`,
+      options: openShifts.map((s) => ({
+        label: `${s.title} · ${dayLabel(s.date) === 'Сегодня' || dayLabel(s.date) === 'Завтра' ? dayLabel(s.date) : shortDate(s.date)}, ${timeRange(s)}`,
+        onPress: () => {
+          const r = invite(w.id, s.id);
+          if (r?.error === 'already_invited') { Alert.alert('Уже позвали', `${w.firstName} уже получил(а) приглашение на эту смену.`); return; }
+          haptic.success();
+        },
+      })),
+    });
   };
 
-  const METRICS = [
-    { label: 'Активных смен', value: stats.activeShifts || 0, icon: 'flash-outline', color: '#4F46E5' },
-    { label: 'Ждут подтверждения', value: stats.pendingApplications || 0, icon: 'hourglass-outline', color: '#D97706' },
-    { label: 'Смен за месяц', value: stats.monthShifts || 0, icon: 'calendar-outline', color: '#059669' },
-    { label: 'Рейтинг', value: stats.rating ? stats.rating.toFixed(1) : '—', icon: 'star-outline', color: '#F59E0B' },
-    { label: 'Заполняемость', value: `${stats.fillRate || 0}%`, icon: 'pie-chart-outline', color: '#8B5CF6' },
-    { label: 'Отмены', value: `${stats.cancelRate || 0}%`, icon: 'close-circle-outline', color: '#EF4444' },
-  ];
-
+  const soon = snap.soon;
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{currentUser?.companyName}</Text>
-          <Text style={styles.plan}>Тариф: {currentUser?.plan === 'premium' ? 'Премиум' : currentUser?.plan === 'business' ? 'Бизнес' : 'Старт'}</Text>
-        </View>
-        <TouchableOpacity style={styles.notifBtn} onPress={() => navigation.navigate('Notifications')} activeOpacity={0.7}>
-          <Ionicons name="notifications-outline" size={24} color={COLORS.textPrimary} />
-          {unreadCount > 0 && (
-            <View style={styles.notifDot}>
-              <Text style={styles.notifDotText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Metrics */}
-        <View style={styles.metricsGrid}>
-          {METRICS.map(m => (
-            <View key={m.label} style={styles.metricCard}>
-              <View style={[styles.metricIcon, { backgroundColor: m.color + '14' }]}>
-                <Ionicons name={m.icon} size={20} color={m.color} />
-              </View>
-              <Text style={styles.metricValue}>{m.value}</Text>
-              <Text style={styles.metricLabel}>{m.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Active Shifts */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Активные смены</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('EmployerShifts')}>
-              <Text style={styles.seeAll}>Все</Text>
-            </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: tabSpace }}>
+        <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <T v="screenTitle" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75} accessibilityRole="header">{me.companyName}</T>
+            <T v="caption" c="secondary" style={{ marginTop: 2 }}>
+              Тариф «{PLAN_NAMES[me.plan] || PLAN_NAMES.free}» · {me.totalShiftsPublished || snap.own.length} {plural(me.totalShiftsPublished || snap.own.length, ['смена', 'смены', 'смен'])} на платформе
+            </T>
           </View>
-
-          {activeShifts.length > 0 ? activeShifts.map(shift => {
-            const apps = applications.filter(a => a.shiftId === shift.id);
-            const pending = apps.filter(a => a.status === 'pending').length;
-            const approved = apps.filter(a => a.status === 'approved').length;
-
-            return (
-              <TouchableOpacity
-                key={shift.id}
-                style={styles.shiftCard}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('ManageApplications', { shiftId: shift.id })}
-              >
-                <View style={styles.shiftTop}>
-                  <Text style={styles.shiftTitle}>{shift.title}</Text>
-                  {shift.urgent && (
-                    <View style={styles.urgentTag}>
-                      <Ionicons name="flash" size={10} color={COLORS.white} />
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.shiftDate}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
-
-                <View style={styles.shiftBottom}>
-                  <View style={styles.shiftStats}>
-                    {pending > 0 && (
-                      <View style={[styles.shiftStatBadge, { backgroundColor: '#FEF3C7' }]}>
-                        <Text style={[styles.shiftStatText, { color: '#D97706' }]}>Новых: {pending}</Text>
-                      </View>
-                    )}
-                    <View style={[styles.shiftStatBadge, { backgroundColor: '#D1FAE5' }]}>
-                      <Text style={[styles.shiftStatText, { color: '#059669' }]}>{approved}/{shift.spotsTotal} подтв.</Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.textTertiary} />
-                </View>
-              </TouchableOpacity>
-            );
-          }) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>Нет активных смен</Text>
-              <TouchableOpacity
-                style={styles.createBtn}
-                onPress={() => navigation.navigate('CreateShift')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={18} color={COLORS.white} />
-                <Text style={styles.createBtnText}>Создать смену</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={{ flexDirection: 'row', gap: 10, paddingTop: 4 }}>
+            <RoundButton icon="bell" variant="fill" badge={unread} onPress={() => navigation.navigate('Notifications')} accessibilityLabel="Уведомления" />
+            <RoundButton icon="plus" variant="accent" iconSize={18} onPress={() => navigation.navigate('CreateShift')} accessibilityLabel="Создать смену" />
+          </View>
         </View>
 
-        {/* Top Workers */}
-        {stats.topWorkers?.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Лучшие исполнители</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -SIZES.lg }}>
-              <View style={{ flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm }}>
-                {stats.topWorkers.map(({ worker, count }) => (
-                  <TouchableOpacity
-                    key={worker.id}
-                    style={styles.topWorkerCard}
-                    onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
-                  >
-                    <Avatar
-                      uri={worker.avatar}
-                      name={worker.firstName}
-                      name2={worker.lastName}
-                      size={48}
-                    />
-                    <Text style={styles.topWorkerName} numberOfLines={1}>{worker.firstName}</Text>
-                    <Text style={styles.topWorkerCount}>{count} смен</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
+        <StatRow
+          style={{ marginTop: 22 }}
+          items={[
+            { label: 'ждут ответа', node: <Odometer value={snap.pending} v="title" c={snap.pending ? 'accent' : 'label'} style={{ marginBottom: 0 }} /> },
+            { label: plural(snap.upcoming.length, ['активная', 'активных', 'активных']), value: String(snap.upcoming.length) },
+            { label: 'за месяц', value: String(snap.monthCount) },
+            { label: 'заполнено', value: `${snap.fillRate}%` },
+          ]}
+        />
+
+        {soon ? (
+          <FillBanner
+            style={{ marginTop: 20 }}
+            title={`${dayLabel(soon.shift.date)} в ${soon.shift.timeStart} не хватает ${soon.free === 1 ? 'человека' : `${soon.free} человек`}`}
+            text={`${soon.pending ? `${soon.pending} ${plural(soon.pending, ['отклик', 'отклика', 'откликов'])}` : 'Откликов пока нет'} на ${soon.free === 1 ? 'одно место' : `${soon.free} ${plural(soon.free, ['место', 'места', 'мест'])}`} · до начала ${span(soon.msLeft)}`}
+            action={soon.pending ? 'Открыть' : 'Позвать'}
+            onAction={() => (soon.pending ? navigation.navigate('Applications', { shiftId: soon.shift.id }) : navigation.navigate('Favorites', { inviteShiftId: soon.shift.id }))}
+          />
+        ) : <Separator style={{ marginTop: 20 }} />}
+
+        <SectionHeader title="Смены на точке" top={!!soon} right={snap.upcoming.length > 5 ? 'Все' : undefined} onRightPress={() => navigation.navigate('EmpShifts')} />
+        {snap.upcoming.length ? snap.upcoming.slice(0, 5).map((s, i, arr) => (
+          <ShiftTimeRow key={s.id} shift={s} approved={snap.approvedFor(s.id)} pending={snap.pendingFor(s.id)} last={i === arr.length - 1} onPress={() => navigation.navigate('ShiftManage', { shiftId: s.id })} />
+        )) : (
+          <EmptyState
+            title="На точке нет активных смен"
+            text={snap.regulars.length ? `${snap.regulars.length} ${plural(snap.regulars.length, ['исполнитель уже работал', 'исполнителя уже работали', 'исполнителей уже работали'])} у тебя — их можно позвать сразу после публикации.` : 'Опубликуй смену — отклики обычно приходят в первые часы.'}
+            action="Создать смену"
+            onAction={() => navigation.navigate('CreateShift')}
+          />
         )}
 
-        <View style={{ height: SIZES.tabBarHeight + SIZES['2xl'] }} />
+        {snap.regulars.length ? (
+          <>
+            <SectionHeader title="Кто чаще всех выходит" />
+            {snap.regulars.map(({ worker: w, count }, i) => {
+              const cancels = snap.cancelsOf(w.id);
+              return (
+                <View key={w.id}>
+                  <Press feedback="highlight" onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: w.id })}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingVertical: 12 }}>
+                      <PersonAvatar first={w.firstName} last={w.lastName} uri={w.avatar} size={36} />
+                      <View style={{ flex: 1 }}>
+                        <T v="value" style={{ fontWeight: '600' }}>{w.firstName} {w.lastName}</T>
+                        <T v="caption" c="secondary" numberOfLines={1}>★ {w.rating ? w.rating.toFixed(1) : '—'} · {count} {plural(count, ['смена', 'смены', 'смен'])} у тебя · {cancels ? `${cancels} ${plural(cancels, ['отмена', 'отмены', 'отмен'])}` : 'без отмен'}</T>
+                      </View>
+                      <Press feedback="none" onPress={() => inviteTo(w)} hitSlop={10} accessibilityLabel={`Позвать ${w.firstName}`}>
+                        <T v="bodyStrong" c="accent">Позвать</T>
+                      </Press>
+                    </View>
+                  </Press>
+                  {i < snap.regulars.length - 1 ? <Separator inset /> : null}
+                </View>
+              );
+            })}
+          </>
+        ) : null}
+        <Separator />
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
-  greeting: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.3 },
-  plan: { fontSize: SIZES.small, color: COLORS.accent, ...FONTS.medium, marginTop: 2 },
-  notifBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center', ...SHADOWS.sm },
-  notifDot: { position: 'absolute', top: 6, right: 6, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: COLORS.error, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: COLORS.white },
-  notifDotText: { fontSize: 10, ...FONTS.bold, color: COLORS.white },
-  scroll: { paddingHorizontal: SIZES.lg },
-
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SIZES.sm },
-  metricCard: { width: '48%', backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base, ...SHADOWS.sm, flexGrow: 1 },
-  metricIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: SIZES.sm },
-  metricValue: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary },
-  metricLabel: { fontSize: SIZES.caption, color: COLORS.textSecondary, marginTop: 2 },
-
-  section: { marginTop: SIZES.xl },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SIZES.md },
-  sectionTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary },
-  seeAll: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.accent },
-
-  shiftCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.base, marginBottom: SIZES.sm, ...SHADOWS.sm },
-  shiftTop: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
-  shiftTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  urgentTag: { backgroundColor: COLORS.error, width: 18, height: 18, borderRadius: 9, justifyContent: 'center', alignItems: 'center' },
-  shiftDate: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 4 },
-  shiftBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: SIZES.md },
-  shiftStats: { flexDirection: 'row', gap: SIZES.sm },
-  shiftStatBadge: { paddingHorizontal: SIZES.sm, paddingVertical: 3, borderRadius: SIZES.radiusSm },
-  shiftStatText: { fontSize: 11, ...FONTS.medium },
-
-  emptyCard: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, padding: SIZES.xl, alignItems: 'center', ...SHADOWS.sm },
-  emptyText: { fontSize: SIZES.body, color: COLORS.textSecondary, marginBottom: SIZES.md },
-  createBtn: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, backgroundColor: COLORS.accent, paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md, borderRadius: SIZES.radiusMd },
-  createBtnText: { fontSize: SIZES.body, ...FONTS.semibold, color: COLORS.white },
-
-  topWorkerCard: { alignItems: 'center', width: 80 },
-  topWorkerAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.skeleton },
-  topWorkerName: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textPrimary, marginTop: SIZES.xs },
-  topWorkerCount: { fontSize: SIZES.caption, color: COLORS.textSecondary },
-});

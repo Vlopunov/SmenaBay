@@ -12,7 +12,7 @@ import { plural } from '../design/format';
 import { sendVerificationCode } from '../services/auth';
 import { useAuthFlow } from '../services/authFlow';
 
-export default function PhoneSheet({ visible, onClose, navigation, intent, spotsLeft, title = 'Закрепим место за тобой' }) {
+export default function PhoneSheet({ visible, onClose, navigation, intent, spotsLeft, title = 'Закрепим место за тобой', text, note }) {
   const [digits, setDigits] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export default function PhoneSheet({ visible, onClose, navigation, intent, spots
       <View style={{ paddingHorizontal: 22, paddingTop: 12 }}>
         <T v="sheetTitle">{title}</T>
         <T v="body" c="secondary" style={{ marginTop: 6 }}>
-          {lead ? `${lead} ` : ''}Введи номер — заказчик увидит отклик сразу, а мы напишем, когда его подтвердят.
+          {text || `${lead ? `${lead} ` : ''}Введи номер — заказчик увидит отклик сразу, а мы напишем, когда его подтвердят.`}
         </T>
         <View style={{ marginTop: 20 }}>
           <PhoneField value={digits} onChange={(v) => { setDigits(v); if (error) setError(''); }} autoFocus onSubmit={submit} error={!!error} />
@@ -54,7 +54,7 @@ export default function PhoneSheet({ visible, onClose, navigation, intent, spots
         <Button title="Получить код" onPress={submit} loading={loading} style={{ marginTop: 12 }} />
       </View>
       <Note icon="lock.shield" style={{ marginTop: 14 }}>
-        Номер нужен заказчику, чтобы позвонить в день смены. Паспорт и документы — только если смена их требует.
+        {note || 'Номер нужен заказчику, чтобы позвонить в день смены. Паспорт и документы — только если смена их требует.'}
       </Note>
     </Sheet>
   );

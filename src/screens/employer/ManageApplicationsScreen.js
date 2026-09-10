@@ -1,305 +1,172 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Linking, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Applications for a shift (handoff screen 11). The first one is marked not
+// by a background but by a filled «Подтвердить»: the system suggests once
+// whom to pick and doesn't stand in the way of picking someone else.
+import React, { useMemo } from 'react';
+import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
-import { BADGE_INFO } from '../../data/mockData';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { NavBar, PersonAvatar, Button, RoundButton, Separator, SectionHeader, Note, EmptyState, StatusPill, Press } from '../../design/ui';
+import { useNow } from '../../design/PassCard';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
+import { showActions } from '../../design/ActionSheet';
+import { plural, dayLabel, shortDate, timeRange, countdown } from '../../design/format';
 import useStore from '../../store/useStore';
-import Avatar from '../../components/Avatar';
-import { formatDate } from '../../utils/formatDate';
 
-const TABS = ['Новые', 'Подтверждённые', 'Отклонённые'];
-
-export default function ManageApplicationsScreen({ route, navigation }) {
-  const { shiftId } = route.params;
-  const insets = useSafeAreaInsets();
-  const getShiftById = useStore(s => s.getShiftById);
-  const getApplicationsForShift = useStore(s => s.getApplicationsForShift);
-  const allApplications = useStore(s => s.applications); // subscribe for reactivity
-  const allShifts = useStore(s => s.shifts); // subscribe for reactivity
-  const shift = getShiftById(shiftId);
-  const apps = getApplicationsForShift(shiftId);
-  const workers = useStore(s => s.workers);
-  const approve = useStore(s => s.approveApplication);
-  const reject = useStore(s => s.rejectApplication);
-  const completeShift = useStore(s => s.completeShift);
-  const cancelShift = useStore(s => s.cancelShift);
-  const getReviewForShift = useStore(s => s.getReviewForShift);
-  const currentUser = useStore(s => s.currentUser);
-  const getOrCreateConversation = useStore(s => s.getOrCreateConversation);
-
-  const [tab, setTab] = useState(0);
-
-  const pending = useMemo(() => apps.filter(a => a.status === 'pending'), [apps]);
-  const approved = useMemo(() => apps.filter(a => a.status === 'approved'), [apps]);
-  const rejected = useMemo(() => apps.filter(a => ['rejected', 'cancelled_by_worker'].includes(a.status)), [apps]);
-  const currentItems = tab === 0 ? pending : tab === 1 ? approved : rejected;
-
-  if (!shift) return null;
-
-  const isCompleted = shift.status === 'completed';
-  const canComplete = shift.status !== 'completed' && shift.status !== 'cancelled' && approved.length > 0;
-
-  const renderApp = ({ item: app }) => {
-    const worker = workers.find(w => w.id === app.workerId);
-    if (!worker) return null;
-    const hasReview = !!getReviewForShift(shiftId, currentUser?.id, worker.id);
-
-    return (
-      <View style={styles.card}>
-        <TouchableOpacity
-          style={styles.workerRow}
-          onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: worker.id })}
-        >
-          <Avatar uri={worker.avatar} name={worker.firstName} name2={worker.lastName} size={52} />
-          <View style={styles.workerInfo}>
-            <Text style={styles.workerName}>{worker.firstName} {worker.lastName}</Text>
-            <View style={styles.workerMeta}>
-              {worker.rating > 0 && (
-                <View style={styles.ratingBadge}>
-                  <Ionicons name="star" size={12} color={COLORS.star} />
-                  <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
-                </View>
-              )}
-              <Text style={styles.metaText}>{worker.shiftsCompleted} смен</Text>
-            </View>
-            {worker.badges.length > 0 && (
-              <View style={styles.badgesRow}>
-                {worker.badges.slice(0, 3).map(b => {
-                  const info = BADGE_INFO[b];
-                  if (!info) return null;
-                  return (
-                    <View key={b} style={[styles.miniBadge, { backgroundColor: info.color + '14' }]}>
-                      <Ionicons name={info.icon} size={10} color={info.color} />
-                      <Text style={[styles.miniBadgeText, { color: info.color }]}>{info.label}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.cardActions}>
-          {tab === 0 && (
-            <>
-              <TouchableOpacity style={styles.rejectBtn} onPress={() => reject(app.id)}>
-                <Ionicons name="close" size={18} color={COLORS.error} />
-                <Text style={styles.rejectText}>Отклонить</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.approveBtn} onPress={() => approve(app.id)}>
-                <Ionicons name="checkmark" size={18} color={COLORS.white} />
-                <Text style={styles.approveText}>Подтвердить</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          {tab === 1 && (
-            <>
-              <TouchableOpacity
-                style={styles.callBtn}
-                onPress={() => {
-                  const conv = getOrCreateConversation(shiftId, worker.id, currentUser.id);
-                  navigation.navigate('ChatConversation', { conversationId: conv.id });
-                }}
-              >
-                <Ionicons name="chatbubble-outline" size={16} color={COLORS.accent} />
-                <Text style={styles.callText}>Написать</Text>
-              </TouchableOpacity>
-              {worker.phoneVisible !== false && (
-                <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${worker.phone}`)}>
-                  <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-                  <Text style={styles.callText}>Позвонить</Text>
-                </TouchableOpacity>
-              )}
-              {isCompleted && !hasReview && (
-                <TouchableOpacity
-                  style={styles.reviewBtn}
-                  onPress={() => navigation.navigate('WriteReview', {
-                    shiftId, targetId: worker.id, type: 'company_about_worker',
-                  })}
-                >
-                  <Ionicons name="star-outline" size={16} color={COLORS.white} />
-                  <Text style={styles.reviewBtnText}>Отзыв</Text>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
-          {tab === 2 && (
-            <Text style={styles.rejectedStatus}>
-              {app.status === 'cancelled_by_worker' ? 'Отменил сам' : 'Отклонён'}
-            </Text>
-          )}
-        </View>
-      </View>
-    );
-  };
-
+function Candidate({ app, worker, stats, primary, onApprove, onReject, onChat, onOpen, last }) {
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.navCenter}>
-          <Text style={styles.navTitle}>{shift.title}</Text>
-          <Text style={styles.navSub}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
-        </View>
-        <View style={{ width: 44 }} />
-      </View>
-
-      {/* Shift actions */}
-      <View style={styles.actionBar}>
-        {canComplete && (
-          <TouchableOpacity style={styles.completeBtn} onPress={() => completeShift(shiftId)}>
-            <Text style={styles.completeBtnText}>Завершить смену</Text>
-          </TouchableOpacity>
-        )}
-        {shift.status === 'active' && (
-          <TouchableOpacity
-            style={styles.cancelShiftBtn}
-            onPress={() => {
-              Alert.alert('Причина отмены', 'Выберите причину:', [
-                { text: 'Нет исполнителей', onPress: () => cancelShift(shiftId) },
-                { text: 'Изменение графика', onPress: () => cancelShift(shiftId) },
-                { text: 'Погодные условия', onPress: () => cancelShift(shiftId) },
-                { text: 'Другое', onPress: () => cancelShift(shiftId) },
-                { text: 'Не отменять', style: 'cancel' },
-              ]);
-            }}
-          >
-            <Text style={styles.cancelShiftText}>Отменить</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Bulk actions for pending */}
-      {tab === 0 && pending.length > 1 && (
-        <View style={styles.bulkActions}>
-          <TouchableOpacity
-            style={styles.bulkApproveBtn}
-            onPress={() => {
-              Alert.alert('Подтвердить всех?', `Подтвердить ${pending.length} исполнителей?`, [
-                { text: 'Отмена', style: 'cancel' },
-                { text: 'Подтвердить', onPress: () => pending.forEach(a => approve(a.id)) },
-              ]);
-            }}
-          >
-            <Ionicons name="checkmark-done" size={16} color={COLORS.white} />
-            <Text style={styles.bulkBtnText}>Принять всех</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.bulkRejectBtn}
-            onPress={() => {
-              Alert.alert('Отклонить всех?', `Отклонить ${pending.length} исполнителей?`, [
-                { text: 'Отмена', style: 'cancel' },
-                { text: 'Отклонить', style: 'destructive', onPress: () => pending.forEach(a => reject(a.id)) },
-              ]);
-            }}
-          >
-            <Ionicons name="close" size={16} color={COLORS.error} />
-            <Text style={styles.bulkRejectText}>Отклонить всех</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {TABS.map((t, i) => {
-          const count = i === 0 ? pending.length : i === 1 ? approved.length : rejected.length;
-          return (
-            <TouchableOpacity
-              key={t}
-              style={[styles.tab, tab === i && styles.tabActive]}
-              onPress={() => setTab(i)}
-            >
-              <Text style={[styles.tabText, tab === i && styles.tabTextActive]}>{t}</Text>
-              {count > 0 && (
-                <View style={[styles.tabBadge, tab === i && styles.tabBadgeActive]}>
-                  <Text style={[styles.tabBadgeText, tab === i && styles.tabBadgeTextActive]}>{count}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <FlatList
-        data={currentItems}
-        renderItem={renderApp}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="people-outline" size={48} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>
-              {tab === 0 ? 'Нет новых откликов' : tab === 1 ? 'Нет подтверждённых' : 'Нет отклонённых'}
-            </Text>
+    <View>
+      <View style={{ paddingHorizontal: 22, paddingTop: 16, paddingBottom: 16 }}>
+        <Press feedback="none" onPress={onOpen} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }} accessibilityLabel={`Профиль: ${worker.firstName} ${worker.lastName}`}>
+          <PersonAvatar first={worker.firstName} last={worker.lastName} uri={worker.avatar} size={44} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <T v="rowTitle">{worker.firstName} {worker.lastName}</T>
+              {stats.reliable ? <Icon name="checkmark.shield" size={14} c="secondary" /> : null}
+            </View>
+            <T v="caption" c="secondary">{stats.line}</T>
           </View>
-        }
-      />
+        </Press>
+        {worker.categories?.length ? <T v="body" c="secondary" style={{ marginTop: 10 }}>Умеет: {worker.categories.join(', ').toLowerCase()}</T> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 }}>
+          <Button title="Подтвердить" icon="checkmark" size="md" variant={primary ? 'primary' : 'secondary'} style={{ flex: 1 }} onPress={onApprove} />
+          <RoundButton icon="bubble.left" variant="fill" size={44} iconSize={16} onPress={onChat} accessibilityLabel={`Написать ${worker.firstName}`} />
+          <RoundButton icon="xmark.circle" variant="fill" size={44} iconSize={17} onPress={onReject} accessibilityLabel={`Отклонить ${worker.firstName}`} />
+        </View>
+      </View>
+      {!last ? <Separator inset /> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.sm, paddingVertical: SIZES.sm },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  navCenter: { flex: 1 },
-  navTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  navSub: { fontSize: SIZES.caption, color: COLORS.textSecondary },
+export default function ManageApplicationsScreen({ route, navigation }) {
+  const { shiftId } = route.params;
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const now = useNow(30000);
+  const shift = useStore((s) => s.getShiftById(shiftId));
+  const allApps = useStore((s) => s.applications);
+  const workers = useStore((s) => s.workers);
+  const approve = useStore((s) => s.approveApplication);
+  const reject = useStore((s) => s.rejectApplication);
+  const getOrCreateConversation = useStore((s) => s.getOrCreateConversation);
 
-  actionBar: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginBottom: SIZES.sm },
-  completeBtn: { flex: 1, backgroundColor: COLORS.success, borderRadius: SIZES.radiusSm, paddingVertical: SIZES.sm, alignItems: 'center' },
-  completeBtnText: { fontSize: SIZES.small, ...FONTS.semibold, color: COLORS.white },
-  cancelShiftBtn: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, borderWidth: 1, borderColor: COLORS.error },
-  cancelShiftText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
+  const apps = useMemo(() => allApps.filter((a) => a.shiftId === shiftId), [allApps, shiftId]);
+  const pending = apps.filter((a) => a.status === 'pending');
+  const approved = apps.filter((a) => a.status === 'approved');
 
-  tabs: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.xs, marginBottom: SIZES.md },
-  tab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, height: 36, borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, gap: SIZES.xs },
-  tabActive: { backgroundColor: COLORS.textPrimary },
-  tabText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  tabTextActive: { color: COLORS.white },
-  tabBadge: { backgroundColor: COLORS.surface, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5 },
-  tabBadgeActive: { backgroundColor: COLORS.accent },
-  tabBadgeText: { fontSize: 11, ...FONTS.bold, color: COLORS.textSecondary },
-  tabBadgeTextActive: { color: COLORS.white },
+  const statsOf = (w) => {
+    const cancels = allApps.filter((a) => a.workerId === w.id && a.status === 'cancelled_by_worker').length;
+    const withMe = allApps.filter((a) => a.workerId === w.id && a.status === 'approved' && a.shiftId !== shiftId).length;
+    const parts = [];
+    if (w.shiftsCompleted) {
+      parts.push(`★ ${w.rating ? w.rating.toFixed(1) : '—'}`, `${w.shiftsCompleted} ${plural(w.shiftsCompleted, ['смена', 'смены', 'смен'])}`);
+      if (withMe) parts.push(`${withMe} у тебя`);
+      parts.push(cancels ? `${cancels} ${plural(cancels, ['отмена', 'отмены', 'отмен'])}` : 'без отмен');
+    } else {
+      parts.push('Новый на платформе', 'без смен');
+    }
+    return { line: parts.join(' · '), reliable: w.badges?.includes('no_cancels') && !cancels, score: (w.rating || 0) * 10 + Math.min(w.shiftsCompleted || 0, 100) / 10 - cancels * 5 };
+  };
 
-  list: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES['3xl'] },
-  card: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base, marginBottom: SIZES.md, ...SHADOWS.sm },
-  workerRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.skeleton },
-  workerInfo: { flex: 1, marginLeft: SIZES.md },
-  workerName: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  workerMeta: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm, marginTop: 3 },
-  ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  ratingText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textPrimary },
-  metaText: { fontSize: SIZES.small, color: COLORS.textSecondary },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: SIZES.sm },
-  miniBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 6, paddingVertical: 2, borderRadius: SIZES.radiusSm },
-  miniBadgeText: { fontSize: 10, ...FONTS.medium },
+  // Best first: rating and experience, cancellations weigh against.
+  const ranked = useMemo(() => pending
+    .map((a) => ({ app: a, worker: workers.find((w) => w.id === a.workerId) }))
+    .filter((x) => x.worker)
+    .map((x) => ({ ...x, stats: statsOf(x.worker) }))
+    .sort((a, b) => b.stats.score - a.stats.score), [pending, workers, allApps]);
 
-  cardActions: { flexDirection: 'row', gap: SIZES.sm, marginTop: SIZES.md, paddingTop: SIZES.md, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
-  rejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, borderWidth: 1, borderColor: COLORS.error },
-  rejectText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
-  approveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.success },
-  approveText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
-  callBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.accentSoft },
-  callText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
-  reviewBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.accent },
-  reviewBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
-  rejectedStatus: { fontSize: SIZES.small, color: COLORS.textTertiary },
+  if (!shift) return <View style={{ flex: 1, backgroundColor: c.ledger }} />;
+  const free = Math.max(0, shift.spotsTotal - approved.length);
+  const cd = countdown(shift, now);
+  const d = dayLabel(shift.date);
+  const when = `${d === 'Сегодня' || d === 'Завтра' ? d.toLowerCase() : shortDate(shift.date)}, ${timeRange(shift)}`;
 
-  bulkActions: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.sm, marginBottom: SIZES.sm },
-  bulkApproveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.success },
-  bulkBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
-  bulkRejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, borderWidth: 1, borderColor: COLORS.error },
-  bulkRejectText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
+  const chat = (workerId) => {
+    const conv = getOrCreateConversation(shift.id, workerId, shift.companyId);
+    navigation.navigate('ChatConversation', { conversationId: conv.id });
+  };
 
-  empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
-  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
-});
+  const doApprove = (x) => {
+    approve(x.app.id);
+    haptic.success();
+  };
+
+  const doReject = (x) => showActions({
+    title: `Отклонить отклик: ${x.worker.firstName} ${x.worker.lastName}?`,
+    message: 'Исполнитель получит вежливый отказ без объяснения причин.',
+    options: [{ label: 'Отклонить', destructive: true, onPress: () => { reject(x.app.id); haptic.medium(); } }],
+  });
+
+  return (
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar variant="fill" onBack={() => navigation.goBack()} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
+        <View style={{ paddingHorizontal: 22, paddingTop: 10 }}>
+          <T v="title" accessibilityRole="header">{pending.length ? `${pending.length} ${plural(pending.length, ['отклик', 'отклика', 'откликов'])}` : 'Отклики'}</T>
+          <T v="body" c="secondary" style={{ marginTop: 6 }}>
+            {shift.title} · {when} · {free ? `${free === 1 ? 'осталось одно место' : `осталось ${free} ${plural(free, ['место', 'места', 'мест'])}`}` : 'все места закрыты'}
+          </T>
+        </View>
+        {cd.phase === 'before' && free > 0 ? (
+          <View style={{ marginHorizontal: 22, marginTop: 16, borderRadius: 14, backgroundColor: c.fill, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Icon name="timer" size={16} c="label" />
+            <T v="bodyStrong" style={{ flex: 1 }}>{cd.text.replace('Начало через', 'До начала')}</T>
+          </View>
+        ) : null}
+
+        <Separator style={{ marginTop: 18 }} />
+        {ranked.length ? ranked.map((x, i) => (
+          <Candidate
+            key={x.app.id}
+            {...x}
+            primary={i === 0 && free > 0}
+            last={i === ranked.length - 1}
+            onApprove={() => doApprove(x)}
+            onReject={() => doReject(x)}
+            onChat={() => chat(x.worker.id)}
+            onOpen={() => navigation.navigate('PublicWorkerProfile', { workerId: x.worker.id })}
+          />
+        )) : cd.phase === 'before' && free > 0 ? (
+          <EmptyState
+            title="Откликов пока нет"
+            text="Смена уже в ленте. Можно не ждать и позвать тех, кто у тебя работал."
+            action="Позвать своих"
+            onAction={() => navigation.navigate('Favorites', { inviteShiftId: shift.id })}
+          />
+        ) : !approved.length ? (
+          <EmptyState title="Откликов не было" text="Смена началась — из ленты она уже пропала." />
+        ) : null}
+
+        {approved.length ? (
+          <>
+            <SectionHeader title="Подтверждены" right={`${approved.length} из ${shift.spotsTotal}`} />
+            {approved.map((a, i) => {
+              const w = workers.find((x) => x.id === a.workerId);
+              if (!w) return null;
+              return (
+                <View key={a.id}>
+                  <Press feedback="highlight" onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: w.id })}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingVertical: 12 }}>
+                      <PersonAvatar first={w.firstName} last={w.lastName} uri={w.avatar} size={36} />
+                      <T v="value" style={{ flex: 1, fontWeight: '600' }}>{w.firstName} {w.lastName}</T>
+                      <StatusPill status="confirmed" />
+                    </View>
+                  </Press>
+                  {i < approved.length - 1 ? <Separator inset /> : null}
+                </View>
+              );
+            })}
+          </>
+        ) : null}
+        <Separator style={{ marginTop: ranked.length ? 0 : 0 }} />
+        {ranked.length ? (
+          <Note icon="info.circle" style={{ marginTop: 16 }}>
+            Отклонённым придёт вежливый отказ без причины. Когда места закроются, остальные отклики отклонятся сами.
+          </Note>
+        ) : null}
+      </ScrollView>
+    </View>
+  );
+}

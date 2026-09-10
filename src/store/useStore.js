@@ -205,8 +205,16 @@ const useStore = create(
         c => c.workerId !== uid && c.companyId !== uid
       ),
       notifications: state.notifications.filter(n => n.userId !== uid),
-      favorites: state.favorites.filter(id => id !== uid),
-      savedShifts: [],
+      // favorites and savedShifts are keyed by user id. Drop this user's
+      // own entry, and remove them from everyone else's favourites.
+      favorites: Object.fromEntries(
+        Object.entries(state.favorites)
+          .filter(([ownerId]) => ownerId !== uid)
+          .map(([ownerId, ids]) => [ownerId, ids.filter(id => id !== uid)])
+      ),
+      savedShifts: Object.fromEntries(
+        Object.entries(state.savedShifts).filter(([ownerId]) => ownerId !== uid)
+      ),
       blockedUsers: [],
     }));
 

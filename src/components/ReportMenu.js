@@ -1,20 +1,19 @@
 /**
- * Report / block control for user-generated content.
+ * «···» menu with report / block for user-generated content.
  *
- * App Store Review Guideline 1.2 requires apps with user-generated content
- * to provide a method for filtering objectionable material, a mechanism to
- * report it, and the ability to block abusive users. This is the reporting
- * and blocking half; filtering happens where lists are rendered, via
- * `useStore().blockedUsers`.
+ * App Store Review Guideline 1.2 requires apps with user-generated content to
+ * let people report objectionable material and block abusive users. Blocked
+ * users are filtered out wherever lists render, via `blockedUsers`.
  *
- * Usage:
  *   <ReportMenu targetType="user" targetId={worker.id} targetName="Дарья" />
- *   <ReportMenu targetType="shift" targetId={shift.id} blockUserId={company.id} />
+ *   <ReportMenu targetType="shift" targetId={shift.id} blockUserId={company.id}
+ *               extra={[{ label: 'Сохранить', onPress: save }]} />
  */
 import React from 'react';
-import { TouchableOpacity, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/theme';
+import { Alert } from 'react-native';
+import { RoundButton } from '../design/ui';
+import { showActions } from '../design/ActionSheet';
+import { haptic } from '../design/haptics';
 import useStore from '../store/useStore';
 
 const REASONS = [
@@ -25,91 +24,53 @@ const REASONS = [
   { key: 'other', label: 'Другое' },
 ];
 
-export default function ReportMenu({
-  targetType,
-  targetId,
-  targetName = '',
-  // Who to block. For a shift or a message this is the author, not the item.
-  blockUserId = null,
-  size = 22,
-  color = COLORS.textSecondary,
-  style,
-}) {
-  const reportContent = useStore(s => s.reportContent);
-  const blockUser = useStore(s => s.blockUser);
-  const unblockUser = useStore(s => s.unblockUser);
-  const blockedUsers = useStore(s => s.blockedUsers);
-  const currentUser = useStore(s => s.currentUser);
-
+export function openReportMenu({ targetType, targetId, targetName = '', blockUserId = null, extra = [], store }) {
+  const { reportContent, blockUser, unblockUser, blockedUsers, currentUser } = store;
   const blockTarget = blockUserId || (targetType === 'user' ? targetId : null);
   const isBlocked = !!blockTarget && blockedUsers.includes(blockTarget);
   const isSelf = blockTarget && blockTarget === currentUser?.id;
 
-  const submitReport = (reason) => {
-    reportContent({ targetType, targetId, reason });
-    Alert.alert(
-      'Жалоба отправлена',
-      'Спасибо. Мы рассмотрим её в течение 24 часов и примем меры, если правила были нарушены.'
-    );
-  };
+  const report = () => showActions({
+    title: 'Причина жалобы',
+    message: targetName || undefined,
+    options: REASONS.map((r) => ({
+      label: r.label,
+      onPress: () => {
+        reportContent({ targetType, targetId, reason: r.key });
+        haptic.success();
+        Alert.alert('Жалоба отправлена', 'Спасибо. Рассмотрим её в течение 24 часов и примем меры, если правила нарушены.');
+      },
+    })),
+  });
 
-  const openReasonPicker = () => {
-    Alert.alert(
-      'Причина жалобы',
-      targetName ? `На: ${targetName}` : '',
-      [
-        ...REASONS.map(r => ({ text: r.label, onPress: () => submitReport(r.key) })),
-        { text: 'Отмена', style: 'cancel' },
-      ]
-    );
-  };
+  const block = () => Alert.alert(
+    'Заблокировать?',
+    `${targetName || 'Этот пользователь'} не сможет тебе писать, а его смены и отзывы пропадут из твоих списков.`,
+    [
+      { text: 'Отмена', style: 'cancel' },
+      { text: 'Заблокировать', style: 'destructive', onPress: () => { blockUser(blockTarget); haptic.medium(); } },
+    ],
+  );
 
-  const confirmBlock = () => {
-    Alert.alert(
-      'Заблокировать?',
-      `${targetName || 'Этот пользователь'} больше не сможет писать вам, а его смены и отзывы исчезнут из ваших лент.`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Заблокировать',
-          style: 'destructive',
-          onPress: () => {
-            blockUser(blockTarget);
-            Alert.alert('Готово', 'Пользователь заблокирован.');
-          },
-        },
-      ]
-    );
-  };
+  const options = [...extra];
+  if (currentUser) options.push({ label: 'Пожаловаться', onPress: report });
+  if (currentUser && blockTarget && !isSelf) {
+    options.push(isBlocked
+      ? { label: 'Разблокировать', onPress: () => unblockUser(blockTarget) }
+      : { label: 'Заблокировать', destructive: true, onPress: block });
+  }
+  if (options.length === 0) return;
+  showActions({ title: targetName || undefined, options });
+}
 
-  const openMenu = () => {
-    const options = [{ text: 'Пожаловаться', onPress: openReasonPicker }];
-
-    if (blockTarget && !isSelf) {
-      options.push(
-        isBlocked
-          ? { text: 'Разблокировать', onPress: () => unblockUser(blockTarget) }
-          : { text: 'Заблокировать', style: 'destructive', onPress: confirmBlock }
-      );
-    }
-
-    options.push({ text: 'Отмена', style: 'cancel' });
-    Alert.alert('Безопасность', targetName || '', options);
-  };
-
+export default function ReportMenu(props) {
+  // Read the store at tap time — subscribing here would re-render the
+  // button on every store change.
   return (
-    <TouchableOpacity
-      onPress={openMenu}
-      style={style}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      accessibilityRole="button"
-      accessibilityLabel="Пожаловаться или заблокировать"
-    >
-      <Ionicons
-        name={isBlocked ? 'ban' : 'ellipsis-horizontal'}
-        size={size}
-        color={isBlocked ? COLORS.error : color}
-      />
-    </TouchableOpacity>
+    <RoundButton
+      icon="ellipsis"
+      accessibilityLabel="Ещё: пожаловаться или заблокировать"
+      onPress={() => openReportMenu({ ...props, store: useStore.getState() })}
+    />
   );
 }

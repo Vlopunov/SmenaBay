@@ -1,255 +1,239 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, StatusBar, Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// «Мои смены» (handoff screen 6) on the warm sheet. On top — one pass, the
+// nearest confirmed shift. Then «Ждут ответа» with how long ago the
+// application went out, then history by month. The month's earnings live in
+// the subtitle, not in a tile: it is a reference, not a KPI.
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import Icon from '../../design/Icon';
+import { TextTabs, Separator, EmptyState, StatusText, Press } from '../../design/ui';
+import ShiftRow from '../../design/ShiftRow';
+import PassCard, { useNow } from '../../design/PassCard';
+import { useTheme } from '../../design/theme';
+import { useTabBarSpace } from '../../design/TabBar';
+import { money, monthName, capitalize, dayLabel, shortDate, timeRange, countdown, ago, plural, parseDay, shiftEnd } from '../../design/format';
+import { openRoute } from '../../components/openRoute';
 import useStore from '../../store/useStore';
 
-const TABS = ['Активные', 'Завершённые', 'Отклонённые'];
-
-const statusConfig = {
-  pending: { label: 'Ожидает', bg: '#FEF3C7', color: '#D97706' },
-  approved: { label: 'Подтверждена', bg: '#D1FAE5', color: '#059669' },
-  in_progress: { label: 'В процессе', bg: '#DBEAFE', color: '#2563EB' },
-  completed: { label: 'Завершена', bg: '#D1FAE5', color: '#059669' },
-  rejected: { label: 'Отклонён', bg: '#FEE2E2', color: '#EF4444' },
-  cancelled_by_worker: { label: 'Вы отменили', bg: '#F3F4F6', color: '#6B7280' },
-  cancelled: { label: 'Отменена', bg: '#FEE2E2', color: '#EF4444' },
-};
-
-export default function MyShiftsScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const applications = useStore(s => s.applications);
-  const shifts = useStore(s => s.shifts);
-  const companies = useStore(s => s.companies);
-  const cancelApplication = useStore(s => s.cancelApplication);
-  const getReviewForShift = useStore(s => s.getReviewForShift);
-  const getOrCreateConversation = useStore(s => s.getOrCreateConversation);
-  const [tab, setTab] = useState(0);
-
-  const myApps = useMemo(() =>
-    applications.filter(a => a.workerId === currentUser?.id),
-    [applications, currentUser]
-  );
-
-  const getShift = (id) => shifts.find(s => s.id === id);
-  const getCompany = (id) => companies.find(c => c.id === id);
-
-  const activeItems = useMemo(() =>
-    myApps.filter(a =>
-      ['pending', 'approved'].includes(a.status) &&
-      !['completed', 'cancelled'].includes(getShift(a.shiftId)?.status)
-    ),
-    [myApps, shifts]
-  );
-
-  const completedItems = useMemo(() =>
-    myApps.filter(a =>
-      a.status === 'approved' && getShift(a.shiftId)?.status === 'completed'
-    ),
-    [myApps, shifts]
-  );
-
-  const rejectedItems = useMemo(() =>
-    myApps.filter(a =>
-      ['rejected', 'cancelled_by_worker'].includes(a.status) ||
-      (a.status === 'approved' && getShift(a.shiftId)?.status === 'cancelled')
-    ),
-    [myApps, shifts]
-  );
-
-  const currentItems = tab === 0 ? activeItems : tab === 1 ? completedItems : rejectedItems;
-
-  const today = new Date().toISOString().split('T')[0];
-  const formatDate = (d) => {
-    if (d === today) return 'Сегодня';
-    const date = new Date(d);
-    const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-    return `${date.getDate()} ${months[date.getMonth()]}`;
-  };
-
-  const renderItem = ({ item: app }) => {
-    const shift = getShift(app.shiftId);
-    if (!shift) return null;
-    const company = getCompany(shift.companyId);
-    const shiftCancelled = shift.status === 'cancelled';
-    const appStatus = shiftCancelled ? 'cancelled' : app.status;
-    const config = statusConfig[appStatus] || statusConfig.pending;
-    const hasReview = !!getReviewForShift(shift.id, currentUser?.id);
-
-    return (
-      <TouchableOpacity
-        style={styles.card}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('ShiftDetail', { shiftId: shift.id })}
-      >
-        <View style={styles.cardTop}>
-          <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
-            <View style={[styles.statusDot, { backgroundColor: config.color }]} />
-            <Text style={[styles.statusText, { color: config.color }]}>{config.label}</Text>
-          </View>
-          <Text style={styles.cardPay}>{shift.pay} BYN</Text>
-        </View>
-
-        <Text style={styles.cardTitle}>{shift.title}</Text>
-        <Text style={styles.cardCompany}>{company?.companyName}</Text>
-
-        <View style={styles.cardInfo}>
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={14} color={COLORS.textTertiary} />
-            <Text style={styles.infoText}>{formatDate(shift.date)}, {shift.timeStart}–{shift.timeEnd}</Text>
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.cardActions}>
-          {app.status === 'pending' && !shiftCancelled && (
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={() => cancelApplication(app.id)}
-            >
-              <Text style={styles.cancelBtnText}>Отменить отклик</Text>
-            </TouchableOpacity>
-          )}
-          {app.status === 'approved' && (
-            <TouchableOpacity
-              style={styles.contactBtn}
-              onPress={() => {
-                const conv = getOrCreateConversation(shift.id, currentUser.id, shift.companyId);
-                navigation.navigate('ChatConversation', { conversationId: conv.id });
-              }}
-            >
-              <Ionicons name="chatbubble-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.contactBtnText}>Написать</Text>
-            </TouchableOpacity>
-          )}
-          {app.status === 'approved' && company?.phone && company?.phoneVisible !== false && (
-            <TouchableOpacity
-              style={styles.contactBtn}
-              onPress={() => Linking.openURL(`tel:${company.phone}`)}
-            >
-              <Ionicons name="call-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.contactBtnText}>Позвонить</Text>
-            </TouchableOpacity>
-          )}
-          {tab === 1 && !hasReview && (
-            <TouchableOpacity
-              style={styles.reviewBtn}
-              onPress={() => navigation.navigate('WriteReview', {
-                shiftId: shift.id,
-                targetId: shift.companyId,
-                type: 'worker_about_company',
-              })}
-            >
-              <Ionicons name="star-outline" size={16} color={COLORS.white} />
-              <Text style={styles.reviewBtnText}>Оставить отзыв</Text>
-            </TouchableOpacity>
-          )}
-          {tab === 1 && (
-            <TouchableOpacity
-              style={styles.contactBtn}
-              onPress={() => navigation.navigate('Feed', { initialSearch: shift.title })}
-            >
-              <Ionicons name="search-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.contactBtnText}>Похожие</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
+function WarmSection({ title }) {
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Мои смены</Text>
-      </View>
-
-      <View style={styles.tabs}>
-        {TABS.map((t, i) => {
-          const count = i === 0 ? activeItems.length : i === 1 ? completedItems.length : rejectedItems.length;
-          return (
-            <TouchableOpacity
-              key={t}
-              style={[styles.tab, tab === i && styles.tabActive]}
-              onPress={() => setTab(i)}
-            >
-              <Text style={[styles.tabText, tab === i && styles.tabTextActive]}>{t}</Text>
-              {count > 0 && (
-                <View style={[styles.tabBadge, tab === i && styles.tabBadgeActive]}>
-                  <Text style={[styles.tabBadgeText, tab === i && styles.tabBadgeTextActive]}>{count}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <FlatList
-        data={currentItems}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color={COLORS.textTertiary} />
-            <Text style={styles.emptyTitle}>
-              {tab === 0 ? 'Нет активных смен' : tab === 1 ? 'Нет завершённых смен' : 'Нет отклонённых'}
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {tab === 0 ? 'Откликнитесь на смену в ленте' : 'Здесь будет история'}
-            </Text>
-          </View>
-        }
-      />
+    <View>
+      <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 26, paddingBottom: 10 }}>{title}</T>
+      <Separator warm />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingHorizontal: SIZES.lg, paddingVertical: SIZES.md },
-  headerTitle: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  tabs: { flexDirection: 'row', paddingHorizontal: SIZES.lg, gap: SIZES.xs, marginBottom: SIZES.md },
-  tab: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.md, height: 36,
-    borderRadius: SIZES.radiusFull, backgroundColor: COLORS.white, gap: SIZES.xs,
-  },
-  tabActive: { backgroundColor: COLORS.textPrimary },
-  tabText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.textSecondary },
-  tabTextActive: { color: COLORS.white },
-  tabBadge: {
-    backgroundColor: COLORS.surface, borderRadius: 10, minWidth: 20, height: 20,
-    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5,
-  },
-  tabBadgeActive: { backgroundColor: COLORS.accent },
-  tabBadgeText: { fontSize: 11, ...FONTS.bold, color: COLORS.textSecondary },
-  tabBadgeTextActive: { color: COLORS.white },
-  list: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES.tabBarHeight + SIZES.xl },
-  card: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusLg, padding: SIZES.base, marginBottom: SIZES.md, ...SHADOWS.sm },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SIZES.sm },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SIZES.sm, paddingVertical: 3, borderRadius: SIZES.radiusSm, gap: 5 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: SIZES.caption, ...FONTS.medium },
-  cardPay: { fontSize: SIZES.bodyLarge, ...FONTS.bold, color: COLORS.textPrimary },
-  cardTitle: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.textPrimary },
-  cardCompany: { fontSize: SIZES.small, color: COLORS.textSecondary, marginTop: 2 },
-  cardInfo: { marginTop: SIZES.md, gap: SIZES.sm },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: SIZES.sm },
-  infoText: { fontSize: SIZES.small, color: COLORS.textSecondary },
-  cardActions: { flexDirection: 'row', gap: SIZES.sm, marginTop: SIZES.md, paddingTop: SIZES.md, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
-  cancelBtn: { paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, borderWidth: 1, borderColor: COLORS.error },
-  cancelBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.error },
-  contactBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.accentSoft },
-  contactBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.accent },
-  reviewBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: SIZES.md, paddingVertical: SIZES.sm, borderRadius: SIZES.radiusSm, backgroundColor: COLORS.accent },
-  reviewBtnText: { fontSize: SIZES.small, ...FONTS.medium, color: COLORS.white },
-  empty: { alignItems: 'center', paddingTop: SIZES['5xl'] },
-  emptyTitle: { fontSize: SIZES.title, ...FONTS.semibold, color: COLORS.textPrimary, marginTop: SIZES.lg },
-  emptySubtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.xs },
-});
+function when(shift) {
+  const d = dayLabel(shift.date);
+  return `${d === 'Сегодня' || d === 'Завтра' || d === 'Вчера' ? d : shortDate(shift.date).split(', ')[1]}, ${timeRange(shift)}`;
+}
+
+export default function MyShiftsScreen({ navigation }) {
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const tabSpace = useTabBarSpace();
+  const now = useNow(30000);
+  const [tab, setTab] = useState('active');
+
+  const me = useStore((s) => s.currentUser);
+  const applications = useStore((s) => s.applications);
+  const shifts = useStore((s) => s.shifts);
+  const companies = useStore((s) => s.companies);
+  const reviews = useStore((s) => s.reviews);
+  const getLocationById = useStore((s) => s.getLocationById);
+  const markSeen = useStore((s) => s.markMyShiftsSeen);
+
+  useFocusEffect(useCallback(() => { markSeen(); }, []));
+
+  const mine = useMemo(() => {
+    if (!me) return [];
+    return applications
+      .filter((a) => a.workerId === me.id)
+      .map((a) => {
+        const shift = shifts.find((s) => s.id === a.shiftId);
+        if (!shift) return null;
+        return { app: a, shift, company: companies.find((co) => co.id === shift.companyId), location: getLocationById(shift.locationId) };
+      })
+      .filter(Boolean);
+  }, [me, applications, shifts, companies]);
+
+  const ended = (x) => shiftEnd(x.shift) <= now || x.shift.status === 'completed';
+  const confirmed = mine.filter((x) => x.app.status === 'approved' && !ended(x) && x.shift.status !== 'cancelled')
+    .sort((a, b) => (a.shift.date + a.shift.timeStart).localeCompare(b.shift.date + b.shift.timeStart));
+  const waiting = mine.filter((x) => x.app.status === 'pending' && !ended(x))
+    .sort((a, b) => String(b.app.appliedAt).localeCompare(String(a.app.appliedAt)));
+  const history = mine.filter((x) => !confirmed.includes(x) && !waiting.includes(x))
+    .sort((a, b) => b.shift.date.localeCompare(a.shift.date));
+
+  const worked = (x) => (x.app.status === 'approved' || x.app.status === 'completed') && ended(x) && x.shift.status !== 'cancelled';
+  const month = new Date(now.getFullYear(), now.getMonth(), 1);
+  const earned = history.filter((x) => worked(x) && parseDay(x.shift.date) >= month).reduce((sum, x) => sum + x.shift.pay, 0);
+
+  const byMonth = useMemo(() => {
+    const groups = new Map();
+    history.forEach((x) => {
+      const d = parseDay(x.shift.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (!groups.has(key)) groups.set(key, { title: capitalize(monthName(d)), items: [] });
+      groups.get(key).items.push(x);
+    });
+    return [...groups.values()];
+  }, [history]);
+
+  const noExpToday = useStore((s) => s.shifts.filter((sh) => sh.status === 'active' && sh.requirements?.noExperienceOk && sh.spotsTaken < sh.spotsTotal).length);
+
+  const open = (id) => navigation.navigate('ShiftDetail', { shiftId: id });
+
+  const historyRow = (x, i, arr) => {
+    const w = worked(x);
+    const cancelled = x.app.status === 'cancelled_by_worker' || x.shift.status === 'cancelled';
+    const rejected = x.app.status === 'rejected' && !cancelled;
+    const myReview = reviews.find((r) => r.shiftId === x.shift.id && r.authorId === me?.id);
+    let right; let line3 = x.company?.companyName;
+    if (w) {
+      right = <StatusText status="done" label="Выполнена" />;
+      line3 = `${x.company?.companyName}${myReview ? ` · твоя оценка ${myReview.overallRating.toFixed(1).replace('.', ',')}` : ' · оцени смену'}`;
+    } else if (cancelled) {
+      right = <StatusText status="cancelled" />;
+      line3 = x.app.status === 'cancelled_by_worker' ? 'Ты отменил · без штрафа' : 'Отменил заказчик';
+    } else if (rejected) {
+      right = <StatusText status="rejected" />;
+    } else {
+      right = <StatusText status="done" label="Прошла" />;
+    }
+    return (
+      <ShiftRow
+        key={x.app.id}
+        warm
+        amount={x.shift.pay}
+        title={x.shift.title}
+        line2={when(x.shift)}
+        line2Right={right}
+        line3={line3}
+        muted={cancelled || rejected}
+        last={i === arr.length - 1}
+        onPress={() => open(x.shift.id)}
+      />
+    );
+  };
+
+  const header = (
+    <View>
+      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 22 }}>
+        <T v="screenTitle" accessibilityRole="header">Мои смены</T>
+        <T v="caption" c="secondary" style={{ marginTop: 2 }}>
+          {earned ? `За ${monthName(now)} заработано ${money(earned)} BYN` : me ? 'Отклики, подтверждённые смены и история' : 'Здесь появятся твои отклики и смены'}
+        </T>
+      </View>
+      {me ? (
+        <TextTabs style={{ paddingTop: 18 }} items={[{ key: 'active', label: 'Активные' }, { key: 'history', label: 'История' }]} value={tab} onChange={setTab} />
+      ) : null}
+      <Separator warm style={{ marginTop: me ? 9 : 18 }} />
+    </View>
+  );
+
+  if (!me || mine.length === 0) {
+    return (
+      <View style={{ flex: 1, backgroundColor: c.warmBg }}>
+        {header}
+        <EmptyState
+          title="Пока ни одной смены"
+          text={`Первую можно взять без опыта и документов — таких сейчас ${noExpToday} ${plural(noExpToday, ['смена', 'смены', 'смен'])}.`}
+          action="Посмотреть смены"
+          onAction={() => navigation.navigate('Shifts')}
+        />
+        {!me ? (
+          <Press feedback="none" onPress={() => navigation.navigate('Profile')} style={{ paddingHorizontal: 22 }}>
+            <T v="body" c="accent">Уже есть аккаунт? Войти</T>
+          </Press>
+        ) : null}
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: c.warmBg }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: tabSpace }}>
+        {header}
+        {tab === 'active' ? (
+          <>
+            {confirmed[0] ? (
+              <View style={{ paddingHorizontal: 22, paddingTop: 18 }}>
+                <PassCard
+                  variant="compact"
+                  shift={confirmed[0].shift}
+                  company={confirmed[0].company}
+                  location={confirmed[0].location}
+                  onPress={() => open(confirmed[0].shift.id)}
+                  onRoute={() => openRoute(confirmed[0].location)}
+                />
+              </View>
+            ) : null}
+            {confirmed.length > 1 ? (
+              <>
+                <WarmSection title="Ещё подтверждены" />
+                {confirmed.slice(1).map((x, i, arr) => (
+                  <ShiftRow
+                    key={x.app.id}
+                    warm
+                    amount={x.shift.pay}
+                    title={x.shift.title}
+                    line2={when(x.shift)}
+                    line2Right={<StatusText status="confirmed" label={countdown(x.shift, now).short} />}
+                    line3={x.company?.companyName}
+                    last={i === arr.length - 1}
+                    onPress={() => open(x.shift.id)}
+                  />
+                ))}
+              </>
+            ) : null}
+            {waiting.length ? (
+              <>
+                <WarmSection title="Ждут ответа" />
+                {waiting.map((x, i, arr) => (
+                  <ShiftRow
+                    key={x.app.id}
+                    warm
+                    amount={x.shift.pay}
+                    title={x.shift.title}
+                    urgent={x.shift.urgent}
+                    line2={when(x.shift)}
+                    line2Right={(
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Icon name="clock" size={12} c="secondary" />
+                        <T v="smallStrong" c="secondary">{ago(x.app.appliedAt, now)}</T>
+                      </View>
+                    )}
+                    line3={x.company?.companyName}
+                    last={i === arr.length - 1}
+                    onPress={() => open(x.shift.id)}
+                  />
+                ))}
+              </>
+            ) : null}
+            {!confirmed.length && !waiting.length ? (
+              <EmptyState
+                title="Активных смен нет"
+                text={`Сейчас без опыта можно взять ${noExpToday} ${plural(noExpToday, ['смену', 'смены', 'смен'])}.`}
+                action="Посмотреть смены"
+                onAction={() => navigation.navigate('Shifts')}
+              />
+            ) : null}
+          </>
+        ) : byMonth.length ? (
+          byMonth.map((g) => (
+            <View key={g.title}>
+              <WarmSection title={g.title} />
+              {g.items.map(historyRow)}
+            </View>
+          ))
+        ) : (
+          <EmptyState title="История пока пустая" text="Здесь будут прошедшие смены и оценки." />
+        )}
+      </ScrollView>
+    </View>
+  );
+}

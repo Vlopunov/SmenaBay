@@ -1,304 +1,90 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, StatusBar,
-  ActivityIndicator, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Employer account. The form is a ledger — the same lines the company card
+// will show to workers — followed by the phone and an SMS code.
+import React, { useState } from 'react';
+import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../constants/theme';
+import T from '../../design/Text';
+import FormRow from '../../design/FormRow';
+import PhoneField, { toE164, isComplete } from '../../design/PhoneField';
+import { NavBar, Button, Chip, SectionHeader, Note } from '../../design/ui';
+import { useTheme } from '../../design/theme';
+import { haptic } from '../../design/haptics';
 import { CITIES, BUSINESS_CATEGORIES } from '../../data/mockData';
-import useStore from '../../store/useStore';
-import { sendVerificationCode, verifyCode, isMockAuth } from '../../services/auth';
+import { sendVerificationCode } from '../../services/auth';
+import { useAuthFlow } from '../../services/authFlow';
 
-export default function RegisterEmployerScreen({ navigation, route }) {
+export default function RegisterEmployerScreen({ navigation }) {
+  const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const registerEmployer = useStore(s => s.registerEmployer);
-  const authMethod = route?.params?.authMethod || 'phone';
-  const socialData = route?.params?.socialData || {};
-
-  const [form, setForm] = useState({
-    companyName: '', unp: '', contactPerson: socialData.displayName || '', phone: '+375',
-    city: '', businessCategory: '', logo: null,
-  });
+  const start = useAuthFlow((s) => s.start);
+  const [form, setForm] = useState({ companyName: '', unp: '', contactPerson: '', city: 'Минск', businessCategory: '' });
+  const [digits, setDigits] = useState('');
   const [errors, setErrors] = useState({});
-  const [showCities, setShowCities] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
-  const [step, setStep] = useState(1);
-  const [smsCode, setSmsCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [verification, setVerification] = useState(null);
-  const [smsError, setSmsError] = useState('');
-  const [resendTimer, setResendTimer] = useState(0);
-  const timerRef = useRef(null);
+  const set = (k) => (v) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
 
-  useEffect(() => {
-    if (resendTimer > 0) {
-      timerRef.current = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
-      return () => clearTimeout(timerRef.current);
-    }
-  }, [resendTimer]);
-
-  const validate = () => {
+  const submit = async () => {
     const e = {};
-    if (!form.companyName.trim()) e.companyName = 'Введите название';
-    if (form.unp.length !== 9) e.unp = 'УНП — 9 цифр';
-    if (!form.contactPerson.trim()) e.contactPerson = 'Введите ФИО';
-    if (authMethod === 'phone' && form.phone.length < 13) e.phone = 'Введите номер';
-    if (!form.city) e.city = 'Выберите город';
-    if (!form.businessCategory) e.businessCategory = 'Выберите категорию';
+    if (!form.companyName.trim()) e.companyName = 'Как компанию увидят исполнители';
+    if (form.unp.replace(/\D/g, '').length !== 9) e.unp = 'УНП — 9 цифр';
+    if (!form.contactPerson.trim()) e.contactPerson = 'Кому звонить по сменам';
+    if (!form.businessCategory) e.businessCategory = 'Выбери категорию';
+    if (!isComplete(digits)) e.phone = 'Нужно 9 цифр после +375';
     setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) return;
-
-    if (authMethod !== 'phone') {
-      // Persist the Firebase uid + email so a later Google/Apple sign-in
-      // can find this profile again instead of creating a duplicate.
-      registerEmployer({
-        ...form,
-        phoneVerified: false,
-        authMethod,
-        authUid: socialData.uid || null,
-        email: socialData.email || null,
-      });
-      return;
-    }
-
+    if (Object.keys(e).length) { haptic.error(); return; }
     setLoading(true);
-    setSmsError('');
     try {
-      const result = await sendVerificationCode(form.phone);
-      setVerification(result);
-      setStep(2);
-      setResendTimer(60);
-    } catch (e) {
-      Alert.alert('Ошибка', e.message);
+      const phone = toE164(digits);
+      const verification = await sendVerificationCode(phone);
+      start(phone, verification, { type: 'employer', form: { ...form, unp: form.unp.replace(/\D/g, '') } });
+      navigation.navigate('Code');
+    } catch (err) {
+      setErrors({ phone: err.message });
+      haptic.error();
     } finally {
       setLoading(false);
     }
   };
-
-  const handleVerify = async () => {
-    if (smsCode.length < 6) return;
-    setLoading(true);
-    setSmsError('');
-    try {
-      await verifyCode(verification, smsCode);
-      registerEmployer({ ...form, phoneVerified: true });
-    } catch (e) {
-      setSmsError(e.message);
-      setSmsCode('');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setLoading(true);
-    setSmsError('');
-    try {
-      const result = await sendVerificationCode(form.phone);
-      setVerification(result);
-      setResendTimer(60);
-      setSmsCode('');
-    } catch (e) {
-      setSmsError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderSelect = (label, value, placeholder, items, show, setShow, field, error) => (
-    <>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
-        style={[styles.input, styles.selectInput, error && styles.inputError]}
-        onPress={() => setShow(!show)}
-      >
-        <Text style={value ? styles.selectText : styles.selectPlaceholder}>
-          {value || placeholder}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color={COLORS.textTertiary} />
-      </TouchableOpacity>
-      {error && <Text style={styles.error}>{error}</Text>}
-      {show && (
-        <View style={styles.dropdown}>
-          {items.map(item => (
-            <TouchableOpacity
-              key={item}
-              style={[styles.dropdownItem, value === item && styles.dropdownItemActive]}
-              onPress={() => { setForm(f => ({ ...f, [field]: item })); setShow(false); }}
-            >
-              <Text style={[styles.dropdownText, value === item && styles.dropdownTextActive]}>
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </>
-  );
-
-  if (step === 2) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="dark-content" />
-        <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.smsContainer}>
-          <Text style={styles.smsTitle}>Введите SMS-код</Text>
-          <Text style={styles.smsSubtitle}>Код отправлен на {form.phone}</Text>
-          <TextInput
-            style={styles.smsInput}
-            value={smsCode}
-            onChangeText={setSmsCode}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="······"
-            placeholderTextColor={COLORS.textTertiary}
-            autoFocus
-            editable={!loading}
-          />
-          {isMockAuth() && (
-            <Text style={styles.smsHint}>Режим разработки — подойдёт любой код</Text>
-          )}
-          {smsError ? <Text style={styles.smsErrorText}>{smsError}</Text> : null}
-          <TouchableOpacity
-            style={[styles.submitBtn, (smsCode.length < 6 || loading) && styles.submitBtnDisabled]}
-            onPress={handleVerify}
-            disabled={smsCode.length < 6 || loading}
-            activeOpacity={0.7}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.submitBtnText}>Подтвердить</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.resendBtn}
-            onPress={resendTimer > 0 ? undefined : handleResend}
-            disabled={resendTimer > 0}
-          >
-            <Text style={[styles.resendText, resendTimer > 0 && styles.resendTextDisabled]}>
-              {resendTimer > 0 ? `Отправить повторно (${resendTimer}с)` : 'Отправить код повторно'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: c.ledger }}>
+      <NavBar onBack={() => navigation.goBack()} variant="fill" />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+          <View style={{ paddingHorizontal: 22, paddingTop: 22, paddingBottom: 22 }}>
+            <T v="title" accessibilityRole="header">Аккаунт заказчика</T>
+            <T v="body" c="secondary" style={{ marginTop: 7 }}>
+              Эти данные исполнители увидят в каждой твоей смене — рядом с оплатой и адресом.
+            </T>
+          </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Регистрация</Text>
-        <Text style={styles.subtitle}>Заказчик</Text>
+          <SectionHeader title="Компания" />
+          <FormRow label="Название" value={form.companyName} onChangeText={set('companyName')} placeholder="Ozon ПВЗ Минск" error={errors.companyName} autoCapitalize="words" />
+          <FormRow label="УНП" value={form.unp} onChangeText={(v) => set('unp')(v.replace(/\D/g, '').slice(0, 9))} placeholder="9 цифр" keyboardType="number-pad" error={errors.unp} />
+          <FormRow label="Контакт" value={form.contactPerson} onChangeText={set('contactPerson')} placeholder="Имя и фамилия" autoCapitalize="words" textContentType="name" error={errors.contactPerson} last />
 
-        <Text style={styles.label}>Название компании *</Text>
-        <TextInput
-          style={[styles.input, errors.companyName && styles.inputError]}
-          value={form.companyName}
-          onChangeText={v => setForm(f => ({ ...f, companyName: v }))}
-          placeholder="ООО / ИП"
-          placeholderTextColor={COLORS.textTertiary}
-        />
-        {errors.companyName && <Text style={styles.error}>{errors.companyName}</Text>}
+          <SectionHeader title="Город" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
+            {CITIES.map((city) => <Chip key={city} label={city} selected={form.city === city} onPress={() => { haptic.selection(); set('city')(city); }} />)}
+          </View>
 
-        <Text style={styles.label}>УНП * (9 цифр)</Text>
-        <TextInput
-          style={[styles.input, errors.unp && styles.inputError]}
-          value={form.unp}
-          onChangeText={v => setForm(f => ({ ...f, unp: v.replace(/\D/g, '').slice(0, 9) }))}
-          placeholder="123456789"
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="number-pad"
-          maxLength={9}
-        />
-        {errors.unp && <Text style={styles.error}>{errors.unp}</Text>}
+          <SectionHeader title="Чем занимается компания" />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
+            {BUSINESS_CATEGORIES.map((cat) => <Chip key={cat} label={cat} selected={form.businessCategory === cat} onPress={() => { haptic.selection(); set('businessCategory')(cat); }} />)}
+          </View>
+          {errors.businessCategory ? <T v="small" c="destructive" style={{ paddingHorizontal: 22, marginTop: -6 }}>{errors.businessCategory}</T> : null}
 
-        <Text style={styles.label}>Контактное лицо (ФИО) *</Text>
-        <TextInput
-          style={[styles.input, errors.contactPerson && styles.inputError]}
-          value={form.contactPerson}
-          onChangeText={v => setForm(f => ({ ...f, contactPerson: v }))}
-          placeholder="Иванов Иван Иванович"
-          placeholderTextColor={COLORS.textTertiary}
-        />
-        {errors.contactPerson && <Text style={styles.error}>{errors.contactPerson}</Text>}
-
-        <Text style={styles.label}>Телефон *</Text>
-        <TextInput
-          style={[styles.input, errors.phone && styles.inputError]}
-          value={form.phone}
-          onChangeText={v => setForm(f => ({ ...f, phone: v }))}
-          placeholder="+375XXXXXXXXX"
-          placeholderTextColor={COLORS.textTertiary}
-          keyboardType="phone-pad"
-        />
-        {errors.phone && <Text style={styles.error}>{errors.phone}</Text>}
-
-        {renderSelect('Город *', form.city, 'Выберите город', CITIES, showCities, setShowCities, 'city', errors.city)}
-        {renderSelect('Категория бизнеса *', form.businessCategory, 'Выберите категорию', BUSINESS_CATEGORIES, showCategories, setShowCategories, 'businessCategory', errors.businessCategory)}
-
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} activeOpacity={0.7}>
-          <Text style={styles.submitBtnText}>Продолжить</Text>
-        </TouchableOpacity>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <SectionHeader title="Телефон для входа" />
+          <View style={{ paddingHorizontal: 22, paddingTop: 14 }}>
+            <PhoneField value={digits} onChange={(v) => { setDigits(v); setErrors((e) => ({ ...e, phone: undefined })); }} error={!!errors.phone} />
+            {errors.phone ? <T v="smallStrong" c="destructive" style={{ marginTop: 8, marginLeft: 20 }}>{errors.phone}</T> : null}
+            <Button title="Получить код" onPress={submit} loading={loading} style={{ marginTop: 14 }} />
+          </View>
+          <Note icon="lock.shield" style={{ marginTop: 14 }}>
+            УНП нужен, чтобы исполнители видели, что за сменой стоит реальная компания.
+          </Note>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scroll: { paddingHorizontal: SIZES.lg, paddingBottom: SIZES['3xl'] },
-  backBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center', marginLeft: SIZES.sm },
-  title: { fontSize: SIZES.largeTitle, ...FONTS.bold, color: COLORS.textPrimary, letterSpacing: -0.5 },
-  subtitle: { fontSize: SIZES.body, color: '#D97706', ...FONTS.medium, marginTop: SIZES.xs, marginBottom: SIZES.xl },
-  label: { fontSize: SIZES.body, ...FONTS.medium, color: COLORS.textPrimary, marginTop: SIZES.base, marginBottom: SIZES.sm },
-  input: {
-    backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, paddingHorizontal: SIZES.base,
-    height: SIZES.inputHeight, fontSize: SIZES.body, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, ...FONTS.regular,
-  },
-  inputError: { borderColor: COLORS.error },
-  selectInput: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  selectText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  selectPlaceholder: { fontSize: SIZES.body, color: COLORS.textTertiary },
-  error: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.xs },
-  dropdown: { backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd, marginTop: SIZES.xs, ...SHADOWS.md, overflow: 'hidden' },
-  dropdownItem: { paddingHorizontal: SIZES.base, paddingVertical: SIZES.md },
-  dropdownItemActive: { backgroundColor: COLORS.accentSoft },
-  dropdownText: { fontSize: SIZES.body, color: COLORS.textPrimary },
-  dropdownTextActive: { color: COLORS.accent, ...FONTS.medium },
-  submitBtn: {
-    backgroundColor: COLORS.accent, borderRadius: SIZES.radiusMd, height: SIZES.buttonHeight,
-    justifyContent: 'center', alignItems: 'center', marginTop: SIZES.xl,
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { fontSize: SIZES.bodyLarge, ...FONTS.semibold, color: COLORS.white },
-  smsContainer: { flex: 1, paddingHorizontal: SIZES.lg, paddingTop: SIZES['3xl'], alignItems: 'center' },
-  smsTitle: { fontSize: SIZES.heading, ...FONTS.bold, color: COLORS.textPrimary },
-  smsSubtitle: { fontSize: SIZES.body, color: COLORS.textSecondary, marginTop: SIZES.sm },
-  smsInput: {
-    width: 160, height: 64, backgroundColor: COLORS.white, borderRadius: SIZES.radiusMd,
-    fontSize: 32, textAlign: 'center', ...FONTS.bold, color: COLORS.textPrimary,
-    borderWidth: 1, borderColor: COLORS.border, marginTop: SIZES['2xl'], letterSpacing: 12,
-  },
-  smsHint: { fontSize: SIZES.caption, color: COLORS.textTertiary, marginTop: SIZES.md },
-  smsErrorText: { fontSize: SIZES.caption, color: COLORS.error, marginTop: SIZES.sm, textAlign: 'center' },
-  resendBtn: { marginTop: SIZES.lg, alignItems: 'center' },
-  resendText: { fontSize: SIZES.body, color: COLORS.accent, ...FONTS.medium },
-  resendTextDisabled: { color: COLORS.textTertiary },
-});

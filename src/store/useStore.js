@@ -221,6 +221,25 @@ const useStore = create(
     return { success: true };
   },
 
+  // ===== «МОИ СМЕНЫ» BADGE =====
+  // The tab badge marks new events (an application sent, an employer's
+  // answer), not a standing count: opening the tab clears it.
+  myShiftsSeenAt: {},
+  markMyShiftsSeen: () => {
+    const uid = get().currentUser?.id;
+    if (!uid) return;
+    set(s => ({ myShiftsSeenAt: { ...s.myShiftsSeenAt, [uid]: new Date().toISOString() } }));
+  },
+  getMyShiftsBadge: () => {
+    const uid = get().currentUser?.id;
+    if (!uid) return 0;
+    const seen = get().myShiftsSeenAt[uid] || '';
+    return get().applications.filter(a => a.workerId === uid && (
+      (a.appliedAt && a.appliedAt.length > 10 && a.appliedAt > seen) ||
+      (a.respondedAt && a.respondedAt.length > 10 && a.respondedAt > seen)
+    )).length;
+  },
+
   // ===== SAFETY: BLOCKING & REPORTING (App Store Guideline 1.2) =====
   // Chat messages, reviews and profiles are user-generated content, so the
   // app must let people block abusive users and report objectionable
@@ -374,7 +393,7 @@ const useStore = create(
       ),
       applications: s.applications.map(a =>
         a.shiftId === shiftId && (a.status === 'pending' || a.status === 'approved')
-          ? { ...a, status: 'rejected', respondedAt: new Date().toISOString().split('T')[0] }
+          ? { ...a, status: 'rejected', respondedAt: new Date().toISOString() }
           : a
       ),
     }));
@@ -439,7 +458,8 @@ const useStore = create(
       shiftId,
       workerId: user.id,
       status: 'pending',
-      appliedAt: new Date().toISOString().split('T')[0],
+      // Full timestamp: «Ждут ответа» shows how long ago the application went out.
+      appliedAt: new Date().toISOString(),
       respondedAt: null,
     };
     set(s => ({ applications: [...s.applications, app] }));
@@ -448,18 +468,48 @@ const useStore = create(
     const shift = get().getShiftById(shiftId);
     if (shift) {
       get().addNotification(shift.companyId, 'new_application',
-        'Новый отклик', `Новый отклик на «${shift.title}» от ${user.firstName} ${user.lastName[0]}.`,
+        'Новый отклик', `Новый отклик на «${shift.title}» от ${user.firstName}${user.lastName ? ` ${user.lastName[0]}.` : ''}`,
         shiftId);
     }
     return { success: true };
   },
 
   cancelApplication: (appId) => {
+    const app = get().applications.find(a => a.id === appId);
+    if (!app) return;
+    const wasApproved = app.status === 'approved';
+
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'cancelled_by_worker' } : a
+        a.id === appId ? { ...a, status: 'cancelled_by_worker', respondedAt: new Date().toISOString() } : a
       ),
+      // A confirmed worker pulling out frees the seat they were holding;
+      // otherwise the shift stays «full» with nobody coming.
+      shifts: wasApproved
+        ? s.shifts.map(sh => sh.id === app.shiftId
+          ? { ...sh, spotsTaken: Math.max(0, sh.spotsTaken - 1), status: sh.status === 'filled' ? 'active' : sh.status }
+          : sh)
+        : s.shifts,
     }));
+
+    if (wasApproved) {
+      // «Без отмен» means exactly that — it goes with the first cancellation.
+      const drop = (w) => (w.id === app.workerId && w.badges?.includes('no_cancels'))
+        ? { ...w, badges: w.badges.filter(b => b !== 'no_cancels') } : w;
+      set(s => ({
+        workers: s.workers.map(drop),
+        currentUser: s.currentUser ? drop(s.currentUser) : s.currentUser,
+      }));
+
+      const shift = get().getShiftById(app.shiftId);
+      const worker = get().workers.find(w => w.id === app.workerId);
+      if (shift) {
+        get().addNotification(shift.companyId, 'shift_cancelled',
+          'Исполнитель отменил смену',
+          `${worker?.firstName || 'Исполнитель'} не выйдет на «${shift.title}» ${shift.date}, ${shift.timeStart}. Место снова открыто.`,
+          shift.id);
+      }
+    }
   },
 
   approveApplication: (appId) => {
@@ -468,7 +518,7 @@ const useStore = create(
 
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'approved', respondedAt: new Date().toISOString().split('T')[0] } : a
+        a.id === appId ? { ...a, status: 'approved', respondedAt: new Date().toISOString() } : a
       ),
       shifts: s.shifts.map(sh =>
         sh.id === app.shiftId ? { ...sh, spotsTaken: sh.spotsTaken + 1 } : sh
@@ -500,7 +550,7 @@ const useStore = create(
         ),
         applications: s.applications.map(a =>
           a.shiftId === app.shiftId && a.status === 'pending'
-            ? { ...a, status: 'rejected', respondedAt: new Date().toISOString().split('T')[0] }
+            ? { ...a, status: 'rejected', respondedAt: new Date().toISOString() }
             : a
         ),
       }));
@@ -517,7 +567,7 @@ const useStore = create(
     const app = get().applications.find(a => a.id === appId);
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'rejected', respondedAt: new Date().toISOString().split('T')[0] } : a
+        a.id === appId ? { ...a, status: 'rejected', respondedAt: new Date().toISOString() } : a
       ),
     }));
     if (app) {
@@ -963,6 +1013,7 @@ const useStore = create(
         // Safety state must survive restarts — a blocked user staying
         // blocked is a Guideline 1.2 requirement, not a preference.
         blockedUsers: state.blockedUsers,
+        myShiftsSeenAt: state.myShiftsSeenAt,
         reports: state.reports,
         // Persist registered users + content created in-app so they
         // survive logout / app restart. Without this, registering a

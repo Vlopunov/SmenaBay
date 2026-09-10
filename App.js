@@ -1,15 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { Linking, Platform, Settings } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useFonts as useUnbounded, Unbounded_600SemiBold, Unbounded_700Bold } from '@expo-google-fonts/unbounded';
-import { useFonts as useOnest, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold } from '@expo-google-fonts/onest';
-import { useFonts as useBonaNova, BonaNova_400Regular_Italic } from '@expo-google-fonts/bona-nova';
-import { useFonts as useSpaceMono, SpaceMono_400Regular } from '@expo-google-fonts/space-mono';
+import { StatusBar } from 'expo-status-bar';
 import AppNavigator from './src/navigation/AppNavigator';
 import useStore from './src/store/useStore';
-import { COLORS } from './src/constants/theme';
+import { ThemeProvider, useTheme } from './src/design/theme';
+import { ActionSheetHost } from './src/design/ActionSheet';
 
 function Heartbeat() {
   const isAuthenticated = useStore(s => s.isAuthenticated);
@@ -35,33 +33,106 @@ function Heartbeat() {
   return null;
 }
 
-export default function App() {
-  const [unboundedLoaded] = useUnbounded({ Unbounded_600SemiBold, Unbounded_700Bold });
-  const [onestLoaded] = useOnest({ Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold });
-  const [bonaLoaded] = useBonaNova({ BonaNova_400Regular_Italic });
-  const [monoLoaded] = useSpaceMono({ SpaceMono_400Regular });
+// Deep links: com.smenabay.app://shift/s1 opens that shift. Push
+// notifications and shared links land on the right screen through these.
+const linking = {
+  prefixes: ['com.smenabay.app://', 'smenabay://'],
+  config: {
+    screens: {
+      Tabs: {
+        screens: {
+          Shifts: 'shifts', MyShifts: 'my', Chat: 'chats', Profile: 'profile',
+          Dashboard: 'dashboard', EmpShifts: 'emp/shifts', EmpChat: 'emp/chats', EmpProfile: 'emp/profile',
+        },
+      },
+      ShiftDetail: 'shift/:shiftId',
+      ShiftManage: 'manage/:shiftId',
+      Applications: 'applications/:shiftId',
+      RateShift: 'rate/:shiftId',
+      ChatConversation: 'chat/:conversationId',
+      Notifications: 'notifications',
+      CreateShift: 'create',
+      SignIn: 'signin',
+      FAQ: 'help',
+      PersonalData: 'me',
+      SavedShifts: 'saved',
+      PublicCompanyProfile: 'company/:companyId',
+      PublicWorkerProfile: 'worker/:workerId',
+      Plans: 'plan',
+      Locations: 'locations',
+      Favorites: 'favorites',
+      WorkerDirectory: 'workers',
+      CompanyData: 'company-data',
+      RegisterEmployer: 'employer',
+    },
+  },
+};
 
-  const fontsReady = unboundedLoaded && onestLoaded && bonaLoaded && monoLoaded;
+// Development only: launch arguments open a screen as a given user, so every
+// state can be checked on a simulator without tapping through the flow:
+//   xcrun simctl launch <udid> com.smenabay.app --initialUrl http://localhost:8081 \
+//     -devUser +375291234567 -devRoute shift/s7
+// `__DEV__` is false in release bundles, so none of this ships.
+const devArg = (key) => (__DEV__ && Platform.OS === 'ios' ? Settings.get(key) : null);
+if (__DEV__) {
+  const route = devArg('devRoute');
+  linking.getInitialURL = async () => (route ? `com.smenabay.app://${route}` : Linking.getInitialURL());
+}
 
-  if (!fontsReady) {
-    // Splash-style loader on parchment background while fonts hydrate
-    return (
-      <View style={{ flex: 1, backgroundColor: COLORS.paper, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 28, color: COLORS.ink, fontWeight: '700', letterSpacing: -1 }}>
-          смена·бел
-        </Text>
-      </View>
-    );
-  }
+function DevUser() {
+  useEffect(() => {
+    const who = devArg('devUser');
+    const approve = devArg('devApprove');
+    if (!who && !approve) return;
+    const apply = () => {
+      const s = useStore.getState();
+      if (who === 'guest') s.logout();
+      else if (who && s.currentUser?.phone !== who) s.login(who);
+      const app = approve && s.applications.find((a) => a.id === approve);
+      if (app && app.status === 'pending') s.approveApplication(approve);
+    };
+    if (useStore.persist.hasHydrated()) apply();
+    else return useStore.persist.onFinishHydration(apply);
+  }, []);
+  return null;
+}
 
+function Root() {
+  const { c, dark } = useTheme();
+  // Navigation surfaces take the ledger colour so pushes and modals never
+  // flash white in dark mode.
+  const base = dark ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: c.accent,
+      background: c.ledger,
+      card: c.ledger,
+      text: c.label,
+      border: c.separator,
+      notification: c.destructive,
+    },
+  };
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.paper }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.ledger }}>
       <SafeAreaProvider>
-        <NavigationContainer>
+        <NavigationContainer theme={navTheme} linking={linking}>
+          <StatusBar style={dark ? 'light' : 'dark'} />
           <Heartbeat />
+          {__DEV__ ? <DevUser /> : null}
           <AppNavigator />
+          <ActionSheetHost />
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <Root />
+    </ThemeProvider>
   );
 }

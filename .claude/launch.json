@@ -4,20 +4,53 @@
     {
       "name": "expo-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8081"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8081"
+      ],
       "port": 8081
     },
     {
       "name": "smenabay-web",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/vladlopunov/Downloads/smenabay-web && npx next dev -p 3001"],
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/vladlopunov/Downloads/smenabay-web && npx next dev -p 3001"
+      ],
       "port": 3001
     },
     {
       "name": "american-bbq",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd /Users/vladlopunov/Downloads/american-bbq && npx expo start --web --port 8082"],
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/vladlopunov/Downloads/american-bbq && npx expo start --web --port 8082"
+      ],
       "port": 8082
+    },
+    {
+      "name": "smenabel-design",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "/Users/vladlopunov/Downloads/mobile-app-design-planning/project"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "metro-ios",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/vladlopunov/Downloads/ServiceHub && EXPO_PUBLIC_MOCK_AUTH=1 npx expo start --dev-client --port 8081"
+      ],
+      "port": 8081
     }
   ]
 }

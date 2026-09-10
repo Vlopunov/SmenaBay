@@ -1,106 +1,42 @@
+// Worker tabs: Смены · Мои смены · Чат · Профиль (four, not five — the feed
+// and the map are one space with a view switch). A guest sees «Войти» in
+// place of «Профиль», and «Мои смены» / «Чат» dimmed to tertiary: visible
+// what is there, visible that it is empty for now.
 import React from 'react';
-import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FAMILIES } from '../constants/theme';
-import { Icon } from '../components/ui/Atoms';
+import TabBar from '../design/TabBar';
 import useStore from '../store/useStore';
 
 import FeedScreen from '../screens/worker/FeedScreen';
-import MapScreen from '../screens/worker/MapScreen';
 import MyShiftsScreen from '../screens/worker/MyShiftsScreen';
 import ChatListScreen from '../screens/shared/ChatListScreen';
 import WorkerProfileScreen from '../screens/worker/WorkerProfileScreen';
+import SignInScreen from '../screens/auth/SignInScreen';
 
 const Tab = createBottomTabNavigator();
 
-const TABS = {
-  Feed:          { icon: 'search', label: 'Лента' },
-  Map:           { icon: 'map',    label: 'Карта' },
-  MyShifts:      { icon: 'cal',    label: 'Мои' },
-  Chat:          { icon: 'chat',   label: 'Чат' },
-  WorkerProfile: { icon: 'user',   label: 'Я' },
-};
-
-function TabIcon({ focused, route, badge }) {
-  const tab = TABS[route];
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-      <View
-        style={{
-          width: 36, height: 36, borderRadius: 999,
-          backgroundColor: focused ? COLORS.ink : 'transparent',
-          alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <Icon
-          name={tab.icon}
-          size={20}
-          color={focused ? COLORS.signal : COLORS.fgMuted}
-          strokeWidth={focused ? 2 : 1.6}
-        />
-      </View>
-      {badge > 0 && (
-        <View style={{
-          position: 'absolute', top: 0, right: -4,
-          minWidth: 16, height: 16, paddingHorizontal: 4,
-          borderRadius: 999, backgroundColor: COLORS.live,
-          alignItems: 'center', justifyContent: 'center',
-          borderWidth: 2, borderColor: COLORS.paper,
-        }}>
-          <Text style={{ fontFamily: FAMILIES.textBold, fontSize: 9, color: COLORS.white }}>{badge}</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
 export default function WorkerTabs() {
-  const insets = useSafeAreaInsets();
-  const currentUser = useStore(s => s.currentUser);
-  const conversations = useStore(s => s.conversations);
-  const unreadChat = conversations
-    .filter(c => c.workerId === currentUser?.id || c.companyId === currentUser?.id)
-    .reduce((total, c) => total + c.messages.filter(m => m.senderId !== currentUser?.id && !m.read).length, 0);
+  const currentUser = useStore((s) => s.currentUser);
+  const guest = !currentUser;
+  const unreadChat = useStore((s) => (s.currentUser ? s.getUnreadChatCount() : 0));
+  const myBadge = useStore((s) => (s.currentUser ? s.getMyShiftsBadge() : 0));
 
-  const bottomPadding = Math.max(insets.bottom, 12);
-  const tabBarHeight = 60 + bottomPadding;
+  const tabs = {
+    Shifts: { label: 'Смены', icon: 'briefcase', iconActive: 'briefcase.fill' },
+    MyShifts: { label: 'Мои смены', icon: 'ticket', iconActive: 'ticket.fill', muted: guest, badge: myBadge },
+    Chat: { label: 'Чат', icon: 'bubble.left.and.bubble.right', iconActive: 'bubble.left.and.bubble.right.fill', muted: guest, badge: unreadChat },
+    Profile: { label: guest ? 'Войти' : 'Профиль', icon: 'person.crop.circle', iconActive: 'person.crop.circle.fill' },
+  };
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <TabIcon focused={focused} route={route.name} badge={route.name === 'Chat' ? unreadChat : 0} />
-        ),
-        tabBarLabel: ({ focused }) => (
-          <Text style={{
-            fontFamily: focused ? FAMILIES.textSemi : FAMILIES.textMed,
-            fontSize: 10,
-            color: focused ? COLORS.ink : COLORS.fgFaint,
-            letterSpacing: 0.2,
-            marginTop: -2,
-          }}>
-            {TABS[route.name]?.label}
-          </Text>
-        ),
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: COLORS.paper,
-          borderTopWidth: 1,
-          borderTopColor: COLORS.line,
-          height: tabBarHeight,
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          elevation: 0,
-        },
-      })}
+      tabBar={(props) => <TabBar {...props} tabs={tabs} />}
+      screenOptions={{ headerShown: false, animation: 'none' }}
     >
-      <Tab.Screen name="Feed" component={FeedScreen} />
-      <Tab.Screen name="Map" component={MapScreen} />
+      <Tab.Screen name="Shifts" component={FeedScreen} />
       <Tab.Screen name="MyShifts" component={MyShiftsScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
-      <Tab.Screen name="WorkerProfile" component={WorkerProfileScreen} />
+      <Tab.Screen name="Profile" component={guest ? SignInScreen : WorkerProfileScreen} />
     </Tab.Navigator>
   );
 }

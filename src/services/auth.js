@@ -25,8 +25,10 @@ function configureGoogleSignin() {
   googleSigninConfigured = true;
 }
 
-// Mock mode flag (kept for backward compatibility with screens checking isMockAuth)
-const FORCE_MOCK = false;
+// Mock SMS verification for simulator work only: a development build started
+// with EXPO_PUBLIC_MOCK_AUTH=1 accepts any 6-digit code without Firebase.
+// `__DEV__` is false in release bundles, so production always uses Firebase.
+const FORCE_MOCK = __DEV__ && process.env.EXPO_PUBLIC_MOCK_AUTH === '1';
 
 /**
  * Send verification code to phone number.

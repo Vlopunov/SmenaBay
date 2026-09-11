@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "description": "СменаБел — платформа подработок и посменной работы в Беларуси. Для соискателей — быстрый поиск смен рядом. Для работодателей — публикация вакансий и отбор кандидатов.",
-    "primaryColor": "#12539E",
+    "primaryColor": "#0F5673",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.smenabay.app",
@@ -20,12 +20,17 @@
         "NSCameraUsageDescription": "СменаБел использует камеру, чтобы вы могли сделать и загрузить фото профиля или прикрепить снимок в чат.",
         "NSPhotoLibraryUsageDescription": "СменаБел запрашивает доступ к фото, чтобы вы могли установить фото профиля и отправлять изображения в чат.",
         "NSPhotoLibraryAddUsageDescription": "Разрешите сохранять изображения из приложения в вашу фотогалерею."
+      },
+      "icon": {
+        "light": "./assets/icon.png",
+        "dark": "./assets/icon-dark.png",
+        "tinted": "./assets/icon-tinted.png"
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#12539E"
+        "backgroundColor": "#0F5673"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.smenabay.app",
@@ -50,13 +55,22 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 88,
-          "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF",
+          "image": "./assets/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#FFC89E",
           "dark": {
+            "image": "./assets/splash-dark.png",
+            "backgroundColor": "#243459"
+          },
+          "android": {
             "image": "./assets/splash-icon.png",
-            "backgroundColor": "#000000"
+            "imageWidth": 120,
+            "resizeMode": "contain",
+            "backgroundColor": "#FBF8F4",
+            "dark": {
+              "image": "./assets/splash-icon.png",
+              "backgroundColor": "#11161C"
+            }
           }
         }
       ],

@@ -6,18 +6,17 @@ import { isoDay, parseDay, shiftStart, shiftEnd } from '../../design/format';
 export const PAY_MIN = 45;
 export const PAY_MAX = 140;
 
+// «Когда» is one choice (a segmented control); «Что подходит» is many.
 export const WHEN = [
   { key: 'today', label: 'Сегодня' },
   { key: 'tomorrow', label: 'Завтра' },
-  { key: 'weekend', label: 'Выходные' },
-  { key: 'morning', label: 'Утро' },
-  { key: 'evening', label: 'Вечер' },
-  { key: 'night', label: 'Ночь' },
+  { key: 'week', label: 'Неделя' },
 ];
 
 export const SKILLS = [
   { key: 'noExp', label: 'Без опыта' },
   { key: 'noMed', label: 'Без медкнижки' },
+  { key: 'night', label: 'Ночные' },
   { key: 'physical', label: 'Физическая работа' },
 ];
 
@@ -28,18 +27,18 @@ const PHYSICAL = /грузчик|разнорабоч|склад|комплек�
 function matchesWhen(shift, key, now) {
   const today = isoDay(now);
   const t = new Date(now); t.setDate(t.getDate() + 1);
-  const start = shiftStart(shift);
-  const h = start.getHours();
   switch (key) {
     case 'today': return shift.date === today;
     case 'tomorrow': return shift.date === isoDay(t);
-    case 'weekend': { const d = parseDay(shift.date).getDay(); return d === 0 || d === 6; }
-    case 'morning': return h < 12;
-    case 'evening': return h >= 16 && h < 21;
-    case 'night': return h >= 21 || shiftEnd(shift).getDate() !== start.getDate();
+    case 'week': { const w = new Date(now); w.setDate(w.getDate() + 7); return parseDay(shift.date) <= w; }
     default: return true;
   }
 }
+
+const isNight = (shift) => {
+  const start = shiftStart(shift);
+  return start.getHours() >= 22 || start.getHours() < 6 || shiftEnd(shift).getDate() !== start.getDate();
+};
 
 /** Does a shift pass the filters? (Search and blocked users handled by the caller.) */
 export function passes(shift, f, now = new Date()) {
@@ -50,6 +49,7 @@ export function passes(shift, f, now = new Date()) {
   if (f.skills.includes('noExp') && !req.noExperienceOk) return false;
   if (f.skills.includes('noMed') && req.medicalBookRequired) return false;
   if (f.skills.includes('physical') && !PHYSICAL.test(shift.title)) return false;
+  if (f.skills.includes('night') && !isNight(shift)) return false;
   return true;
 }
 
@@ -65,7 +65,7 @@ export function conditions(f) {
   const out = [];
   if (f.minPay > PAY_MIN) out.push({ label: `от ${f.minPay} BYN`, without: { ...f, minPay: PAY_MIN } });
   if (f.urgentOnly) out.push({ label: 'только срочные', without: { ...f, urgentOnly: false } });
-  f.when.forEach((k) => out.push({ label: WHEN.find((w) => w.key === k).label.toLowerCase(), without: { ...f, when: f.when.filter((x) => x !== k) } }));
+  f.when.forEach((k) => out.push({ label: (WHEN.find((w) => w.key === k)?.label || k).toLowerCase(), without: { ...f, when: f.when.filter((x) => x !== k) } }));
   f.skills.forEach((k) => out.push({ label: SKILLS.find((s) => s.key === k).label.toLowerCase(), without: { ...f, skills: f.skills.filter((x) => x !== k) } }));
   return out;
 }

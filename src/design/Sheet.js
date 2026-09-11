@@ -1,7 +1,8 @@
-// Bottom sheet: scrim rgba(0,0,0,.42), 26 pt top corners, grabber.
-// Opens on the «panel» curve (300 ms, .77/0/.175/1). Dragging tracks the
-// finger 1:1; on release it either dismisses (velocity or distance) or
-// springs home carrying the finger's velocity, so there is no seam.
+// Bottom sheet (spring.sheet): scrim rgba(20,14,8,.42), 26 pt top corners,
+// a 38×5 grabber on the line colour, background = screen bg. Opens on the
+// sheet spring (damping 26 · stiffness 300 · mass .8) with a light haptic
+// at the detent; dragging tracks the finger 1:1 and hands its velocity to
+// the spring on release. Reduce Motion: a 200 ms cross-fade, no travel.
 import React, { useEffect, useState, useCallback } from 'react';
 import { Modal, View, StyleSheet, KeyboardAvoidingView, Platform, Pressable, useWindowDimensions } from 'react-native';
 import Animated, {
@@ -10,7 +11,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
+import { haptic } from './haptics';
 import T from './Text';
 import { Press } from './ui';
 import { useTheme } from './theme';
@@ -20,7 +21,7 @@ const PANEL = Easing.bezier(...motion.panel.bezier);
 
 export default function Sheet({ visible, onClose, children, title, right, onRight, dismissable = true }) {
   const theme = useTheme();
-  const { c, dark, glass } = theme;
+  const { c } = theme;
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
   const reduced = useReducedMotion();
@@ -51,8 +52,8 @@ export default function Sheet({ visible, onClose, children, title, right, onRigh
 
   const onShow = () => {
     y.value = reduced ? 0 : winH;
-    scrim.value = withTiming(1, { duration: motion.panel.duration, easing: PANEL });
-    y.value = reduced ? 0 : withTiming(0, { duration: motion.panel.duration, easing: PANEL });
+    scrim.value = withTiming(1, { duration: reduced ? 200 : 300 });
+    y.value = reduced ? 0 : withSpring(0, motion.sheet, (done) => { if (done) scheduleOnRN(haptic.light); });
   };
 
   const requestClose = () => { if (dismissable) onClose?.(); };
@@ -69,7 +70,7 @@ export default function Sheet({ visible, onClose, children, title, right, onRigh
       if (shouldClose) {
         scheduleOnRN(requestClose);
       } else {
-        y.value = withSpring(0, { duration: motion.springSheet.duration, dampingRatio: motion.springSheet.dampingRatio, velocity: e.velocityY });
+        y.value = withSpring(0, { ...motion.sheet, velocity: e.velocityY });
       }
     });
 
@@ -90,25 +91,19 @@ export default function Sheet({ visible, onClose, children, title, right, onRigh
               accessibilityViewIsModal
               style={[{
                 borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: 'hidden',
-                backgroundColor: glass ? 'transparent' : c.sheet,
+                backgroundColor: c.bg,
                 paddingBottom: Math.max(insets.bottom, 12) + 4,
-                shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: -10 },
+                shadowColor: 'rgb(20,14,8)', shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: -10 },
               }, sheetStyle]}
             >
-              {glass && Platform.OS === 'ios' ? (
-                <>
-                  <BlurView intensity={80} tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} style={StyleSheet.absoluteFill} />
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: c.sheet, opacity: 0.6 }]} />
-                </>
-              ) : null}
-              <View style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 6 }}>
-                <View style={{ width: 36, height: 5, borderRadius: 2.5, backgroundColor: c.fillSecondary }} />
+              <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 4 }}>
+                <View style={{ width: 38, height: 5, borderRadius: 3, backgroundColor: c.lineStrong }} />
               </View>
               {title ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 10, paddingBottom: 4, gap: 12 }}>
-                  <T v="sheetTitle" style={{ flex: 1 }} accessibilityRole="header">{title}</T>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4, gap: 12 }}>
+                  <T v="titleScreen" style={{ flex: 1, fontSize: 23, lineHeight: 28 }} accessibilityRole="header">{title}</T>
                   {right ? (
-                    <Press onPress={onRight} hitSlop={10}><T v="body" c="accent">{right}</T></Press>
+                    <Press onPress={onRight} hitSlop={10}><T v="bodyStrong" c="brand" style={{ fontSize: 16 }}>{right}</T></Press>
                   ) : null}
                 </View>
               ) : null}

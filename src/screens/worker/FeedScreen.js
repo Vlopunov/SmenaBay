@@ -1,97 +1,74 @@
-// «Смены» — the feed and the map are one space with a view switch in the
-// header (handoff screens 1 and 5). A guest sees exactly this: no sign-up
-// banner, no bell — there is nothing to show in it yet.
-import React, { useMemo, useState, useRef } from 'react';
-import { View, SectionList, TextInput, RefreshControl, ScrollView, useWindowDimensions, StyleSheet } from 'react-native';
+// «Смены» — screens 1 and 2. The list and the map are one space: the list
+// fades out over 200 ms onto a map that is already standing under it, and
+// the selected shift survives the switch. On the map a pin shows the sum;
+// swiping the preview cards moves the map, picking a pin moves the cards.
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { View, SectionList, FlatList, RefreshControl, useWindowDimensions, Share } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
-import { Press, RoundButton, TextTabs, SectionHeader, Separator, EmptyState, Glass } from '../../design/ui';
-import ShiftRow, { FeedShiftRow } from '../../design/ShiftRow';
-import { useTheme, SUPPORTS_GLASS } from '../../design/theme';
+import {
+  Press, LargeTitle, SectionTitle, SearchField, Segmented, Chip, CircleButton, EmptyState, SkeletonCard,
+} from '../../design/ui';
+import { FeedCard, MapPreviewCard } from '../../design/ShiftCard';
+import { useTheme } from '../../design/theme';
 import { useTabBarSpace } from '../../design/TabBar';
 import { haptic } from '../../design/haptics';
-import { plural, daySection, isoDay, timeRange, hours, perHour } from '../../design/format';
+import { toast } from '../../design/Toast';
+import { plural, daySection, isoDay } from '../../design/format';
 import FiltersSheet from '../../components/FiltersSheet';
 import ShiftsMap from '../../components/ShiftsMap';
+import { openReportMenu } from '../../components/ReportMenu';
 import useStore from '../../store/useStore';
 import { EMPTY_FILTERS, passes, activeFilterCount, conditions, visibleShifts, isFull } from './shiftFilters';
 
-function ViewSwitch({ value, onChange }) {
-  const { c, dark } = useTheme();
-  const item = (key, icon, label) => {
-    const on = value === key;
-    return (
-      <Press
-        feedback="none"
-        onPress={() => { if (!on) { haptic.selection(); onChange(key); } }}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ selected: on }}
-        style={[{ width: 36, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-          on && { backgroundColor: dark ? c.fillSecondary : c.elevated, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }]}
-      >
-        <Icon name={icon} size={16} c={on ? 'label' : 'secondary'} weight="semibold" />
-      </Press>
-    );
-  };
-  return (
-    <View style={{ height: 34, borderRadius: 17, backgroundColor: c.fill, flexDirection: 'row', alignItems: 'center', padding: 2 }}>
-      {item('list', 'list.bullet', 'Список')}
-      {item('map', 'map', 'Карта')}
-    </View>
-  );
-}
-
-function SearchField({ value, onChange, placeholder = 'Должность или компания', height = 36, glass }) {
-  const { c } = useTheme();
-  const body = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height, paddingHorizontal: 14 }}>
-      <Icon name="magnifyingglass" size={15} c="tertiary" weight="medium" />
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={c.labelTertiary}
-        returnKeyType="search"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-        accessibilityLabel="Поиск смен"
-        style={{ flex: 1, fontSize: 15, color: c.label, paddingVertical: 0 }}
-      />
-    </View>
-  );
-  if (glass) return <Glass radius={height / 2} style={{ flex: 1 }}>{body}</Glass>;
-  return <View style={{ borderRadius: height / 2, backgroundColor: c.fill }}>{body}</View>;
-}
+const smena = (n) => `${n} ${plural(n, ['смена', 'смены', 'смен'])}`;
 
 export default function FeedScreen({ navigation }) {
-  const { c } = useTheme();
+  const t = useTheme();
+  const { c } = t;
   const insets = useSafeAreaInsets();
   const tabSpace = useTabBarSpace();
-  const { height: winH } = useWindowDimensions();
+  const { width: winW } = useWindowDimensions();
+  const reduced = useReducedMotion();
+  const compact = winW < 380;
+  const gutter = compact ? 16 : 20;
 
   const currentUser = useStore((s) => s.currentUser);
   const shifts = useStore((s) => s.shifts);
   const companies = useStore((s) => s.companies);
+  const applications = useStore((s) => s.applications);
   const blockedUsers = useStore((s) => s.blockedUsers);
   const unread = useStore((s) => (s.currentUser ? s.getUnreadCount() : 0));
   const getLocationById = useStore((s) => s.getLocationById);
   const refresh = useStore((s) => s.initializeFromFirestore);
+  const toggleSavedShift = useStore((s) => s.toggleSavedShift);
+  const isSavedShift = useStore((s) => s.isSavedShift);
 
   const [view, setView] = useState('list');
+  const [mapMounted, setMapMounted] = useState(false);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sheet, setSheet] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  const [inViewIds, setInViewIds] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const listRef = useRef(null);
+  const pagerRef = useRef(null);
 
   const city = currentUser?.city || 'Минск';
   const companyOf = useMemo(() => Object.fromEntries(companies.map((co) => [co.id, co])), [companies]);
+  const mineOf = useMemo(() => {
+    if (!currentUser) return {};
+    const out = {};
+    applications.forEach((a) => {
+      if (a.workerId !== currentUser.id) return;
+      if (a.status === 'pending') out[a.shiftId] = { state: 'pending', at: a.appliedAt };
+      if (a.status === 'approved') out[a.shiftId] = { state: 'confirmed', at: a.respondedAt };
+    });
+    return out;
+  }, [applications, currentUser]);
 
-  // Everything a worker could see, enriched once.
   const pool = useMemo(() => visibleShifts(shifts, blockedUsers)
     .map((s) => ({ ...s, full: isFull(s), company: companyOf[s.companyId], location: getLocationById(s.locationId) })),
   [shifts, blockedUsers, companyOf]);
@@ -113,11 +90,9 @@ export default function FeedScreen({ navigation }) {
     return [...byDay.entries()].map(([day, data]) => ({ day, title: daySection(day), data }));
   }, [results]);
 
-  const today = isoDay();
-  const todayCount = pool.filter((s) => s.date === today && !s.full).length;
+  const open = (id) => { setSelectedId(id); navigation.navigate('ShiftDetail', { shiftId: id }); };
 
-  // Quick tabs and the sheet share one state: the tab is a shortcut, not a
-  // second filter.
+  // Quick tabs and the sheet share one state: the tab is a shortcut.
   const tab = filters.urgentOnly ? 'urgent' : filters.skills.includes('noExp') ? 'noexp' : 'all';
   const setTab = (k) => {
     haptic.selection();
@@ -134,170 +109,192 @@ export default function FeedScreen({ navigation }) {
     try { await refresh(); } finally { setRefreshing(false); }
   };
 
-  const open = (id) => navigation.navigate('ShiftDetail', { shiftId: id });
-
-  // Selection survives the view switch: back on the list, scroll to it.
+  // ── List ⇄ map: the list fades over the mounted map ──────────
+  const listO = useSharedValue(1);
+  const listStyle = useAnimatedStyle(() => ({ opacity: listO.value }));
   const switchView = (v) => {
+    if (v === view) return;
+    haptic.selection();
+    if (v === 'map') setMapMounted(true);
     setView(v);
+    listO.value = withTiming(v === 'map' ? 0 : 1, { duration: 200 });
     if (v === 'list' && selectedId) {
       setTimeout(() => {
         const si = sections.findIndex((sec) => sec.data.some((x) => x.id === selectedId));
         if (si < 0) return;
         const ii = sections[si].data.findIndex((x) => x.id === selectedId);
         listRef.current?.scrollToLocation({ sectionIndex: si, itemIndex: ii, viewPosition: 0.4, animated: false });
-      }, 50);
+      }, 40);
     }
   };
 
-  // ── Empty states: name a number and a next step ─────────────
+  // Long press: the context menu — save, share, report / block.
+  const onLongPress = (s) => {
+    haptic.light();
+    const saved = currentUser && isSavedShift(s.id);
+    const extra = [
+      currentUser ? { label: saved ? 'Убрать из сохранённых' : 'Сохранить', onPress: () => { toggleSavedShift(s.id); toast.success(saved ? 'Убрано из сохранённых' : 'Сохранено'); } } : null,
+      { label: 'Поделиться', onPress: () => Share.share({ message: `${s.title} · ${s.pay} BYN · ${s.company?.companyName || ''} — com.smenabay.app://shift/${s.id}` }) },
+    ].filter(Boolean);
+    openReportMenu({ targetType: 'shift', targetId: s.id, targetName: s.title, blockUserId: s.companyId, extra, store: useStore.getState() });
+  };
+
+  // ── Empty states: a number and a next step ───────────────────
   const renderEmpty = () => {
+    if (!pool.length && !shifts.length) {
+      return <View style={{ paddingHorizontal: gutter, gap: gutter === 16 ? 8 : 10, marginTop: 18 }}>{[0, 1, 2].map((i) => <SkeletonCard key={i} index={i} />)}</View>;
+    }
     if (query.trim()) {
-      return <EmptyState title={`По запросу «${query.trim()}» ничего`} text="Попробуй короче — например, «Оператор» или название компании." action="Очистить поиск" onAction={() => setQuery('')} />;
+      return <EmptyState icon="magnifyingglass" title={`По запросу «${query.trim()}» ничего`} text="Попробуй короче — например, «Оператор» или название компании." action="Очистить поиск" onAction={() => setQuery('')} />;
     }
     if (activeFilterCount(filters) > 0) {
       const best = conditions(filters)
         .map((cond) => ({ ...cond, n: searched.filter((s) => passes(s, cond.without)).length }))
         .sort((a, b) => b.n - a.n)[0];
       if (best && best.n > 0) {
-        return <EmptyState title="Под фильтры не подошла ни одна" text={`Если убрать «${best.label}», появится ${best.n} ${plural(best.n, ['смена', 'смены', 'смен'])}.`} action="Убрать это условие" onAction={() => { haptic.selection(); setFilters(best.without); }} />;
+        return <EmptyState icon="line.3.horizontal.decrease" title="Под фильтры не подошла ни одна" text={`Если убрать «${best.label}», появится ${smena(best.n)}.`} action="Убрать это условие" onAction={() => { haptic.selection(); setFilters(best.without); }} />;
       }
-      return <EmptyState title="Под фильтры не подошла ни одна" text="Попробуй сбросить фильтры." action="Сбросить фильтры" onAction={() => setFilters(EMPTY_FILTERS)} />;
+      return <EmptyState icon="line.3.horizontal.decrease" title="Под фильтры не подошла ни одна" text="Попробуй сбросить фильтры." action="Сбросить фильтры" onAction={() => setFilters(EMPTY_FILTERS)} />;
     }
-    const t = new Date(); t.setDate(t.getDate() + 1);
-    const tomorrow = pool.filter((s) => s.date === isoDay(t) && !s.full).length;
+    const tm = new Date(); tm.setDate(tm.getDate() + 1);
+    const tomorrow = pool.filter((s) => s.date === isoDay(tm) && !s.full).length;
     return (
       <EmptyState
-        title="Смен на сегодня нет"
-        text={tomorrow ? `Завтра в городе уже ${tomorrow} ${plural(tomorrow, ['смена', 'смены', 'смен'])}.` : 'Новые смены появляются каждый день — загляни позже.'}
+        title="Сегодня смен нет"
+        text={tomorrow ? `Новые появляются утром. На завтра в городе уже ${smena(tomorrow)}.` : 'Новые появляются утром — загляни позже.'}
         action={tomorrow ? 'Смотреть завтра' : undefined}
         onAction={() => setFilters({ ...EMPTY_FILTERS, when: ['tomorrow'] })}
       />
     );
   };
 
+  const switcher = (glass) => (
+    <Segmented
+      glass={glass}
+      items={[{ key: 'list', icon: 'list.bullet', label: 'Список' }, { key: 'map', icon: 'map', label: 'Карта' }]}
+      value={view}
+      onChange={switchView}
+    />
+  );
+
   const header = (
-    <View>
-      <View style={{ paddingTop: insets.top + 12, paddingHorizontal: 22, flexDirection: 'row', alignItems: 'flex-start' }}>
-        <View style={{ flex: 1 }}>
-          <T v="screenTitle" accessibilityRole="header">Смены</T>
-          <T v="caption" c="secondary" style={{ marginTop: 2 }}>
-            {city} · {todayCount} {plural(todayCount, ['смена', 'смены', 'смен'])} сегодня
-          </T>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 4 }}>
-          {currentUser ? <RoundButton icon="bell" variant="fill" size={34} iconSize={16} badge={unread} onPress={() => navigation.navigate('Notifications')} accessibilityLabel="Уведомления" /> : null}
-          <ViewSwitch value={view} onChange={switchView} />
-        </View>
-      </View>
-      <View style={{ paddingHorizontal: 22, paddingTop: 18 }}>
-        <SearchField value={query} onChange={setQuery} />
-      </View>
-      <TextTabs
-        style={{ paddingTop: 17 }}
-        items={[{ key: 'all', label: 'Все' }, { key: 'urgent', label: 'Срочные' }, { key: 'noexp', label: 'Без опыта' }]}
-        value={tab}
-        onChange={setTab}
+    <View style={{ paddingTop: insets.top + 4, paddingHorizontal: gutter }}>
+      <LargeTitle
+        title="Смены"
+        subtitle={`${city} · ${smena(pool.length)}`}
         right={(
-          <Press feedback="none" onPress={() => setSheet(true)} hitSlop={8} accessibilityLabel={`Фильтры${extraCount ? `, выбрано ${extraCount}` : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Icon name="line.3.horizontal.decrease" size={14} c="accent" weight="semibold" />
-            <T v="body" c="accent">{extraCount ? `Фильтры · ${extraCount}` : 'Фильтры'}</T>
-          </Press>
+          <>
+            {currentUser ? <CircleButton icon="bell" badge={unread} onPress={() => navigation.navigate('Notifications')} accessibilityLabel="Уведомления" /> : null}
+            {switcher(false)}
+          </>
         )}
       />
-      <Separator style={{ marginTop: 9 }} />
+      <SearchField value={query} onChangeText={setQuery} placeholder="Должность или компания" style={{ marginTop: 14 }} />
+      <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Chip label="Все" selected={tab === 'all'} onPress={() => setTab('all')} />
+        <Chip label="Срочные" selected={tab === 'urgent'} onPress={() => setTab('urgent')} />
+        <Chip label="Без опыта" selected={tab === 'noexp'} onPress={() => setTab('noexp')} />
+        <Press onPress={() => setSheet(true)} hitSlop={8} outerStyle={{ marginLeft: 'auto' }} accessibilityLabel={`Фильтры${extraCount ? `, выбрано ${extraCount}` : ''}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Icon name="line.3.horizontal.decrease" size={16} c="brand" weight="semibold" />
+          <T v="bodyStrong" c="brand" style={{ fontSize: 13.5 }}>{extraCount ? `Фильтры · ${extraCount}` : 'Фильтры'}</T>
+        </Press>
+      </View>
     </View>
   );
 
-  if (view === 'map') {
-    const visible = inViewIds ? results.filter((s) => inViewIds.includes(s.id)) : results;
-    const panelMax = Math.round(winH * 0.36);
-    return (
-      <View style={{ flex: 1, backgroundColor: c.ledger }}>
-        <ShiftsMap
-          shifts={results}
-          selectedId={selectedId}
-          onSelect={(id) => { haptic.selection(); setSelectedId(id); }}
-          onViewChange={setInViewIds}
-        />
-        <View style={{ position: 'absolute', top: insets.top + 8, left: 16, right: 16, flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          <SearchField value={query} onChange={setQuery} placeholder="Смены рядом" height={44} glass />
-          <RoundButton icon="list.bullet" size={44} iconSize={18} onPress={() => { haptic.selection(); switchView('list'); }} accessibilityLabel="Список" />
-        </View>
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: tabSpace - 10 }}>
-          <View style={{
-            borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: 'hidden',
-            backgroundColor: SUPPORTS_GLASS ? c.sheet : c.glassFallback,
-            borderWidth: StyleSheet.hairlineWidth * 2, borderColor: SUPPORTS_GLASS ? c.glassBorder : c.glassFallbackBorder,
-            maxHeight: panelMax + 70,
-          }}>
-            <View style={{ alignItems: 'center', paddingTop: 8 }}>
-              <View style={{ width: 36, height: 5, borderRadius: 2.5, backgroundColor: c.fillSecondary }} />
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 12, paddingBottom: 12 }}>
-              <T v="rowTitle" style={{ fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.5 }}>
-                {visible.length ? `${visible.length} ${plural(visible.length, ['смена', 'смены', 'смен'])} в кадре` : 'Здесь смен нет'}
-              </T>
-              <Press feedback="none" onPress={() => setSheet(true)} hitSlop={8}><T v="body" c="accent">{extraCount ? `Фильтры · ${extraCount}` : 'Фильтры'}</T></Press>
-            </View>
-            <Separator />
-            <ScrollView style={{ maxHeight: panelMax }} contentContainerStyle={{ paddingBottom: 12 }}>
-              {visible.length === 0 && results.length > 0 ? (
-                <EmptyState title="Здесь смен нет" text="Сдвинь карту или посмотри все смены списком." action="Показать списком" onAction={() => switchView('list')} />
-              ) : null}
-              {visible.map((s, i) => (
-                <ShiftRow
-                  key={s.id}
-                  amount={s.pay}
-                  title={s.title}
-                  urgent={s.urgent && !s.full}
-                  line2={`${timeRange(s)} · ${hours(s.durationHours)}`}
-                  line3={s.location?.address}
-                  unavailable={s.full}
-                  selected={s.id === selectedId}
-                  last={i === visible.length - 1}
-                  onPress={() => { if (s.id === selectedId) open(s.id); else { haptic.selection(); setSelectedId(s.id); } }}
-                  accessibilityLabel={`${s.title}, ${s.pay} BYN, ${timeRange(s)}`}
-                />
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-        <FiltersSheet visible={sheet} onClose={() => setSheet(false)} value={filters} onApply={setFilters} pool={searched} />
-      </View>
-    );
-  }
+  // ── Map preview pager ────────────────────────────────────────
+  const cardW = winW - 28;
+  const mapList = results;
+  useEffect(() => {
+    if (view !== 'map' || !selectedId) return;
+    const i = mapList.findIndex((s) => s.id === selectedId);
+    if (i >= 0) pagerRef.current?.scrollToIndex({ index: i, animated: !reduced });
+  }, [selectedId, view]);
+  useEffect(() => {
+    if (view === 'map' && !selectedId && mapList[0]) setSelectedId(mapList[0].id);
+  }, [view]);
+
+  const rise = useSharedValue(0);
+  useEffect(() => {
+    if (view === 'map') { rise.value = 0; rise.value = reduced ? withTiming(1, { duration: 200 }) : withSpring(1, t.motion.default); }
+  }, [view]);
+  const riseStyle = useAnimatedStyle(() => ({ opacity: rise.value, transform: reduced ? [] : [{ translateY: (1 - rise.value) * 24 }] }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.ledger }}>
-      <SectionList
-        ref={listRef}
-        sections={sections}
-        keyExtractor={(s) => s.id}
-        stickySectionHeadersEnabled={false}
-        ListHeaderComponent={header}
-        ListEmptyComponent={renderEmpty}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        onScrollToIndexFailed={() => {}}
-        contentContainerStyle={{ paddingBottom: tabSpace }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.labelSecondary} />}
-        renderSectionHeader={({ section }) => (
-          <SectionHeader
-            top={section.day !== sections[0]?.day}
-            title={section.title}
-            right={`${section.data.length} ${plural(section.data.length, ['смена', 'смены', 'смен'])}`}
-          />
-        )}
-        renderItem={({ item, index, section }) => (
-          <FeedShiftRow
-            shift={item}
-            company={item.company}
-            location={item.location}
-            last={index === section.data.length - 1}
-            onPress={() => { setSelectedId(item.id); open(item.id); }}
-          />
-        )}
-      />
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      {mapMounted ? (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents={view === 'map' ? 'auto' : 'none'}>
+          <ShiftsMap shifts={mapList} selectedId={selectedId} onSelect={(id) => { haptic.selection(); setSelectedId(id); }} />
+          <View style={{ position: 'absolute', top: insets.top + 6, left: 20, right: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }} pointerEvents="box-none">
+            <View style={[{ paddingVertical: 9, paddingHorizontal: 14, borderRadius: 15, backgroundColor: c.material }, t.sh.e1]}>
+              <T v="bodyStrong" display weight="700" style={{ fontSize: 15 }}>{city} · {smena(mapList.length)}</T>
+            </View>
+            {switcher(true)}
+          </View>
+          {mapList.length ? (
+            <Animated.View style={[{ position: 'absolute', left: 0, right: 0, bottom: tabSpace - 6 }, riseStyle]}>
+              <FlatList
+                ref={pagerRef}
+                data={mapList}
+                horizontal
+                keyExtractor={(s) => s.id}
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={cardW + 8}
+                decelerationRate="fast"
+                contentContainerStyle={{ paddingHorizontal: 14, gap: 8 }}
+                getItemLayout={(_, index) => ({ length: cardW + 8, offset: (cardW + 8) * index, index })}
+                onScrollToIndexFailed={() => {}}
+                onMomentumScrollEnd={(e) => {
+                  const i = Math.round(e.nativeEvent.contentOffset.x / (cardW + 8));
+                  const s = mapList[i];
+                  if (s && s.id !== selectedId) { haptic.selection(); setSelectedId(s.id); }
+                }}
+                renderItem={({ item }) => (
+                  <View style={{ width: cardW }}>
+                    <MapPreviewCard shift={item} company={item.company} onPress={() => open(item.id)} />
+                  </View>
+                )}
+              />
+            </Animated.View>
+          ) : null}
+        </View>
+      ) : null}
+
+      <Animated.View style={[{ flex: 1, backgroundColor: c.bg }, listStyle]} pointerEvents={view === 'list' ? 'auto' : 'none'}>
+        <SectionList
+          ref={listRef}
+          sections={sections}
+          keyExtractor={(s) => s.id}
+          stickySectionHeadersEnabled={false}
+          ListHeaderComponent={header}
+          ListEmptyComponent={renderEmpty}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScrollToIndexFailed={() => {}}
+          contentContainerStyle={{ paddingBottom: tabSpace }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.ink2} />}
+          renderSectionHeader={({ section }) => (
+            <SectionTitle
+              title={section.title}
+              right={smena(section.data.length)}
+              style={{ paddingHorizontal: gutter, marginTop: section.day === sections[0]?.day ? 18 : 16, marginBottom: 10 }}
+            />
+          )}
+          renderItem={({ item }) => (
+            <View style={{ paddingHorizontal: gutter, paddingBottom: compact ? 8 : 10 }}>
+              <FeedCard
+                shift={item}
+                company={item.company}
+                location={item.location}
+                mine={mineOf[item.id]?.state}
+                appliedAt={mineOf[item.id]?.at}
+                onPress={() => open(item.id)}
+                onLongPress={() => onLongPress(item)}
+              />
+            </View>
+          )}
+        />
+      </Animated.View>
       <FiltersSheet visible={sheet} onClose={() => setSheet(false)} value={filters} onApply={setFilters} pool={searched} />
     </View>
   );

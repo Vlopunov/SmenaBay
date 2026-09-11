@@ -1,11 +1,15 @@
-// The apply button — the product's key interaction (handoff «Отклик на смену»).
-// CTA and the «Ждёт ответа» pill are one shape (a capsule) at two sizes, so
-// the morph is a squeeze, not a swap. Success haptic lands on the first
-// frame of the morph; error haptic lands with the first shake.
-import React, { useEffect, useRef, useState } from 'react';
+// The apply button — the product's key moment (§9.1 · 1).
+// Press: scale 0.97 in 120 ms. Release: the button morphs into «Отклик
+// отправлен» — a success layer fades in on spring.snappy (damping 18 ·
+// stiffness 250), the checkmark grows 0.6 → 1, text and sum follow 80 ms
+// later; the success haptic lands on the first frame of the morph.
+// Refusal: shake ×2 (±7 ±6 ±4 ±2, 450 ms) with the error haptic; under
+// Reduce Motion no shake — a red outline for 200 ms instead.
+// Colours never animate on the UI thread: states are stacked layers.
+import React, { useEffect, useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing, interpolateColor, useReducedMotion,
+  useSharedValue, useAnimatedStyle, withTiming, withSpring, withSequence, withRepeat, withDelay, useReducedMotion, Easing,
 } from 'react-native-reanimated';
 import T from './Text';
 import Icon from './Icon';
@@ -14,24 +18,22 @@ import { useTheme } from './theme';
 import { motion } from './tokens';
 import { haptic } from './haptics';
 import { money } from './format';
+import { rublesLabel } from './Money';
 
-const MORPH = Easing.bezier(...motion.morph.bezier);
-const APPEAR = Easing.bezier(...motion.appear.bezier);
-const REJECT = Easing.bezier(...motion.reject.bezier);
+const H = 54;
+const R = 17;
 
-/**
- * state: 'idle' | 'sending' | 'sent' | 'error' | 'full'
- */
-export default function ApplyButton({ state = 'idle', amount, onPress, label = 'Откликнуться', errorText = 'Места только что закончились', sentLabel = 'Ждёт ответа' }) {
-  const { c, dark } = useTheme();
+/** state: 'idle' | 'sending' | 'sent' | 'error' | 'full' */
+export default function ApplyButton({ state = 'idle', amount, onPress, label = 'Откликнуться', title, note }) {
+  const t = useTheme();
+  const { c } = t;
   const reduced = useReducedMotion();
-  const [boxW, setBoxW] = useState(0);
-  const [pillW, setPillW] = useState(150);
   const sent = state === 'sent';
-
-  const m = useSharedValue(sent ? 1 : 0);      // 0 = CTA, 1 = pill
+  const m = useSharedValue(sent ? 1 : 0);
+  const check = useSharedValue(sent ? 1 : 0.6);
+  const text = useSharedValue(sent ? 1 : 0);
   const shake = useSharedValue(0);
-  const err = useSharedValue(0);
+  const outline = useSharedValue(0);
   const prev = useRef(state);
 
   useEffect(() => {
@@ -39,110 +41,101 @@ export default function ApplyButton({ state = 'idle', amount, onPress, label = '
     prev.current = state;
     if (state === 'sent' && was !== 'sent') {
       haptic.success();
-      m.value = withTiming(1, { duration: reduced ? motion.appear.duration : motion.morph.duration, easing: MORPH });
-    } else if (state !== 'sent') {
-      m.value = withTiming(0, { duration: motion.morph.duration, easing: MORPH });
+      if (reduced) {
+        m.value = withTiming(1, { duration: 200 });
+        check.value = 1;
+        text.value = withTiming(1, { duration: 200 });
+      } else {
+        m.value = withSpring(1, motion.snappy);
+        check.value = withSpring(1, motion.snappy);
+        text.value = withDelay(80, withTiming(1, { duration: 180 }));
+      }
+    } else if (state !== 'sent' && was === 'sent') {
+      m.value = withTiming(0, { duration: 200 });
+      text.value = 0;
+      check.value = 0.6;
     }
     if (state === 'error' && was !== 'error') {
       haptic.error();
-      err.value = withTiming(1, { duration: motion.appear.duration, easing: APPEAR });
-      if (!reduced) {
-        const q = motion.reject.duration / 8;
-        shake.value = withSequence(
-          withTiming(-7, { duration: q, easing: REJECT }),
-          withTiming(7, { duration: q * 2, easing: REJECT }),
-          withTiming(-7, { duration: q * 2, easing: REJECT }),
-          withTiming(7, { duration: q * 2, easing: REJECT }),
-          withTiming(0, { duration: q, easing: REJECT }),
-        );
+      if (reduced) {
+        outline.value = withSequence(withTiming(1, { duration: 0 }), withDelay(200, withTiming(0, { duration: 200 })));
+      } else {
+        const step = motion.shake.duration / 10;
+        const ease = Easing.bezier(0.23, 1, 0.32, 1);
+        shake.value = withRepeat(withSequence(
+          withTiming(-7, { duration: step, easing: ease }),
+          withTiming(6, { duration: step, easing: ease }),
+          withTiming(-4, { duration: step, easing: ease }),
+          withTiming(2, { duration: step, easing: ease }),
+          withTiming(0, { duration: step, easing: ease }),
+        ), 2, false);
       }
-    } else if (state !== 'error') {
-      err.value = withTiming(0, { duration: motion.appear.duration });
     }
-  }, [state]);
+  }, [state, reduced, m, check, text, shake, outline]);
 
-  const H_CTA = 52, H_PILL = 40;
-
-  const capsule = useAnimatedStyle(() => {
-    const full = boxW || 300;
-    const w = reduced ? (m.value > 0.5 ? pillW : full) : full + (pillW - full) * m.value;
-    const h = reduced ? (m.value > 0.5 ? H_PILL : H_CTA) : H_CTA + (H_PILL - H_CTA) * m.value;
-    return {
-      width: w,
-      height: h,
-      borderRadius: h / 2,
-      left: (full - w) / 2,
-      top: (H_CTA - h) / 2,
-      backgroundColor: interpolateColor(m.value, [0, 1], [c.accent, c.fill]),
-      shadowOpacity: dark ? 0 : 0.26 * (1 - m.value),
-      borderWidth: reduced && state === 'error' ? 2 : 0,
-    };
-  });
-  const ctaLabel = useAnimatedStyle(() => ({ opacity: 1 - Math.min(1, m.value * 2) }));
-  const pillLabel = useAnimatedStyle(() => ({ opacity: Math.max(0, m.value * 2 - 1) }));
+  const successLayer = useAnimatedStyle(() => ({ opacity: m.value }));
+  const idleLabel = useAnimatedStyle(() => ({ opacity: 1 - Math.min(1, m.value * 1.6) }));
+  const sentLabel = useAnimatedStyle(() => ({ opacity: text.value }));
+  const checkStyle = useAnimatedStyle(() => ({ transform: [{ scale: check.value }], opacity: Math.min(1, m.value * 1.4) }));
   const shaker = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
-  const errStyle = useAnimatedStyle(() => ({ opacity: err.value, transform: [{ translateY: (1 - err.value) * 4 }] }));
+  const outlineStyle = useAnimatedStyle(() => ({ opacity: outline.value }));
+
+  const noteView = note ? (
+    <T v="caption" c="ink2" style={{ textAlign: 'center', marginTop: 8, fontSize: 12.5, lineHeight: 17 }} accessibilityLiveRegion="polite">{note}</T>
+  ) : null;
 
   if (state === 'full') {
     return (
-      <View style={{ height: H_CTA, borderRadius: 26, backgroundColor: c.fill, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="text">
-        <T v="button" c="tertiary">Мест нет</T>
-      </View>
+      <Animated.View style={shaker}>
+        <Press onPress={onPress} accessibilityLabel="Мест нет" style={{ height: H, borderRadius: R, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
+          <T v="button" c="disabled">Мест нет</T>
+        </Press>
+        {noteView}
+      </Animated.View>
     );
   }
 
-  const disabled = state === 'sending' || sent;
-
+  const busy = state === 'sending';
   return (
     <View>
-      <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: -24, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 }, errStyle]} pointerEvents="none" accessibilityLiveRegion="assertive">
-        {state === 'error' ? (
-          <>
-            <Icon name="exclamationmark.circle" size={13} c="destructive" />
-            <T v="smallStrong" c="destructive">{errorText}</T>
-          </>
-        ) : null}
-      </Animated.View>
-
       <Animated.View style={shaker}>
         <Press
           onPress={onPress}
-          disabled={disabled}
+          disabled={busy || sent}
           feedback={sent ? 'none' : 'scale'}
-          accessibilityLabel={sent ? sentLabel : `${label}, ${amount} BYN`}
-          accessibilityState={{ disabled, busy: state === 'sending' }}
+          accessibilityLabel={sent ? 'Отклик отправлен. Ждёт ответа заказчика' : `${label} на смену${title ? ` ${title}` : ''}, ${rublesLabel(amount)}`}
+          accessibilityState={{ disabled: busy || sent, busy }}
+          style={[{ height: H, borderRadius: R }, !sent && t.sh.brand]}
         >
-          <View style={{ height: H_CTA }} onLayout={(e) => setBoxW(e.nativeEvent.layout.width)}>
-            <Animated.View style={[{ position: 'absolute', shadowColor: c.accentShadow, shadowRadius: 9, shadowOffset: { width: 0, height: 5 }, borderColor: c.destructive }, capsule]} />
-
-            <Animated.View style={[StyleSheet.absoluteFill, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }, ctaLabel]}>
-              {state === 'sending' ? (
+          <View style={{ height: H, borderRadius: R, overflow: 'hidden', backgroundColor: c.brand }}>
+            <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: c.successTint }, successLayer]} />
+            <Animated.View style={[StyleSheet.absoluteFill, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }, idleLabel]}>
+              {busy ? (
                 <>
-                  <ActivityIndicator size="small" color={c.onAccent} />
-                  <T v="button" c="onAccent">Отправляем</T>
+                  <ActivityIndicator size="small" color={c.onBrand} />
+                  <T v="button" c="onBrand">Отправляем…</T>
                 </>
               ) : (
                 <>
-                  <T v="button" c="onAccent">{label}</T>
+                  <T v="button" c="onBrand">{label}</T>
                   {amount != null ? (
                     <>
-                      <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: c.onAccent, opacity: 0.55 }} />
-                      <T v="button" c="onAccent">{money(amount)} BYN</T>
+                      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: c.onBrand, opacity: 0.5 }} />
+                      <T v="button" display weight="700" c="onBrand">{`${money(amount)} BYN`}</T>
                     </>
                   ) : null}
                 </>
               )}
             </Animated.View>
-
-            <Animated.View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, pillLabel]} pointerEvents="none">
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16 }} onLayout={(e) => setPillW(Math.ceil(e.nativeEvent.layout.width) + 2)}>
-                <Icon name="clock" size={15} c="label" weight="semibold" />
-                <T v="bodyStrong">{sentLabel}</T>
-              </View>
-            </Animated.View>
+            <View style={[StyleSheet.absoluteFill, { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }]} pointerEvents="none">
+              <Animated.View style={checkStyle}><Icon name="checkmark" size={20} c="success" weight="heavy" /></Animated.View>
+              <Animated.View style={sentLabel}><T v="button" c="success">Отклик отправлен</T></Animated.View>
+            </View>
           </View>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: R, borderWidth: 2, borderColor: c.error }, outlineStyle]} />
         </Press>
       </Animated.View>
+      {noteView}
     </View>
   );
 }

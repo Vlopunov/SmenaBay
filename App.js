@@ -8,6 +8,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import useStore from './src/store/useStore';
 import { ThemeProvider, useTheme } from './src/design/theme';
 import { ActionSheetHost } from './src/design/ActionSheet';
+import { ToastHost } from './src/design/Toast';
+import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
 
 function Heartbeat() {
   const isAuthenticated = useStore(s => s.isAuthenticated);
@@ -83,6 +85,8 @@ const linking = {
 // `__DEV__` is false in release bundles, so none of this ships.
 const devArg = (key) => (__DEV__ && Platform.OS === 'ios' ? Settings.get(key) : null);
 if (__DEV__) {
+  // Sign-in steps that are otherwise reached only through a live SMS.
+  Object.assign(linking.config.screens, { Code: 'dev/code', Name: 'dev/name' });
   const route = devArg('devRoute');
   linking.getInitialURL = async () => (route ? `com.smenabay.app://${route}` : Linking.getInitialURL());
 }
@@ -96,16 +100,31 @@ function DevUser() {
     const t = setTimeout(() => Linking.openURL(`com.smenabay.app://${push}`), 2500);
     return () => clearTimeout(t);
   }, []);
+  // -devApplyLater <shiftId>: apply 5 s after launch, while the shift is on
+  // screen, so the button's «sent» morph can be recorded.
+  useEffect(() => {
+    const shiftId = devArg('devApplyLater');
+    if (!shiftId) return;
+    const t = setTimeout(() => useStore.getState().applyToShift(shiftId), 5000);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     const who = devArg('devUser');
     const approve = devArg('devApprove');
-    if (!who && !approve) return;
+    if (!who && !approve && !devArg('devApply')) return;
     const apply = () => {
       const s = useStore.getState();
       if (who === 'guest') s.logout();
       else if (who && s.currentUser?.phone !== who) s.login(who);
       const app = approve && s.applications.find((a) => a.id === approve);
       if (app && app.status === 'pending') s.approveApplication(approve);
+      // -devApply <shiftId>: apply as the dev user and get confirmed (pass state).
+      const applyTo = devArg('devApply');
+      if (applyTo && useStore.getState().currentUser?.role === 'worker') {
+        useStore.getState().applyToShift(applyTo);
+        const mine = useStore.getState().applications.find((a) => a.shiftId === applyTo && a.workerId === useStore.getState().currentUser.id && a.status === 'pending');
+        if (mine) useStore.getState().approveApplication(mine.id);
+      }
     };
     if (useStore.persist.hasHydrated()) apply();
     else return useStore.persist.onFinishHydration(apply);
@@ -138,6 +157,7 @@ function Root() {
           <Heartbeat />
           {__DEV__ ? <DevUser /> : null}
           <AppNavigator />
+          <ToastHost />
           <ActionSheetHost />
         </NavigationContainer>
       </SafeAreaProvider>
@@ -145,7 +165,15 @@ function Root() {
   );
 }
 
+// The display face is SF Pro Rounded on iOS (a system font); Android gets
+// Nunito, bundled, one file per weight.
+const useDisplayFonts = Platform.OS === 'android'
+  ? () => useFonts({ Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black })[0]
+  : () => true;
+
 export default function App() {
+  const fontsReady = useDisplayFonts();
+  if (!fontsReady) return null;
   return (
     <ThemeProvider>
       <Root />

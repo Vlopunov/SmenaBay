@@ -1,12 +1,17 @@
-// Company data — the lines workers see on every shift of this company.
+// «Данные компании» — screen 29. The lines workers see on every shift of
+// this company. Most companies have no logo, so the monogram is shown as a
+// full variant, not a placeholder. The UNP is never labelled as verified:
+// nothing checks it.
 import React, { useState } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import T from '../../design/Text';
-import FormRow from '../../design/FormRow';
-import { NavBar, Press, SectionHeader, LedgerRow, Chip, Monogram, Separator } from '../../design/ui';
+import Icon from '../../design/Icon';
+import { CircleButton, Press, Divider } from '../../design/ui';
+import { CompanyMono, companyLetters } from '../../design/Monogram';
+import { Pictogram, categoryFromBusiness } from '../../design/category';
 import { useTheme } from '../../design/theme';
 import { haptic } from '../../design/haptics';
 import { showActions } from '../../design/ActionSheet';
@@ -14,9 +19,34 @@ import { prettyPhone } from '../../design/PhoneField';
 import { CITIES, BUSINESS_CATEGORIES } from '../../data/mockData';
 import useStore from '../../store/useStore';
 
+const ABOUT_MAX = 300;
+const MONO = Platform.select({ ios: 'ui-monospace', default: 'monospace' });
+
+/** «Label — value» line inside the fields card: label column 100 pt. */
+function Field({ label, error, children, last, onPress, accessibilityLabel }) {
+  const content = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 11, minHeight: 48 }}>
+      <T v="body" c={error ? 'error' : 'ink2'} style={{ width: 100, fontSize: 14.5, lineHeight: 19 }}>{label}</T>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {children}
+        {error ? <T v="caption" c="error" style={{ marginTop: 3, fontSize: 12.5 }}>{error}</T> : null}
+      </View>
+    </View>
+  );
+  return (
+    <View>
+      {onPress ? <Press feedback="highlight" onPress={onPress} accessibilityLabel={accessibilityLabel}>{content}</Press> : content}
+      {!last ? <Divider inset={14} /> : null}
+    </View>
+  );
+}
+
 export default function EmployerSettingsScreen({ navigation }) {
-  const { c } = useTheme();
+  const t = useTheme();
+  const { c } = t;
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const g = width < 380 ? 16 : 20;
   const me = useStore((s) => s.currentUser);
   const updateProfile = useStore((s) => s.updateProfile);
   const [form, setForm] = useState({
@@ -63,40 +93,110 @@ export default function EmployerSettingsScreen({ navigation }) {
     set('logo', m.uri);
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: c.ledger }}>
-      <NavBar
-        variant="fill"
-        onBack={() => navigation.goBack()}
-        center={<T v="rowTitle">Данные компании</T>}
-        right={<Press feedback="none" onPress={save} hitSlop={10}><T v="bodyStrong" c="accent" style={{ fontSize: 17 }}>Готово</T></Press>}
-      />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
-          <Press feedback="highlight" onPress={pickLogo} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 16 }} accessibilityLabel="Изменить логотип">
-            <Monogram name={form.companyName} logo={form.logo} size={56} />
-            <View style={{ flex: 1 }}>
-              <T v="value">Логотип</T>
-              <T v="caption" c="secondary">Без логотипа показываем буквы названия</T>
-            </View>
-            <T v="body" c="accent">{form.logo ? 'Изменить' : 'Добавить'}</T>
-          </Press>
-          <SectionHeader title="Компания" />
-          <FormRow label="Название" value={form.companyName} onChangeText={(v) => set('companyName', v)} autoCapitalize="words" error={errors.companyName} />
-          <FormRow label="УНП" value={form.unp} onChangeText={(v) => set('unp', v.replace(/\D/g, '').slice(0, 9))} keyboardType="number-pad" error={errors.unp} />
-          <FormRow label="Контакт" value={form.contactPerson} onChangeText={(v) => set('contactPerson', v)} autoCapitalize="words" hint="Кого спросить на входе — виден подтверждённым исполнителям" />
-          <FormRow label="О компании" value={form.description} onChangeText={(v) => set('description', v)} multiline placeholder="Пара предложений для исполнителей" />
-          <LedgerRow label="Телефон" value={me.phone ? prettyPhone(me.phone) : 'Не указан'} sub="Меняется через поддержку" last />
+  const pickCity = () => showActions({
+    title: 'Город',
+    options: CITIES.map((city) => ({ label: city, onPress: () => { haptic.selection(); set('city', city); } })),
+  });
 
-          <SectionHeader title="Город" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
-            {CITIES.map((city) => <Chip key={city} label={city} selected={form.city === city} onPress={() => { haptic.selection(); set('city', city); }} />)}
+  const input = { flex: 1, fontSize: 15.5, lineHeight: 20, fontWeight: '500', color: c.ink, paddingVertical: 0, fontVariant: ['tabular-nums'] };
+  const label = (text) => <T v="caption" c="ink2" weight="600" style={{ marginTop: 16, fontSize: 13, lineHeight: 16 }}>{text}</T>;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <View style={{ paddingTop: insets.top + 4, paddingHorizontal: g, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <CircleButton icon="chevron.left" color={c.ink} iconSize={20} onPress={() => navigation.goBack()} accessibilityLabel="Назад" />
+        <T v="rowTitle" numberOfLines={1} accessibilityRole="header" style={{ flex: 1, fontSize: 17, lineHeight: 21 }}>Данные компании</T>
+        <Press onPress={save} hitSlop={8} accessibilityLabel="Готово, сохранить" style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 }}>
+          <T v="bodyStrong" c="brand" style={{ fontSize: 15 }}>Готово</T>
+        </Press>
+      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: g, paddingBottom: insets.bottom + 30 }}>
+          <Press onPress={pickLogo} accessibilityLabel={form.logo ? 'Изменить логотип' : 'Загрузить логотип'} style={{ marginTop: 16, alignItems: 'center', alignSelf: 'center', paddingHorizontal: 12 }}>
+            <View style={{ width: 88, height: 88 }}>
+              {form.logo ? (
+                <CompanyMono name={form.companyName} logo={form.logo} size={88} style={{ borderRadius: 28 }} />
+              ) : (
+                <View style={{ width: 88, height: 88, borderRadius: 28, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
+                  <T v="body" display weight="800" c="brand" maxFontSizeMultiplier={1.2} style={{ fontSize: 30, lineHeight: 36 }}>{companyLetters(form.companyName) || '—'}</T>
+                </View>
+              )}
+              <View style={{ position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: c.brand, borderWidth: 3, borderColor: c.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="camera" size={14} c="onBrand" weight="semibold" />
+              </View>
+            </View>
+            <T v="bodyStrong" c="brand" style={{ marginTop: 10, fontSize: 14, lineHeight: 18 }}>{form.logo ? 'Изменить логотип' : 'Загрузить логотип'}</T>
+            <T v="caption" c="ink2" style={{ marginTop: 3, fontSize: 12.5, lineHeight: 17, textAlign: 'center' }}>
+              {form.logo ? 'Логотип заменит монограмму в сменах компании' : 'Пока логотипа нет, покажем монограмму'}
+            </T>
+          </Press>
+
+          <View style={[{ marginTop: 20, backgroundColor: c.surface, borderRadius: 18 }, t.sh.e1, t.dark && { borderWidth: 1, borderColor: c.line }]}>
+            <View style={{ borderRadius: 17, overflow: 'hidden' }}>
+              <Field label="Название" error={errors.companyName}>
+                <TextInput value={form.companyName} onChangeText={(v) => set('companyName', v)} autoCapitalize="words" placeholder="Как в вывеске" placeholderTextColor={c.inkDisabled} accessibilityLabel="Название" style={input} />
+              </Field>
+              <Field label="УНП" error={errors.unp}>
+                <TextInput value={form.unp} onChangeText={(v) => set('unp', v.replace(/\D/g, '').slice(0, 9))} keyboardType="number-pad" placeholder="9 цифр" placeholderTextColor={c.inkDisabled} accessibilityLabel="УНП" style={input} />
+              </Field>
+              <Field label="Контакт">
+                <TextInput value={form.contactPerson} onChangeText={(v) => set('contactPerson', v)} autoCapitalize="words" placeholder="Имя и фамилия" placeholderTextColor={c.inkDisabled} accessibilityLabel="Контакт" style={input} />
+              </Field>
+              <Field label="Телефон">
+                <T v="body" c="ink2" weight="500" numberOfLines={1} style={{ fontSize: 15.5, lineHeight: 20 }}>{me.phone ? prettyPhone(me.phone) : 'Не указан'}</T>
+              </Field>
+              <Field label="Город" onPress={pickCity} accessibilityLabel={`Город: ${form.city}`} last>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <T v="body" weight="500" numberOfLines={1} style={{ flex: 1, fontSize: 15.5, lineHeight: 20 }}>{form.city}</T>
+                  <Icon name="chevron.down" size={14} c="ink2" weight="semibold" style={{ opacity: 0.65 }} />
+                </View>
+              </Field>
+            </View>
           </View>
-          <SectionHeader title="Чем занимается компания" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
-            {BUSINESS_CATEGORIES.map((cat) => <Chip key={cat} label={cat} selected={form.businessCategory === cat} onPress={() => { haptic.selection(); set('businessCategory', cat); }} />)}
+          <T v="caption" c="ink2" style={{ marginTop: 8, paddingHorizontal: 4, fontSize: 12.5, lineHeight: 17 }}>
+            УНП увидят исполнители в профиле компании. Контакт — кого спросить на входе, его видят подтверждённые исполнители. Телефон меняется через поддержку.
+          </T>
+
+          {label('Чем занимается')}
+          <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {BUSINESS_CATEGORIES.map((cat) => {
+              const on = form.businessCategory === cat;
+              const kind = categoryFromBusiness(cat);
+              return (
+                <Press
+                  key={cat}
+                  onPress={() => { haptic.selection(); set('businessCategory', cat); }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  accessibilityLabel={cat}
+                  hitSlop={{ top: 4, bottom: 4 }}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, borderRadius: 11,
+                    paddingVertical: 8, paddingLeft: on && kind ? 9 : 12, paddingRight: 12,
+                    backgroundColor: on ? c.brandTint : c.surface, borderWidth: 1, borderColor: on ? c.brandTint : c.line,
+                  }}
+                >
+                  {on && kind ? <Pictogram kind={kind} size={16} color={c.brand} /> : null}
+                  <T v="bodyStrong" c={on ? 'brand' : 'ink3'} weight={on ? '600' : '500'} style={{ fontSize: 13.5, lineHeight: 17 }}>{cat}</T>
+                </Press>
+              );
+            })}
           </View>
-          <Separator />
+
+          {label('О компании')}
+          <View style={{ marginTop: 8, minHeight: 78, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, paddingTop: 13, paddingBottom: 10, paddingHorizontal: 15 }}>
+            <TextInput
+              value={form.description}
+              onChangeText={(v) => set('description', v)}
+              multiline
+              maxLength={ABOUT_MAX}
+              placeholder="Пара предложений для исполнителей"
+              placeholderTextColor={c.inkDisabled}
+              accessibilityLabel="О компании"
+              style={{ fontSize: 14.5, lineHeight: 21, color: c.ink, paddingVertical: 0, minHeight: 42, textAlignVertical: 'top' }}
+            />
+            <T v="caption" c="ink2" style={{ marginTop: 7, alignSelf: 'flex-end', fontSize: 11.5, lineHeight: 14, fontFamily: MONO }}>{`${form.description.length} / ${ABOUT_MAX}`}</T>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { ActionSheetIOS, Platform, View } from 'react-native';
 import Sheet from './Sheet';
 import T from './Text';
-import { Press, Separator } from './ui';
+import { Press, Divider } from './ui';
 
 let listener = null;
 
@@ -47,7 +47,7 @@ export function ActionSheetHost() {
           <Press onPress={() => pick(o)} feedback="highlight" style={{ paddingHorizontal: 22, paddingVertical: 15 }}>
             <T v="value" c={o.destructive ? 'destructive' : 'label'} style={{ fontSize: 17, lineHeight: 22 }}>{o.label}</T>
           </Press>
-          <Separator inset />
+          <Divider style={{ marginHorizontal: 20 }} />
         </View>
       ))}
       <Press onPress={() => pick(null)} feedback="highlight" style={{ paddingHorizontal: 22, paddingVertical: 15 }}>

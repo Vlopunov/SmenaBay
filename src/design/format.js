@@ -202,3 +202,27 @@ export function clock(iso) {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+
+/** Accusative of a Russian full name for «спросить Андрея Комарова / Светлану Иванову». */
+export function accusative(full = '') {
+  return String(full).trim().split(/\s+/).map((w) => {
+    if (/ия$/.test(w)) return w.slice(0, -1) + 'ю';          // Мария → Марию
+    if (/[ая]$/.test(w)) return w.slice(0, -1) + (w.endsWith('я') ? 'ю' : 'у'); // Светлана → Светлану, Иванова → Иванову
+    if (/й$/.test(w)) return w.slice(0, -1) + 'я';           // Андрей → Андрея
+    if (/ь$/.test(w)) return w.slice(0, -1) + 'я';           // Игорь → Игоря
+    if (/[бвгджзклмнпрстфхцчшщ]$/i.test(w)) return w + 'а';   // Иван → Ивана, Комаров → Комарова
+    return w;
+  }).join(' ');
+}
+
+/** «10 минут» · «1 час» · «3 часа» — how long an application has been waiting. */
+export function waitedFor(iso, now = new Date()) {
+  if (!iso) return '';
+  const min = Math.floor((now - new Date(iso)) / 60000);
+  if (min < 1) return 'меньше минуты';
+  if (min < 60) return `${min} ${plural(min, ['минуту', 'минуты', 'минут'])}`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} ${plural(h, ['час', 'часа', 'часов'])}`;
+  const d = Math.round(h / 24);
+  return `${d} ${plural(d, ['день', 'дня', 'дней'])}`;
+}

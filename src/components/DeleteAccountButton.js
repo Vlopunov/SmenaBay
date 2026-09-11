@@ -5,10 +5,13 @@
  * must let people start deleting the account from inside the app. Two
  * confirmations — this is one of the two places Alert is allowed (the other
  * is cancelling a confirmed shift), because it is irreversible.
+ *
+ * Drawn as a destructive Row of a settings Group: trash icon and title in
+ * error, no chevron. Used by both the worker and the employer profile.
  */
 import React, { useState } from 'react';
 import { Alert, ActivityIndicator } from 'react-native';
-import { SettingRow } from '../design/ui';
+import { Row } from '../design/ui';
 import { haptic } from '../design/haptics';
 import { useTheme } from '../design/theme';
 import useStore from '../store/useStore';
@@ -54,13 +57,12 @@ export default function DeleteAccountRow({ last = true }) {
   );
 
   return (
-    <SettingRow
+    <Row
       icon="trash"
       title={busy ? 'Удаляем…' : 'Удалить аккаунт'}
-      sub="Аккаунт и все данные удаляются безвозвратно"
       destructive
       onPress={busy ? undefined : ask}
-      right={busy ? <ActivityIndicator size="small" color={c.destructive} /> : undefined}
+      right={busy ? <ActivityIndicator size="small" color={c.error} /> : undefined}
       last={last}
     />
   );

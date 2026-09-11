@@ -1,5 +1,5 @@
-// Phone capsule: 54 pt on fill, fixed «+375» prefix, a hairline divider,
-// then the local number formatted as «29 644-18-02».
+// Phone field: fixed «+375» prefix, a divider, then the local number
+// formatted as «29 644-18-02».
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import T from './Text';
@@ -23,16 +23,20 @@ export function prettyPhone(e164 = '') {
   return `+375 ${formatLocal(d.slice(3))}`;
 }
 
-export default function PhoneField({ value, onChange, autoFocus, onSubmit, error }) {
+// Field: 54 pt on surface with a 1 pt line; focus — 2 pt brand; error —
+// 2 pt error (the message lives under the field, as text and a sign).
+export default function PhoneField({ value, onChange, autoFocus, onSubmit, error, editable = true }) {
   const { c } = useTheme();
+  const [focused, setFocused] = React.useState(false);
+  const border = error ? c.error : focused ? c.brand : c.line;
   return (
     <View style={{
-      flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, borderRadius: 27,
-      backgroundColor: c.fill, paddingHorizontal: 20,
-      borderWidth: error ? 2 : 0, borderColor: c.destructive,
+      flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, borderRadius: 16,
+      backgroundColor: editable ? c.surface : c.surface2, paddingHorizontal: focused || error ? 15 : 16,
+      borderWidth: focused || error ? 2 : 1, borderColor: border,
     }}>
-      <T v="value" style={{ fontSize: 19, lineHeight: 24 }}>+375</T>
-      <View style={{ width: StyleSheet.hairlineWidth * 2, height: 22, backgroundColor: c.separator }} />
+      <T v="bodyStrong" style={{ fontSize: 18, lineHeight: 22 }}>+375</T>
+      <View style={{ width: 1, height: 20, backgroundColor: c.line }} />
       <TextInput
         value={formatLocal(value)}
         onChangeText={(t) => onChange(t.replace(/\D/g, '').slice(0, 9))}
@@ -40,13 +44,16 @@ export default function PhoneField({ value, onChange, autoFocus, onSubmit, error
         textContentType="telephoneNumber"
         autoComplete="tel"
         autoFocus={autoFocus}
+        editable={editable}
         placeholder="29 000-00-00"
-        placeholderTextColor={c.labelTertiary}
+        placeholderTextColor={c.inkDisabled}
         onSubmitEditing={onSubmit}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         returnKeyType="done"
         maxLength={12}
         accessibilityLabel="Номер телефона без кода страны"
-        style={{ flex: 1, fontSize: 19, fontWeight: '500', color: c.label, fontVariant: ['tabular-nums'], paddingVertical: 0 }}
+        style={{ flex: 1, fontSize: 18, fontWeight: '600', color: c.ink, fontVariant: ['tabular-nums'], paddingVertical: 0 }}
       />
     </View>
   );

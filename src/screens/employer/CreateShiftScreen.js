@@ -1,32 +1,45 @@
-// New shift (handoff screen 10). The form starts with PAY, not the job title:
-// it is the one field that decides whether the shift fills. Then the ledger —
-// position, category, date, time, seats, address — then requirements as
-// chips. The bottom panel states the payout before «Опубликовать».
+// «Новая смена» — screen 25, presented modally. Pay comes first, on the sky
+// of the hour the shift starts: it is the one decision that makes a shift
+// fill. The marker on the slider is the market reference — the median of
+// similar shifts in the store. Then the rows, tasks and requirements, the
+// «Срочно» switch. The payout total and the button are pinned to the
+// bottom, so the employer sees the sum before publishing, not after.
 import React, { useMemo, useState } from 'react';
-import { View, ScrollView, Switch, TextInput, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import {
+  View, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, Text as RNText, useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
-import { Press, LedgerRow, Separator, Chip, Button, RoundButton, SectionHeader } from '../../design/ui';
-import FormRow from '../../design/FormRow';
+import {
+  Press, Chip, Button, Card, Divider, Stepper, Switch, Material,
+} from '../../design/ui';
 import Slider from '../../design/Slider';
 import Sheet from '../../design/Sheet';
-import { useTheme } from '../../design/theme';
+import { SkyView, skyByHour } from '../../design/Sky';
+import { Pictogram, CategoryTile } from '../../design/category';
+import { rublesLabel } from '../../design/Money';
+import { useTheme, displayFont } from '../../design/theme';
 import { haptic } from '../../design/haptics';
-import { money, plural, isoDay, dayLabel, shortDate } from '../../design/format';
+import { showActions } from '../../design/ActionSheet';
+import {
+  money, plural, isoDay, dayLabel, shortDate, longDate,
+} from '../../design/format';
 import { SHIFT_TEMPLATES } from '../../data/mockData';
 import PhoneSheet from '../../components/PhoneSheet';
 import useStore from '../../store/useStore';
 
+// `kind` — the category pictogram (design/category.js).
 export const CATEGORIES = [
-  { key: 'pvz', label: 'ПВЗ, выдача заказов', symbol: 'shippingbox' },
-  { key: 'warehouse', label: 'Склад, комплектация', symbol: 'tray.2' },
-  { key: 'courier', label: 'Курьер, доставка', symbol: 'bicycle' },
-  { key: 'horeca', label: 'Общепит, кухня, зал', symbol: 'fork.knife' },
-  { key: 'retail', label: 'Магазин, продажи', symbol: 'bag' },
-  { key: 'promo', label: 'Промо, дегустации', symbol: 'megaphone' },
-  { key: 'cleaning', label: 'Уборка, клининг', symbol: 'sparkles' },
-  { key: 'construction', label: 'Стройка, монтаж', symbol: 'hammer' },
+  { key: 'pvz', label: 'ПВЗ, выдача заказов', short: 'ПВЗ', kind: 'pvz' },
+  { key: 'warehouse', label: 'Склад, комплектация', short: 'Склад', kind: 'sklad' },
+  { key: 'courier', label: 'Курьер, доставка', short: 'Курьер', kind: 'kuryer' },
+  { key: 'horeca', label: 'Общепит, кухня, зал', short: 'Общепит', kind: 'obshchepit' },
+  { key: 'retail', label: 'Магазин, продажи', short: 'Магазин', kind: 'riteyl' },
+  { key: 'promo', label: 'Промо, дегустации', short: 'Промо', kind: 'riteyl' },
+  { key: 'cleaning', label: 'Уборка, клининг', short: 'Клининг', kind: 'klining' },
+  { key: 'construction', label: 'Стройка, монтаж', short: 'Стройка', kind: 'proizvodstvo' },
 ];
 
 function guessCategory(title = '') {
@@ -50,28 +63,87 @@ const hoursBetween = (a, b) => {
 
 const REQS = [
   { key: 'noExperienceOk', label: 'Без опыта' },
-  { key: 'smartphoneRequired', label: 'Свой смартфон' },
+  { key: 'smartphoneRequired', label: 'Смартфон' },
+  { key: 'adult', label: '18+' },
   { key: 'medicalBookRequired', label: 'Медкнижка' },
   { key: 'ownClothes', label: 'Своя одежда' },
-  { key: 'adult', label: '18+' },
 ];
 
-function Stepper({ value, onChange, min = 1, max = 20 }) {
+const MAX_TASKS = 300;
+const PAY_MIN = 45;
+const PAY_MAX = 140;
+
+const IN_CITY = {
+  'Минск': 'в Минске', 'Гомель': 'в Гомеле', 'Гродно': 'в Гродно', 'Брест': 'в Бресте', 'Могилёв': 'в Могилёве', 'Витебск': 'в Витебске',
+};
+
+/**
+ * Market reference: the median pay of similar shifts in the store (same
+ * first word of the title), in the chosen address's city when there are enough.
+ */
+function marketFor({ id, title, locationId }, shifts, cityByLoc) {
+  const key = (title || '').trim().split(/\s+/)[0]?.toLowerCase();
+  if (!key) return null;
+  const similar = shifts.filter((s) => s.id !== id && s.status !== 'cancelled' && s.title.toLowerCase().startsWith(key));
+  const city = cityByLoc[locationId];
+  const local = city ? similar.filter((s) => cityByLoc[s.locationId] === city) : [];
+  const pool = local.length >= 2 ? local : similar;
+  if (pool.length < 2) return null;
+  const pays = pool.map((s) => s.pay).sort((a, b) => a - b);
+  return { min: pays[0], median: pays[Math.floor(pays.length / 2)], where: local.length >= 2 ? IN_CITY[city] || null : null };
+}
+
+/** 'пт, 11 сентября' · 'Сегодня, 11 сентября' */
+function dateLong(d) {
+  const l = dayLabel(d);
+  return l === 'Сегодня' || l === 'Завтра' ? `${l}, ${longDate(d)}` : `${shortDate(d).split(',')[0]}, ${longDate(d)}`;
+}
+function dateChip(d) {
+  const l = dayLabel(d);
+  return l === 'Сегодня' || l === 'Завтра' ? l : shortDate(d);
+}
+
+/** The rising line of the mockup's market hint. */
+function Trend({ size = 13, color }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <RoundButton icon="minus" variant="fill" size={32} iconSize={14} onPress={() => { if (value > min) { haptic.selection(); onChange(value - 1); } }} accessibilityLabel="Меньше мест" />
-      <RoundButton icon="plus" variant="fill" size={32} iconSize={14} onPress={() => { if (value < max) { haptic.selection(); onChange(value + 1); } }} accessibilityLabel="Больше мест" />
-    </View>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 18 10 11l3.5 3.5L20 7" />
+    </Svg>
   );
 }
 
+/** A form row: label column 92 (80 on SE) · value · chevron. */
+function Line({ label, value, valueC = 'ink', sub, error, onPress, chevron, right, compact, children, pad, a11y }) {
+  const content = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 11 : 12, paddingHorizontal: compact ? 13 : 14, paddingVertical: pad ?? (compact ? 10 : 11), minHeight: 44 }}>
+      <T v="body" c="ink2" style={{ width: compact ? 80 : 92, fontSize: compact ? 13.5 : 14.5, lineHeight: 19 }}>{label}</T>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {children}
+        {value != null ? <T v="body" c={valueC} weight="500" style={{ fontSize: compact ? 14.5 : 15.5, lineHeight: 20 }}>{value}</T> : null}
+        {sub ? <T v="caption" c="ink2" style={{ marginTop: 2, fontSize: 12.5, lineHeight: 16 }}>{sub}</T> : null}
+        {error ? <T v="caption" c="error" style={{ marginTop: 2, fontSize: 12.5, lineHeight: 16 }}>{error}</T> : null}
+      </View>
+      {right}
+      {chevron ? <Icon name="chevron.right" size={13} c="ink2" weight="semibold" style={{ opacity: 0.6 }} /> : null}
+    </View>
+  );
+  if (!onPress) return content;
+  return <Press feedback="highlight" onPress={onPress} accessibilityLabel={a11y || `${label}: ${value || ''}`}>{content}</Press>;
+}
+
 export default function CreateShiftScreen({ navigation, route }) {
-  const { c } = useTheme();
+  const t = useTheme();
+  const { c } = t;
   const insets = useSafeAreaInsets();
+  // iPhone SE: gutters 16, money.hero 44 → 38, a one-line market hint.
+  const compact = useWindowDimensions().width < 380;
+  const G = compact ? 16 : 20;
   const me = useStore((s) => s.currentUser);
   const shifts = useStore((s) => s.shifts);
+  const companies = useStore((s) => s.companies);
   const createShift = useStore((s) => s.createShift);
   const editShift = useStore((s) => s.editShift);
+  const duplicateShift = useStore((s) => s.duplicateShift);
   const editing = useStore((s) => (route?.params?.editShiftId ? s.getShiftById(route.params.editShiftId) : null));
   const template = route?.params?.template;
   const base = editing || template || {};
@@ -95,20 +167,58 @@ export default function CreateShiftScreen({ navigation, route }) {
   const [sheet, setSheet] = useState(null); // 'title' | 'category' | 'date' | 'time' | 'address' | 'other'
   const [errors, setErrors] = useState({});
   const [verify, setVerify] = useState(false);
+  const [panelH, setPanelH] = useState(130 + insets.bottom);
 
   const duration = hoursBetween(timeStart, timeEnd);
   const location = locations.find((l) => l.id === locationId);
-  const market = useMemo(() => {
-    const key = (title || '').split(' ')[0].toLowerCase();
-    if (!key) return null;
-    const similar = shifts.filter((s) => s.id !== editing?.id && s.title.toLowerCase().startsWith(key) && s.status !== 'cancelled');
-    if (similar.length < 2) return null;
-    const pays = similar.map((s) => s.pay).sort((a, b) => a - b);
-    return { min: pays[0], median: pays[Math.floor(pays.length / 2)] };
-  }, [title, shifts]);
+  const cityByLoc = useMemo(() => {
+    const m = {};
+    companies.forEach((co) => (co.locations || []).forEach((l) => { m[l.id] = l.city; }));
+    locations.forEach((l) => { m[l.id] = l.city; });
+    return m;
+  }, [companies, locations]);
+  const market = useMemo(
+    () => marketFor({ id: editing?.id, title, locationId }, shifts, cityByLoc),
+    [title, locationId, shifts, cityByLoc, editing?.id],
+  );
+
+  // «Ещё»: fill the form like one of the recent shifts (store.duplicateShift).
+  const recent = useMemo(() => {
+    if (editing || !me) return [];
+    const seen = new Set();
+    return shifts
+      .filter((s) => s.companyId === me.id)
+      .sort((a, b) => (b.date + b.timeStart).localeCompare(a.date + a.timeStart))
+      .map((s) => ({ id: s.id, label: `${s.title} · ${s.pay} BYN · ${s.timeStart}–${s.timeEnd}` }))
+      .filter((x) => (seen.has(x.label) ? false : seen.add(x.label)))
+      .slice(0, 5);
+  }, [shifts, me, editing]);
 
   const dateOptions = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() + i); return isoDay(d); });
-  const dateLabel = (d) => { const l = dayLabel(d); return l === 'Сегодня' || l === 'Завтра' ? `${l}, ${shortDate(d)}` : shortDate(d); };
+  const clearErr = (k) => { if (errors[k]) setErrors((x) => ({ ...x, [k]: undefined })); };
+
+  const fillFrom = (id) => {
+    const tpl = duplicateShift(id);
+    if (!tpl) return;
+    haptic.selection();
+    setPay(tpl.pay || 65);
+    setTitle(tpl.title || '');
+    setCategory(tpl.category || guessCategory(tpl.title) || null);
+    setTimeStart(tpl.timeStart || '10:00');
+    setTimeEnd(tpl.timeEnd || '18:00');
+    setSpots(tpl.spotsTotal || 1);
+    if (tpl.locationId && locations.some((l) => l.id === tpl.locationId)) setLocationId(tpl.locationId);
+    setDescription(tpl.description || '');
+    setUrgent(!!tpl.urgent);
+    const r = tpl.requirements || {};
+    setReq({ ...r, adult: r.minAge === 18 });
+    setOther(r.other || '');
+    setErrors({});
+  };
+  const more = () => showActions({
+    title: 'Заполнить как в прошлой смене',
+    options: recent.map((x) => ({ label: x.label, onPress: () => fillFrom(x.id) })),
+  });
 
   const submit = () => {
     const e = {};
@@ -145,195 +255,341 @@ export default function CreateShiftScreen({ navigation, route }) {
     navigation.goBack();
   };
 
-  const chip = (label, on, onPress, key) => <Chip key={key || label} label={label} selected={on} onPress={() => { haptic.selection(); onPress(); }} tone="sheet" />;
+  const close = () => setSheet(null);
+  const sky = t.sky(skyByHour(parseInt(timeStart, 10)));
+  const cat = CATEGORIES.find((x) => x.key === category);
+  const copies = editing ? 1 : dates.length;
+  const seatsN = spots * copies;
+  const total = pay * seatsN;
+  const hero = compact ? 38 : 44;
+  const durText = `${String(Math.round(duration * 10) / 10).replace('.', ',')} ч`;
+  const overnight = timeEnd <= timeStart;
+  const timeSub = [overnight ? 'через полночь' : null, duration > 12 ? 'длинная смена' : null].filter(Boolean).join(' · ');
+  const datesValue = !dates.length ? 'Выбрать'
+    : dates.length <= 3 ? dates.map(dateLong).join('\n')
+      : `${dates.slice(0, 2).map(dateLong).join('\n')}\nи ещё ${dates.length - 2}`;
+  const cta = editing ? 'Сохранить изменения' : dates.length > 1 ? `Опубликовать ${dates.length} ${plural(dates.length, ['смену', 'смены', 'смен'])}` : 'Опубликовать смену';
+  const sheetInput = { height: 50, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, paddingHorizontal: 16, fontSize: 17, color: c.ink };
+  const headerText = { fontSize: compact ? 15 : 16, lineHeight: 20 };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.ledger }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: Platform.OS === 'ios' ? 16 : insets.top + 10, paddingBottom: 10 }}>
-        <Press feedback="none" onPress={() => navigation.goBack()} hitSlop={10}><T v="body" c="accent" style={{ fontSize: 17 }}>Отмена</T></Press>
-        <T v="rowTitle">{editing ? 'Изменить смену' : 'Новая смена'}</T>
-        <View style={{ width: 60 }} />
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: G, paddingTop: Platform.OS === 'ios' ? (compact ? 12 : 14) : insets.top + 10, paddingBottom: 4, minHeight: 44 }}>
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Press onPress={() => navigation.goBack()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Отмена">
+            <T v="bodyStrong" c="ink2" style={headerText}>Отмена</T>
+          </Press>
+        </View>
+        <T v="rowTitle" style={{ fontSize: compact ? 16 : 17, lineHeight: 21 }} numberOfLines={1} accessibilityRole="header">{editing ? 'Изменить смену' : 'Новая смена'}</T>
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          {recent.length ? (
+            <Press onPress={more} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Ещё: заполнить как в прошлой смене">
+              <T v="bodyStrong" c="ink2" style={headerText}>Ещё</T>
+            </Press>
+          ) : null}
+        </View>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 150 + insets.bottom }}>
-          <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
-            <T v="caption" c="secondary">Оплата за смену</T>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-              <T v="moneyHero">{money(pay)}</T>
-              <T v="rowTitle" c="secondary" style={{ fontSize: 19, letterSpacing: 0 }}>BYN</T>
-              <T v="body" c="secondary" style={{ marginLeft: 4 }}>≈{Math.round(pay / duration)} BYN/ч</T>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          contentContainerStyle={{ paddingHorizontal: G, paddingTop: compact ? 10 : 14, paddingBottom: panelH + 16 }}
+        >
+          {/* Pay — first and largest, on the sky of the start hour */}
+          <SkyView sky={sky} radius={compact ? 18 : 20} style={{ paddingTop: compact ? 12 : 14, paddingHorizontal: compact ? 14 : 16, paddingBottom: compact ? 14 : 16 }}>
+            <T v="caption" c={sky.ink2} weight="600" style={{ fontSize: compact ? 11.5 : 12.5, lineHeight: 15 }}>Оплата за смену</T>
+            <View style={{ marginTop: compact ? 5 : 6, flexDirection: 'row', alignItems: 'baseline', gap: compact ? 8 : 9, flexWrap: 'wrap' }}>
+              <T v="moneyHero" c={sky.ink} style={{ fontSize: hero, lineHeight: hero + 4, letterSpacing: -hero * 0.02 }} accessibilityLabel={rublesLabel(pay)}>
+                {money(pay)}
+                <RNText style={[displayFont('700'), { fontSize: hero / 2, color: sky.ink2, letterSpacing: 0 }]}>{' BYN'}</RNText>
+              </T>
+              <T v="bodyStrong" c={sky.ink2} style={{ fontSize: compact ? 13 : 14, lineHeight: 17 }}>{`≈${Math.round(pay / duration)} BYN/ч`}</T>
             </View>
-            {market ? (
-              <View style={{ flexDirection: 'row', gap: 7, marginTop: 8 }}>
-                <Icon name="chart.bar" size={13} c="secondary" style={{ marginTop: 2 }} />
-                <T v="small" c="secondary" style={{ flex: 1 }}>
-                  {`Похожие смены платят от ${market.min} BYN, чаще — ${market.median}.${pay < market.median ? ' С оплатой ниже обычной смена закрывается дольше.' : ''}`}
-                </T>
-              </View>
-            ) : null}
-            <Slider min={45} max={140} step={5} value={Math.min(140, Math.max(45, pay))} onChange={setPay} accessibilityLabel="Оплата за смену" formatValue={(v) => `${v} BYN`} />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 }}>
-              <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>45 BYN</T>
-              <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>140 BYN</T>
+            <View style={{ marginTop: compact ? 5 : 7 }}>
+              <Slider
+                min={PAY_MIN}
+                max={PAY_MAX}
+                step={5}
+                value={Math.min(PAY_MAX, Math.max(PAY_MIN, pay))}
+                onChange={setPay}
+                thumb={compact ? 24 : 26}
+                track={c.onSky}
+                marker={market && market.median >= PAY_MIN && market.median <= PAY_MAX ? { value: market.median } : undefined}
+                accessibilityLabel="Оплата за смену"
+                formatValue={(v) => `${v} BYN`}
+              />
             </View>
-          </View>
+            <View style={{ marginTop: -3, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {!compact ? <Trend size={13} color={sky.ink2} /> : null}
+              <T v="caption" c={sky.ink2} weight="500" style={{ flex: 1, fontSize: compact ? 11.5 : 12, lineHeight: 16 }}>
+                {market
+                  ? `Похожие смены${!compact && market.where ? ` ${market.where}` : ''} чаще платят ${market.median} BYN`
+                  : compact ? 'Сумму увидят в ленте первой' : 'Сумма — первое, что исполнители увидят в ленте'}
+              </T>
+            </View>
+          </SkyView>
 
-          <Separator style={{ marginTop: 18 }} />
-          <LedgerRow label="Должность" value={title || 'Выбрать'} valueC={title ? 'label' : 'tertiary'} onPress={() => setSheet('title')} chevron alignTop={false} />
-          {errors.title ? <T v="small" c="destructive" style={{ paddingHorizontal: 22, marginTop: -6, marginBottom: 6, marginLeft: 120 }}>{errors.title}</T> : null}
-          <Press feedback="highlight" onPress={() => setSheet('category')}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingTop: 13, paddingBottom: 14 }}>
-              <T v="caption" c="secondary" style={{ width: 84 }}>Категория</T>
-              {category ? <Icon name={CATEGORIES.find((x) => x.key === category)?.symbol} size={15} c="label" /> : null}
-              <T v="value" c={category ? 'label' : 'tertiary'} style={{ flex: 1 }}>{CATEGORIES.find((x) => x.key === category)?.label || 'Выбрать'}</T>
-              <Icon name="chevron.right" size={13} c="tertiary" weight="semibold" />
+          {/* The rows */}
+          <Card radius={compact ? 16 : 18} style={{ marginTop: compact ? 10 : 14 }}>
+            {/* Clip on an inner layer so the pressed-row wash keeps the corners and the card keeps its shadow. */}
+            <View style={{ borderRadius: compact ? 16 : 18, overflow: 'hidden' }}>
+              <Line
+                compact={compact}
+                label="Должность"
+                value={title || 'Выбрать'}
+                valueC={title ? 'ink' : errors.title ? 'error' : 'disabled'}
+                error={errors.title}
+                onPress={() => setSheet('title')}
+              />
+              <Divider inset={compact ? 13 : 14} />
+              <Line compact={compact} label="Категория" onPress={() => setSheet('category')} chevron a11y={`Категория: ${cat?.label || 'не выбрана'}`}>
+                {cat ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                    <View style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: c.brandTint, alignItems: 'center', justifyContent: 'center' }}>
+                      <Pictogram kind={cat.kind} size={16} />
+                    </View>
+                    <T v="body" weight="500" style={{ flex: 1, fontSize: compact ? 14.5 : 15.5, lineHeight: 20 }} numberOfLines={1}>{cat.short}</T>
+                  </View>
+                ) : <T v="body" c="disabled" weight="500" style={{ fontSize: compact ? 14.5 : 15.5, lineHeight: 20 }}>Выбрать</T>}
+              </Line>
+              <Divider inset={compact ? 13 : 14} />
+              <Line
+                compact={compact}
+                label={dates.length > 1 ? 'Даты' : 'Дата'}
+                value={datesValue}
+                valueC={dates.length ? 'ink' : 'disabled'}
+                sub={dates.length > 1 ? `${dates.length} ${plural(dates.length, ['смена', 'смены', 'смен'])} с одинаковыми условиями` : undefined}
+                error={errors.date}
+                onPress={() => setSheet('date')}
+                chevron
+              />
+              <Divider inset={compact ? 13 : 14} />
+              <Line
+                compact={compact}
+                label="Время"
+                value={`${timeStart} – ${timeEnd}`}
+                sub={timeSub || undefined}
+                onPress={() => setSheet('time')}
+                right={<T v="caption" c="ink2" style={{ fontSize: compact ? 12 : 13 }}>{durText}</T>}
+                a11y={`Время: с ${timeStart} до ${timeEnd}, ${durText}`}
+              />
+              <Divider inset={compact ? 13 : 14} />
+              <Line compact={compact} label="Мест" pad={compact ? 8 : 9}>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Stepper value={spots} min={1} max={20} onChange={(v) => { haptic.selection(); setSpots(v); }} />
+                </View>
+              </Line>
+              <Divider inset={compact ? 13 : 14} />
+              <Line
+                compact={compact}
+                label="Адрес"
+                value={location?.address || 'Выбрать'}
+                valueC={location ? 'ink' : errors.address ? 'error' : 'disabled'}
+                sub={location?.name}
+                error={errors.address}
+                onPress={() => setSheet('address')}
+                chevron
+              />
             </View>
-          </Press>
-          <Separator inset />
-          <LedgerRow label={dates.length > 1 ? 'Даты' : 'Дата'} value={dates.length ? dates.map(dateLabel).join('\n') : 'Выбрать'} sub={dates.length > 1 ? `${dates.length} ${plural(dates.length, ['смена', 'смены', 'смен'])} с одинаковыми условиями` : undefined} onPress={() => setSheet('date')} chevron />
-          <LedgerRow label="Время" value={`${timeStart}–${timeEnd}`} sub={`${duration} ${plural(Math.round(duration), ['час', 'часа', 'часов'])}${duration > 12 ? ' — длинная смена' : ''}`} onPress={() => setSheet('time')} chevron />
-          <LedgerRow label="Мест" alignTop={false} value={String(spots)} right={<Stepper value={spots} onChange={setSpots} />} />
-          <LedgerRow label="Адрес" value={location?.address || 'Выбрать'} valueC={location ? 'label' : errors.address ? 'destructive' : 'tertiary'} sub={location?.name} onPress={() => setSheet('address')} chevron last />
+          </Card>
 
-          <SectionHeader title="Задачи" />
-          <View style={{ paddingHorizontal: 22, paddingVertical: 12 }}>
+          {/* Tasks and requirements */}
+          <Card radius={compact ? 16 : 18} style={{ marginTop: compact ? 10 : 12, paddingVertical: compact ? 11 : 12, paddingHorizontal: compact ? 13 : 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+              <T v="caption" c="ink2" weight="600" style={{ fontSize: compact ? 11.5 : 12.5, lineHeight: 15 }}>Задачи</T>
+              <T v="caption" c={description.length > MAX_TASKS ? 'error' : 'ink2'} style={{ fontSize: 11.5, lineHeight: 15 }}>{`${description.length} / ${MAX_TASKS}`}</T>
+            </View>
             <TextInput
               value={description}
-              onChangeText={(v) => { setDescription(v); if (errors.description) setErrors((x) => ({ ...x, description: undefined })); }}
+              onChangeText={(v) => { setDescription(v); clearErr('description'); }}
               placeholder="Что нужно делать, с кем работать, где вход"
-              placeholderTextColor={c.labelTertiary}
+              placeholderTextColor={c.inkDisabled}
               multiline
-              style={{ minHeight: 88, borderRadius: 14, backgroundColor: c.fill, paddingHorizontal: 16, paddingTop: 13, paddingBottom: 13, fontSize: 15, lineHeight: 21, color: c.label, textAlignVertical: 'top', borderWidth: errors.description ? 2 : 0, borderColor: c.destructive }}
+              maxLength={MAX_TASKS}
+              scrollEnabled={false}
+              style={{ marginTop: 6, minHeight: 60, padding: 0, paddingTop: 0, fontSize: compact ? 14 : 14.5, lineHeight: 20, color: c.ink, textAlignVertical: 'top' }}
               accessibilityLabel="Задачи на смене"
             />
-            {errors.description ? <T v="small" c="destructive" style={{ marginTop: 6 }}>{errors.description}</T> : null}
-          </View>
-
-          <SectionHeader title="Требования" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingVertical: 14 }}>
-            {REQS.map((r) => <Chip key={r.key} label={r.label} selected={!!req[r.key]} onPress={() => { haptic.selection(); setReq((x) => ({ ...x, [r.key]: !x[r.key] })); }} />)}
-            <Chip label={other ? other : 'Своё'} icon={other ? undefined : 'plus'} selected={!!other} onPress={() => setSheet('other')} />
-          </View>
-
-          <Separator />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 14 }}>
-            <View style={{ flex: 1 }}>
-              <T v="value" style={{ fontSize: 16, lineHeight: 21 }}>Отметить как срочную</T>
-              <T v="caption" c="secondary">Метка «Срочно» и вкладка «Срочные» в ленте исполнителей</T>
+            {errors.description ? <T v="caption" c="error" style={{ marginTop: 4, fontSize: 12.5, lineHeight: 16 }}>{errors.description}</T> : null}
+            <View style={{ marginTop: 11, paddingTop: 11, borderTopWidth: 1, borderTopColor: c.line }}>
+              <T v="caption" c="ink2" weight="600" style={{ fontSize: compact ? 11.5 : 12.5, lineHeight: 15 }}>Требования</T>
+              <View style={{ marginTop: compact ? 7 : 8, flexDirection: 'row', flexWrap: 'wrap', gap: compact ? 5 : 6 }}>
+                {REQS.map((r) => (
+                  <Chip key={r.key} label={r.label} tone="soft" size={compact ? 'sm' : 'md'} selected={!!req[r.key]} onPress={() => { haptic.selection(); setReq((x) => ({ ...x, [r.key]: !x[r.key] })); }} />
+                ))}
+                <Chip label={other || 'Своё'} icon={other ? undefined : 'plus'} tone="soft" size={compact ? 'sm' : 'md'} selected={!!other} onPress={() => setSheet('other')} />
+              </View>
             </View>
-            <Switch value={urgent} onValueChange={(v) => { haptic.selection(); setUrgent(v); }} trackColor={{ true: c.accent, false: c.fillSecondary }} ios_backgroundColor={c.fillSecondary} accessibilityLabel="Срочная смена" />
-          </View>
-          <Separator />
+          </Card>
+
+          {/* Urgent */}
+          <Card radius={compact ? 16 : 18} style={{ marginTop: compact ? 10 : 12, paddingVertical: 12, paddingHorizontal: compact ? 13 : 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="bolt.fill" size={14} c="urgent" />
+                <T v="bodyStrong" style={{ fontSize: compact ? 14.5 : 15.5, lineHeight: 20 }}>Отметить «Срочно»</T>
+              </View>
+              <T v="caption" c="ink2" style={{ marginTop: 3, fontSize: 12.5, lineHeight: 17 }}>Смена попадёт во вкладку «Срочные» и получит метку</T>
+            </View>
+            <Switch value={urgent} onValueChange={(v) => { haptic.selection(); setUrgent(v); }} accessibilityLabel="Отметить «Срочно»" />
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: insets.bottom + 10, backgroundColor: c.glassFallback, borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: c.glassFallbackBorder }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 10 }}>
-          <T v="caption" c="secondary">К выплате исполнителям</T>
-          <T v="bodyStrong" style={{ fontSize: 16 }}>{money(pay * spots * (editing ? 1 : dates.length))} BYN за {spots * (editing ? 1 : dates.length)} {plural(spots * (editing ? 1 : dates.length), ['место', 'места', 'мест'])}</T>
-        </View>
-        <Button title={editing ? 'Сохранить изменения' : dates.length > 1 ? `Опубликовать ${dates.length} ${plural(dates.length, ['смену', 'смены', 'смен'])}` : 'Опубликовать'} onPress={submit} />
+      {/* Total and the action, pinned to the bottom */}
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }} onLayout={(e) => setPanelH(e.nativeEvent.layout.height)}>
+        <Material style={{ paddingTop: compact ? 9 : 12, paddingHorizontal: G, paddingBottom: Math.max(insets.bottom - 4, 12) }}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: compact ? 8 : 10 }}
+            accessible
+            accessibilityLabel={`К выплате исполнителям ${rublesLabel(total)} за ${seatsN} ${plural(seatsN, ['место', 'места', 'мест'])}`}
+          >
+            <T v="bodyStrong" c="ink2" weight="500" style={{ fontSize: compact ? 13 : 14, lineHeight: 18, flexShrink: 1 }} numberOfLines={1}>
+              {copies > 1 ? `К выплате за ${copies} ${plural(copies, ['смену', 'смены', 'смен'])}` : 'К выплате исполнителям'}
+            </T>
+            <T v="moneyCard" style={{ fontSize: compact ? 20 : 22, lineHeight: 25, letterSpacing: 0 }}>
+              {money(total)}
+              <RNText style={[displayFont('700'), { fontSize: compact ? 13 : 14, color: c.ink2, letterSpacing: 0 }]}>{' BYN'}</RNText>
+            </T>
+          </View>
+          <Button
+            title={cta}
+            onPress={submit}
+            style={compact ? { minHeight: 50, borderRadius: 16 } : null}
+            textStyle={compact ? { fontSize: 16.5 } : null}
+          />
+        </Material>
       </View>
 
       {/* ── Pickers ─────────────────────────────────────────── */}
-      <Sheet visible={sheet === 'title'} onClose={() => setSheet(null)} title="Должность">
-        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+      <Sheet visible={sheet === 'title'} onClose={close} title="Должность">
+        <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
           <TextInput
             value={title}
-            onChangeText={(v) => { setTitle(v); if (!category) setCategory(guessCategory(v)); }}
+            onChangeText={(v) => { setTitle(v); if (!category) setCategory(guessCategory(v)); clearErr('title'); }}
             placeholder="Например, оператор ПВЗ"
-            placeholderTextColor={c.labelTertiary}
+            placeholderTextColor={c.inkDisabled}
             autoFocus
-            style={{ height: 54, borderRadius: 27, backgroundColor: c.fillSecondary, paddingHorizontal: 20, fontSize: 17, color: c.label }}
+            style={sheetInput}
             returnKeyType="done"
-            onSubmitEditing={() => setSheet(null)}
+            onSubmitEditing={close}
+            accessibilityLabel="Должность"
           />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 14 }}>
-            {SHIFT_TEMPLATES.map((t) => chip(t, title === t, () => { setTitle(t); setCategory(guessCategory(t)); setSheet(null); }))}
+            {SHIFT_TEMPLATES.map((tpl) => (
+              <Chip key={tpl} label={tpl} tone="soft" selected={title === tpl} onPress={() => { haptic.selection(); setTitle(tpl); setCategory(guessCategory(tpl)); clearErr('title'); close(); }} />
+            ))}
           </View>
-          <Button title="Готово" style={{ marginTop: 18 }} onPress={() => setSheet(null)} />
+          <Button title="Готово" style={{ marginTop: 18 }} onPress={close} />
         </View>
       </Sheet>
 
-      <Sheet visible={sheet === 'category'} onClose={() => setSheet(null)} title="Категория">
+      <Sheet visible={sheet === 'category'} onClose={close} title="Категория">
         <View style={{ paddingTop: 6 }}>
-          {CATEGORIES.map((cat, i) => (
-            <View key={cat.key}>
-              <Press feedback="highlight" onPress={() => { haptic.selection(); setCategory(cat.key); setSheet(null); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 14 }}>
-                <Icon name={cat.symbol} size={18} c="label" />
-                <T v="value" style={{ flex: 1, fontSize: 16 }}>{cat.label}</T>
-                {category === cat.key ? <Icon name="checkmark" size={15} c="accent" weight="semibold" /> : null}
+          {CATEGORIES.map((x, i) => (
+            <View key={x.key}>
+              <Press
+                feedback="highlight"
+                onPress={() => { haptic.selection(); setCategory(x.key); close(); }}
+                accessibilityState={{ selected: category === x.key }}
+                accessibilityLabel={x.label}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 9, minHeight: 52 }}
+              >
+                <CategoryTile kind={x.kind} size={34} />
+                <T v="body" style={{ flex: 1, fontSize: 16, lineHeight: 21 }}>{x.label}</T>
+                {category === x.key ? <Icon name="checkmark" size={15} c="brand" weight="semibold" /> : null}
               </Press>
-              {i < CATEGORIES.length - 1 ? <Separator inset /> : null}
+              {i < CATEGORIES.length - 1 ? <Divider inset={66} /> : null}
             </View>
           ))}
         </View>
       </Sheet>
 
-      <Sheet visible={sheet === 'date'} onClose={() => setSheet(null)} title={editing ? 'Дата' : 'Даты'}>
-        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
-          {!editing ? <T v="caption" c="secondary" style={{ marginBottom: 10 }}>Можно выбрать несколько дней — опубликуем по смене на каждый.</T> : null}
+      <Sheet visible={sheet === 'date'} onClose={close} title={editing ? 'Дата' : 'Даты'}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+          {!editing ? <T v="caption" c="ink2" style={{ marginBottom: 12, fontSize: 13.5, lineHeight: 19 }}>Можно выбрать несколько дней — опубликуем по смене на каждый.</T> : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {dateOptions.map((d) => chip(dateLabel(d), dates.includes(d), () => {
-              if (editing) { setDates([d]); return; }
-              setDates((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d].sort()));
-            }, d))}
+            {dateOptions.map((d) => (
+              <Chip
+                key={d}
+                label={dateChip(d)}
+                tone="soft"
+                selected={dates.includes(d)}
+                onPress={() => {
+                  haptic.selection();
+                  clearErr('date');
+                  if (editing) { setDates([d]); return; }
+                  setDates((x) => (x.includes(d) ? x.filter((y) => y !== d) : [...x, d].sort()));
+                }}
+              />
+            ))}
           </View>
-          <Button title="Готово" style={{ marginTop: 18 }} disabled={!dates.length} onPress={() => setSheet(null)} />
+          <Button title="Готово" style={{ marginTop: 18 }} disabled={!dates.length} onPress={close} />
         </View>
       </Sheet>
 
-      <Sheet visible={sheet === 'time'} onClose={() => setSheet(null)} title="Время">
+      <Sheet visible={sheet === 'time'} onClose={close} title="Время">
         <View style={{ paddingTop: 8 }}>
-          <T v="section" c="secondary" style={{ paddingHorizontal: 22 }}>Начало</T>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 22, paddingVertical: 10 }}>
-            {TIMES.map((t) => chip(t, timeStart === t, () => setTimeStart(t), `s${t}`))}
+          <T v="caption" c="ink2" weight="600" style={{ paddingHorizontal: 20, fontSize: 12.5 }}>Начало</T>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentOffset={{ x: Math.max(0, TIMES.indexOf(timeStart) * 70 - 40), y: 0 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingVertical: 10 }}>
+            {TIMES.map((x) => <Chip key={`s${x}`} label={x} tone="soft" selected={timeStart === x} onPress={() => { haptic.selection(); setTimeStart(x); }} />)}
           </ScrollView>
-          <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 8 }}>Конец</T>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 22, paddingVertical: 10 }}>
-            {TIMES.map((t) => chip(t, timeEnd === t, () => setTimeEnd(t), `e${t}`))}
+          <T v="caption" c="ink2" weight="600" style={{ paddingHorizontal: 20, paddingTop: 8, fontSize: 12.5 }}>Конец</T>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentOffset={{ x: Math.max(0, TIMES.indexOf(timeEnd) * 70 - 40), y: 0 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingVertical: 10 }}>
+            {TIMES.map((x) => <Chip key={`e${x}`} label={x} tone="soft" selected={timeEnd === x} onPress={() => { haptic.selection(); setTimeEnd(x); }} />)}
           </ScrollView>
-          <T v="body" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 6 }}>{timeStart}–{timeEnd} · {duration} ч{hoursBetween(timeStart, timeEnd) && timeEnd <= timeStart ? ' · через полночь' : ''}</T>
-          <View style={{ paddingHorizontal: 22 }}><Button title="Готово" style={{ marginTop: 16 }} onPress={() => setSheet(null)} /></View>
+          <T v="bodyStrong" c="ink2" style={{ paddingHorizontal: 20, paddingTop: 6 }}>{`${timeStart} – ${timeEnd} · ${durText}${overnight ? ' · через полночь' : ''}`}</T>
+          <View style={{ paddingHorizontal: 20 }}><Button title="Готово" style={{ marginTop: 16 }} onPress={close} /></View>
         </View>
       </Sheet>
 
-      <Sheet visible={sheet === 'address'} onClose={() => setSheet(null)} title="Адрес">
+      <Sheet visible={sheet === 'address'} onClose={close} title="Адрес">
         <View style={{ paddingTop: 6 }}>
-          {locations.map((l, i) => (
+          {locations.map((l) => (
             <View key={l.id}>
-              <Press feedback="highlight" onPress={() => { haptic.selection(); setLocationId(l.id); setSheet(null); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingVertical: 13 }}>
-                <View style={{ flex: 1 }}>
-                  <T v="value" style={{ fontSize: 16 }}>{l.address}</T>
-                  {l.name ? <T v="caption" c="secondary">{l.name}</T> : null}
+              <Press
+                feedback="highlight"
+                onPress={() => { haptic.selection(); setLocationId(l.id); clearErr('address'); close(); }}
+                accessibilityState={{ selected: locationId === l.id }}
+                accessibilityLabel={`${l.address}${l.name ? `, ${l.name}` : ''}`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 12, minHeight: 52 }}
+              >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <T v="body" weight="500" style={{ fontSize: 16, lineHeight: 21 }}>{l.address}</T>
+                  {l.name ? <T v="caption" c="ink2" style={{ marginTop: 1 }}>{l.name}</T> : null}
                 </View>
-                {locationId === l.id ? <Icon name="checkmark" size={15} c="accent" weight="semibold" /> : null}
+                {locationId === l.id ? <Icon name="checkmark" size={15} c="brand" weight="semibold" /> : null}
               </Press>
-              <Separator inset />
+              <Divider inset={20} />
             </View>
           ))}
-          <Press feedback="highlight" onPress={() => { setSheet(null); navigation.navigate('Locations'); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingVertical: 14 }}>
-            <Icon name="plus" size={15} c="accent" weight="semibold" />
-            <T v="value" c="accent" style={{ fontSize: 16 }}>{locations.length ? 'Добавить адрес' : 'Добавить первый адрес'}</T>
+          <Press
+            feedback="highlight"
+            onPress={() => { close(); navigation.navigate('Locations'); }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 14, minHeight: 50 }}
+          >
+            <Icon name="plus" size={15} c="brand" weight="semibold" />
+            <T v="bodyStrong" c="brand" style={{ fontSize: 16 }}>{locations.length ? 'Добавить адрес' : 'Добавить первый адрес'}</T>
           </Press>
         </View>
       </Sheet>
 
-      <Sheet visible={sheet === 'other'} onClose={() => setSheet(null)} title="Своё требование">
-        <View style={{ paddingHorizontal: 22, paddingTop: 8 }}>
+      <Sheet visible={sheet === 'other'} onClose={close} title="Своё требование">
+        <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
           <TextInput
             value={other}
             onChangeText={setOther}
             placeholder="Например, закрытая обувь"
-            placeholderTextColor={c.labelTertiary}
+            placeholderTextColor={c.inkDisabled}
             autoFocus
             maxLength={60}
-            style={{ height: 54, borderRadius: 27, backgroundColor: c.fillSecondary, paddingHorizontal: 20, fontSize: 17, color: c.label }}
+            style={sheetInput}
             returnKeyType="done"
-            onSubmitEditing={() => setSheet(null)}
+            onSubmitEditing={close}
+            accessibilityLabel="Своё требование"
           />
-          <Button title="Готово" style={{ marginTop: 14 }} onPress={() => setSheet(null)} />
+          <Button title="Готово" style={{ marginTop: 14 }} onPress={close} />
         </View>
       </Sheet>
 
@@ -343,7 +599,7 @@ export default function CreateShiftScreen({ navigation, route }) {
         navigation={navigation}
         title="Подтверди номер"
         text="Смены публикуются только с подтверждённым номером — так исполнители знают, что за сменой стоит живой человек."
-        note="Номер увидят исполнители, которых ты подтвердишь на смену."
+        social={false}
         intent={{ type: 'verify-phone' }}
       />
     </View>

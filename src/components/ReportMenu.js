@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import { Alert } from 'react-native';
-import { RoundButton } from '../design/ui';
+import { CircleButton } from '../design/ui';
 import { showActions } from '../design/ActionSheet';
 import { haptic } from '../design/haptics';
 import useStore from '../store/useStore';
@@ -67,7 +67,7 @@ export default function ReportMenu(props) {
   // Read the store at tap time — subscribing here would re-render the
   // button on every store change.
   return (
-    <RoundButton
+    <CircleButton
       icon="ellipsis"
       accessibilityLabel="Ещё: пожаловаться или заблокировать"
       onPress={() => openReportMenu({ ...props, store: useStore.getState() })}

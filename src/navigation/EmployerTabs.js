@@ -30,14 +30,14 @@ export default function EmployerTabs() {
   const tabs = {
     Dashboard: { label: 'Сводка', icon: 'chart.bar', iconActive: 'chart.bar.fill' },
     EmpShifts: { label: 'Смены', icon: 'briefcase', iconActive: 'briefcase.fill', badge: pending },
-    EmpChat: { label: 'Чат', icon: 'bubble.left.and.bubble.right', iconActive: 'bubble.left.and.bubble.right.fill', badge: unreadChat },
+    EmpChat: { label: 'Чат', icon: 'bubble.left', iconActive: 'bubble.left.fill', dot: unreadChat > 0 },
     EmpProfile: { label: 'Профиль', icon: 'person.crop.circle', iconActive: 'person.crop.circle.fill' },
   };
 
   return (
     <Tab.Navigator
       tabBar={(props) => <TabBar {...props} tabs={tabs} />}
-      screenOptions={{ headerShown: false, animation: 'none' }}
+      screenOptions={{ headerShown: false, animation: 'fade', transitionSpec: { animation: 'timing', config: { duration: 200 } } }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="EmpShifts" component={EmployerShiftsScreen} />

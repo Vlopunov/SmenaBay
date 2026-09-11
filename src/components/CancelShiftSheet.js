@@ -1,61 +1,73 @@
-// Cancelling a confirmed shift (handoff screen 15). The sheet names every
-// consequence by name — including the honest «no fine» — offers a better way
-// out first, and keeps the destructive action as red text without a fill so
-// it is not hit by accident.
+// Cancelling a confirmed shift (screen 12). Consequences are listed
+// honestly, including the mark in the profile. The main button is not the
+// cancellation but a conversation — «Написать Андрею»; the cancellation
+// itself is red text: not hidden, not hit by accident.
 import React from 'react';
 import { View } from 'react-native';
 import Sheet from '../design/Sheet';
 import T from '../design/Text';
 import Icon from '../design/Icon';
-import { Button, Separator } from '../design/ui';
-import { shiftStart, plural, dative } from '../design/format';
+import Money from '../design/Money';
+import { Button, Press } from '../design/ui';
+import { useTheme } from '../design/theme';
+import { SkyBand } from '../design/ShiftCard';
+import { skyKey } from '../design/Sky';
+import { PersonMono } from '../design/Monogram';
+import { dayLabel, timeRange, hours, plural, dative } from '../design/format';
 
-function Consequence({ icon, title, sub, last }) {
+function Line({ icon, color, children }) {
   return (
-    <View>
-      <View style={{ flexDirection: 'row', gap: 12, paddingVertical: 12 }}>
-        <Icon name={icon} size={16} c="label" style={{ marginTop: 2 }} />
-        <View style={{ flex: 1 }}>
-          <T v="value">{title}</T>
-          <T v="small" c="secondary" style={{ marginTop: 1 }}>{sub}</T>
-        </View>
-      </View>
-      {!last ? <Separator /> : null}
+    <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+      <Icon name={icon} size={16} c={color || 'ink2'} weight="semibold" style={{ marginTop: 3 }} />
+      <T v="body" c="ink3" style={{ flex: 1, fontSize: 14.5, lineHeight: 21 }}>{children}</T>
     </View>
   );
 }
 
-export default function CancelShiftSheet({ visible, onClose, shift, company, cancellations, hasNoCancelBadge, onWrite, onConfirm }) {
+export default function CancelShiftSheet({ visible, onClose, shift, company, location, cancellations = 0, hasNoCancelBadge, onWrite, onConfirm }) {
+  const t = useTheme();
   if (!shift) return null;
-  const hoursLeft = Math.max(0, Math.round((shiftStart(shift) - new Date()) / 3600000));
-  const contact = company?.contactPerson?.split(' ')[0];
-  const soon = hoursLeft < 24;
-  const title = soon
-    ? `Отменить смену за ${hoursLeft} ${plural(hoursLeft, ['час', 'часа', 'часов'])} до начала?`
-    : 'Отменить подтверждённую смену?';
-  const lead = soon
-    ? `${contact || 'Заказчик'} уже рассчитывает на тебя, и заново закрыть место так быстро почти нереально.`
-    : 'Место снова откроется, и заказчику придётся искать замену.';
-
+  const contact = company?.contactPerson || '';
+  const [first, last] = contact.split(' ');
+  const next = cancellations + 1;
   return (
-    <Sheet visible={visible} onClose={onClose}>
-      <View style={{ paddingHorizontal: 22, paddingTop: 12 }}>
-        <T v="sheetTitle">{title}</T>
-        <T v="body" c="secondary" style={{ marginTop: 8 }}>{lead}</T>
-        <Separator style={{ marginTop: 16 }} />
-        <Consequence
-          icon="star.fill"
-          title={`Отмен в профиле станет ${cancellations + 1}`}
-          sub="Заказчики видят это число в каждом твоём отклике"
-        />
-        {hasNoCancelBadge ? (
-          <Consequence icon="checkmark.shield" title="Метка «Без отмен» пропадёт" sub="Её видят заказчики в списке откликов" />
+    <Sheet visible={visible} onClose={onClose} title="Отменить смену?">
+      <View style={{ paddingHorizontal: 20 }}>
+        <View style={[{ marginTop: 14, borderRadius: 18, overflow: 'hidden', backgroundColor: t.c.surface }, t.sh.e1]}>
+          <SkyBand sky={skyKey(shift, { ignoreClosed: true })} text={`${dayLabel(shift.date)} · ${timeRange(shift)} · ${hours(shift.durationHours)}`} height={32} fontSize={12.5} />
+          <View style={{ paddingTop: 10, paddingHorizontal: 13, paddingBottom: 11, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T v="rowTitle" style={{ fontSize: 15 }} numberOfLines={2}>{shift.title}</T>
+              <T v="caption" c="ink2" style={{ marginTop: 2, fontSize: 12.5 }} numberOfLines={1}>{[company?.companyName, location?.address].filter(Boolean).join(' · ')}</T>
+            </View>
+            <Money value={shift.pay} size="inline" style={{ fontSize: 17 }} />
+          </View>
+        </View>
+
+        <T v="caption" c="ink2" weight="600" style={{ marginTop: 16 }}>Что изменится</T>
+        <View style={{ marginTop: 9, gap: 9 }}>
+          <Line icon="person.2">Место освободится, и его займёт другой человек.</Line>
+          <Line icon="exclamationmark.triangle" color={t.c.warning}>
+            В профиле станет <T v="body" weight="700" style={{ fontSize: 14.5 }}>{`${next} ${plural(next, ['отмена', 'отмены', 'отмен'])}`}</T> вместо {cancellations} — заказчики это видят.
+          </Line>
+          {hasNoCancelBadge ? <Line icon="checkmark.shield">Метка «Надёжный исполнитель» пропадёт.</Line> : null}
+          <Line icon="banknote">{`Оплату ${shift.pay} BYN ты не получишь — смена не состоится.`}</Line>
+        </View>
+
+        {first ? (
+          <View style={{ marginTop: 16, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, backgroundColor: t.c.brandTint, flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+            <PersonMono first={first} last={last} size={36} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T v="bodyStrong" c="brand" style={{ fontSize: 14 }}>Не успеваешь или что-то поменялось?</T>
+              <T v="caption" c="brand" style={{ marginTop: 2, fontSize: 12.5, opacity: 0.8 }}>{`Напиши ${dative(first)} — часто можно сдвинуть время`}</T>
+            </View>
+          </View>
         ) : null}
-        <Consequence icon="creditcard" title="Денежного штрафа нет" sub="Платформа не списывает деньги за отмену" last />
-      </View>
-      <View style={{ paddingHorizontal: 22, paddingTop: 14, gap: 4 }}>
-        <Button variant="secondary" icon="bubble.left" title={contact ? `Написать ${dative(contact)}` : 'Написать заказчику'} onPress={onWrite} />
-        <Button variant="destructive" title="Всё равно отменить" onPress={onConfirm} />
+
+        <Button title={first ? `Написать ${dative(first)}` : 'Написать заказчику'} onPress={onWrite} style={{ marginTop: 12 }} />
+        <Press onPress={onConfirm} hitSlop={10} style={{ alignSelf: 'center', marginTop: 14, paddingVertical: 4 }} accessibilityLabel="Всё равно отменить смену">
+          <T v="bodyStrong" c="error" style={{ fontSize: 16 }}>Всё равно отменить смену</T>
+        </Press>
       </View>
     </Sheet>
   );

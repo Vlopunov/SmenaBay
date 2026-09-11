@@ -1,78 +1,85 @@
-// Filters sheet. The button names the result as a number («Показать 9 смен»),
-// so there is no surprise after closing. Active chips are ink, not accent:
-// the accent is already taken by the button and the slider.
+// Filters sheet (screen 3). The feed stays visible behind it, so it is
+// clear what is being filtered. One-handle pay slider — «от» is what a
+// person actually decides; the button always counts: «Показать 9 смен».
 import React, { useEffect, useState } from 'react';
-import { View, Switch } from 'react-native';
+import { View } from 'react-native';
 import Sheet from '../design/Sheet';
 import T from '../design/Text';
 import Slider from '../design/Slider';
-import { Button, Chip, Separator } from '../design/ui';
+import { Button, Chip, Switch, Press } from '../design/ui';
 import { useTheme } from '../design/theme';
 import { haptic } from '../design/haptics';
 import { plural } from '../design/format';
 import { EMPTY_FILTERS, PAY_MIN, PAY_MAX, WHEN, SKILLS, passes } from '../screens/worker/shiftFilters';
 
+function WhenSegments({ value, onChange }) {
+  const t = useTheme();
+  const { c } = t;
+  const items = [{ key: null, label: 'Любой день' }, ...WHEN];
+  return (
+    <View style={{ flexDirection: 'row', padding: 3, gap: 2, borderRadius: 12, backgroundColor: c.surface2, marginTop: 9 }}>
+      {items.map((it) => {
+        const on = (value || null) === it.key;
+        return (
+          <Press key={String(it.key)} outerStyle={{ flex: 1 }} onPress={() => { haptic.selection(); onChange(it.key); }} accessibilityRole="button" accessibilityState={{ selected: on }}>
+            <View style={[{ paddingVertical: 8, borderRadius: 9, alignItems: 'center', backgroundColor: on ? c.surface : 'transparent' }, on && { shadowColor: c.shadow, shadowOpacity: t.dark ? 0 : 0.14, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }]}>
+              <T v="bodyStrong" c={on ? 'brand' : 'ink2'} numberOfLines={1} style={{ fontSize: 13.5, lineHeight: 17, fontWeight: on ? '600' : '500' }}>{it.label}</T>
+            </View>
+          </Press>
+        );
+      })}
+    </View>
+  );
+}
+
+const Label = ({ children, style }) => <T v="bodyStrong" c="ink3" style={[{ fontSize: 15 }, style]}>{children}</T>;
+
 export default function FiltersSheet({ visible, onClose, value, onApply, pool }) {
-  const { c } = useTheme();
   const [f, setF] = useState(value);
   useEffect(() => { if (visible) setF(value); }, [visible]);
 
   const count = pool.filter((s) => passes(s, f)).length;
-  const toggle = (key, item) => {
+  const toggle = (item) => {
     haptic.selection();
-    setF((prev) => ({ ...prev, [key]: prev[key].includes(item) ? prev[key].filter((x) => x !== item) : [...prev[key], item] }));
+    setF((prev) => ({ ...prev, skills: prev.skills.includes(item) ? prev.skills.filter((x) => x !== item) : [...prev.skills, item] }));
   };
 
   return (
     <Sheet visible={visible} onClose={onClose} title="Фильтры" right="Сбросить" onRight={() => { haptic.selection(); setF(EMPTY_FILTERS); }}>
-      <Separator style={{ marginTop: 10 }} />
-      <View style={{ paddingHorizontal: 22, paddingTop: 18 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <T v="section" c="secondary">Оплата за смену, не меньше</T>
-          <T v="rowTitle" style={{ letterSpacing: 0 }}>{f.minPay} BYN</T>
+      <View style={{ paddingHorizontal: 20 }}>
+        <View style={{ marginTop: 14, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <Label>Оплата за смену</Label>
+          <T v="moneyInline" style={{ fontSize: 15 }}>{f.minPay > PAY_MIN ? `от ${f.minPay} BYN` : 'любая'}</T>
         </View>
         <Slider
-          min={PAY_MIN} max={PAY_MAX} step={5} value={f.minPay} thumb={22}
+          min={PAY_MIN} max={PAY_MAX} step={5} value={f.minPay} fill="from"
           onChange={(v) => setF((p) => ({ ...p, minPay: v }))}
           accessibilityLabel="Оплата за смену, не меньше"
-          formatValue={(v) => `${v} BYN`}
+          formatValue={(v) => `от ${v} BYN`}
         />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 }}>
-          <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>{PAY_MIN}</T>
-          <T v="label" c="secondary" style={{ fontSize: 11.5, fontWeight: '400' }}>{PAY_MAX}</T>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -2 }}>
+          <T v="caption" c="ink2" style={{ fontSize: 11.5 }}>{PAY_MIN}</T>
+          <T v="caption" c="ink2" style={{ fontSize: 11.5 }}>{PAY_MAX} BYN</T>
         </View>
-      </View>
 
-      <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 22 }}>Когда</T>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingTop: 11 }}>
-        {WHEN.map((w) => <Chip key={w.key} tone="sheet" label={w.label} selected={f.when.includes(w.key)} onPress={() => toggle('when', w.key)} />)}
-      </View>
+        <Label style={{ marginTop: 18 }}>Когда</Label>
+        <WhenSegments value={f.when[0]} onChange={(k) => setF((p) => ({ ...p, when: k ? [k] : [] }))} />
 
-      <T v="section" c="secondary" style={{ paddingHorizontal: 22, paddingTop: 22 }}>Что подходит</T>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingTop: 11 }}>
-        {SKILLS.map((s) => <Chip key={s.key} tone="sheet" label={s.label} selected={f.skills.includes(s.key)} onPress={() => toggle('skills', s.key)} />)}
-      </View>
-
-      <Separator inset style={{ marginTop: 20 }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16 }}>
-        <View style={{ flex: 1 }}>
-          <T v="value" style={{ fontSize: 16, lineHeight: 21 }}>Только срочные</T>
-          <T v="caption" c="secondary">Заказчик отметил, что человек нужен срочно</T>
+        <Label style={{ marginTop: 18 }}>Что подходит</Label>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 9 }}>
+          {SKILLS.map((s) => <Chip key={s.key} tone="soft" label={s.label} selected={f.skills.includes(s.key)} onPress={() => toggle(s.key)} />)}
         </View>
-        <Switch
-          value={f.urgentOnly}
-          onValueChange={(v) => { haptic.selection(); setF((p) => ({ ...p, urgentOnly: v })); }}
-          trackColor={{ true: c.accent, false: c.fillSecondary }}
-          ios_backgroundColor={c.fillSecondary}
-          accessibilityLabel="Только срочные"
-        />
-      </View>
 
-      <View style={{ paddingHorizontal: 16 }}>
+        <View style={{ marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <T v="body" style={{ fontSize: 16, lineHeight: 21, flex: 1 }}>Только срочные</T>
+          <Switch value={f.urgentOnly} onValueChange={(v) => { haptic.light(); setF((p) => ({ ...p, urgentOnly: v })); }} accessibilityLabel="Только срочные" />
+        </View>
+
         <Button
+          style={{ marginTop: 20 }}
           title={count ? `Показать ${count} ${plural(count, ['смену', 'смены', 'смен'])}` : 'Под эти условия смен нет'}
           disabled={!count}
-          onPress={() => { onApply(f); onClose(); }}
+          onPress={() => { haptic.selection(); onApply(f); onClose(); }}
         />
       </View>
     </Sheet>

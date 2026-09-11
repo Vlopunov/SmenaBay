@@ -921,13 +921,17 @@ const useStore = create(
     }));
   },
 
+  // Counts what the chat list shows as unread: people's messages, not
+  // system notes, and nothing from blocked users.
   getUnreadChatCount: () => {
     const userId = get().currentUser?.id;
     if (!userId) return 0;
+    const blocked = get().blockedUsers;
     return get().conversations
       .filter(c => c.workerId === userId || c.companyId === userId)
+      .filter(c => !blocked.includes(c.workerId === userId ? c.companyId : c.workerId))
       .reduce((total, c) => {
-        return total + c.messages.filter(m => m.senderId !== userId && !m.read).length;
+        return total + c.messages.filter(m => m.senderId !== userId && m.senderId !== 'system' && !m.isSystem && !m.read).length;
       }, 0);
   },
 

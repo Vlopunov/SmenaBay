@@ -1,6 +1,8 @@
-// Slider: 4 pt track on fillSecondary, accent fill, 28 pt white thumb.
-// Tracks the finger 1:1 on the UI thread; a selection haptic ticks once per
-// step so the value can be set without looking.
+// Slider: 5 pt track on surface.3, brand fill, 28 pt surface thumb with a
+// line border. Tracks the finger 1:1 on the UI thread; a selection haptic
+// ticks once per step so the value can be set without looking.
+// fill="from" paints thumb → max (a one-handle «от 60 BYN» filter);
+// `marker` puts the market reference on the track.
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedReaction } from 'react-native-reanimated';
@@ -10,8 +12,9 @@ import { useTheme } from './theme';
 import { haptic } from './haptics';
 
 
-export default function Slider({ min, max, step = 1, value, onChange, accessibilityLabel, formatValue = (v) => String(v), thumb: THUMB = 28 }) {
-  const { c } = useTheme();
+export default function Slider({ min, max, step = 1, value, onChange, accessibilityLabel, formatValue = (v) => String(v), thumb: THUMB = 28, fill: fillMode = 'to', marker, track }) {
+  const t = useTheme();
+  const { c } = t;
   const [w, setW] = useState(0);
   const x = useSharedValue(0);
   const start = useSharedValue(0);
@@ -51,7 +54,9 @@ export default function Slider({ min, max, step = 1, value, onChange, accessibil
     [w, min, max, step],
   );
 
-  const fill = useAnimatedStyle(() => ({ width: x.value + THUMB / 2 }));
+  const fill = useAnimatedStyle(() => (fillMode === 'from'
+    ? { left: x.value + THUMB / 2, right: 0 }
+    : { left: 0, width: x.value + THUMB / 2 }));
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
   return (
@@ -69,12 +74,15 @@ export default function Slider({ min, max, step = 1, value, onChange, accessibil
           onChange?.(next);
         }}
       >
-        <View style={{ height: 4, borderRadius: 2, backgroundColor: c.fillSecondary }} />
-        <Animated.View style={[{ position: 'absolute', left: 0, height: 4, borderRadius: 2, backgroundColor: c.accent }, fill]} />
+        <View style={{ height: 5, borderRadius: 3, backgroundColor: track || c.surface3 }} />
+        <Animated.View style={[{ position: 'absolute', height: 5, borderRadius: 3, backgroundColor: c.brand }, fill]} />
+        {marker && w ? (
+          <View pointerEvents="none" style={{ position: 'absolute', left: toX(marker.value, w) + THUMB / 2 - 1, top: 6, width: 2, height: 24, borderRadius: 1, backgroundColor: c.ink2, opacity: 0.55 }} />
+        ) : null}
         <Animated.View style={[{
-          position: 'absolute', left: 0, width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: '#FFFFFF',
-          shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 3,
-          borderWidth: 0.5, borderColor: 'rgba(0,0,0,0.04)',
+          position: 'absolute', left: 0, width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: c.surface,
+          borderWidth: 1, borderColor: c.line,
+          shadowColor: 'rgb(40,30,18)', shadowOpacity: t.dark ? 0.5 : 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 3,
         }, thumb]} />
       </View>
     </GestureDetector>

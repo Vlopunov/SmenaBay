@@ -62,13 +62,16 @@
             "image": "./assets/splash-dark.png",
             "backgroundColor": "#243459"
           },
+          "ios": {
+            "enableFullScreenImage_legacy": true
+          },
           "android": {
             "image": "./assets/splash-icon.png",
             "imageWidth": 120,
             "resizeMode": "contain",
             "backgroundColor": "#FBF8F4",
             "dark": {
-              "image": "./assets/splash-icon.png",
+              "image": "./assets/splash-icon-dark.png",
               "backgroundColor": "#11161C"
             }
           }

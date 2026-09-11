@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#E9E6E0;color:#1B1917;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0F5673;text-decoration:none}
+a:hover{color:#0B4459}
+.card{background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:16px}
+.lab{font:600 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45)}
+.m{font:400 11.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55)}
+.id{font:700 11px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);border-radius:5px;color:#1a1a1a}
+.row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.grid{width:58px;height:58px;border-radius:13px;position:relative;overflow:hidden;flex:none}
+.chk{background:repeating-conic-gradient(#EFEBE4 0% 25%,#DCD6CC 0% 50%) 0 0/14px 14px}
+</style></helmet>
+
+<div style="padding:36px 40px 56px;max-width:1500px">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+  <span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:4px 8px;background:#1B1917;color:#fff;border-radius:5px">ИКОНКА</span>
+  <h1 style="margin:0;font:800 29px/1.1 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em">Шесть направлений</h1>
+</div>
+<p style="margin:0 0 8px;max-width:900px;font:400 14.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Солнце над горизонтом снято. Здесь шесть разных идей — три держатся системы «Небо смены», три от неё уходят. Это эскизы формы, а не финальная графика: задача — выбрать идею, а рисовать её будет иллюстратор по ТЗ.</p>
+<p style="margin:0 0 16px;max-width:900px;font:400 13px/1.55 -apple-system,sans-serif;color:#6E6559">Каждое направление показано пятью плитками в одном и том же порядке — сразу видно, выживает ли идея во всех четырёх режимах iOS 26 и на реальном мелком размере.</p>
+
+<div class="card" style="padding:14px 18px;margin-bottom:26px;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap;max-width:900px">
+  <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#DCD6CC"></div><div class="lab" style="margin-top:6px">132 pt<br>СВЕТЛАЯ</div></div>
+  <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#2B3541"></div><div class="lab" style="margin-top:6px">132 pt<br>ТЁМНАЯ</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px;background:#DCD6CC"></div><div class="lab" style="margin-top:6px">58 pt<br>НАСТРОЙКИ</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px;background:#2B2B2B"></div><div class="lab" style="margin-top:6px">58 pt<br>TINTED</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px" class="chk"></div><div class="lab" style="margin-top:6px">58 pt<br>CLEAR</div></div>
+  <div style="flex:1;min-width:230px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C;padding-bottom:4px">Порядок плиток одинаковый во всех шести карточках. Tinted — монохром, который iOS красит сама; clear — стекло на прозрачной подложке, шахматка показывает прозрачность. Скажи букву, и я перепишу ТЗ под неё.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:22px;align-items:start">
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">A</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Место</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Главный объект продукта — не смена, а место в смене.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:#0F5673;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:44px;width:34px;height:44px;border-radius:9px;background:#FFD9B8"></div>
+        <div style="position:absolute;left:72px;top:44px;width:34px;height:44px;border-radius:9px;border:5px solid rgba(255,217,184,.42)"></div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:#11161C;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:44px;width:34px;height:44px;border-radius:9px;background:#6FB4D8"></div>
+        <div style="position:absolute;left:72px;top:44px;width:34px;height:44px;border-radius:9px;border:5px solid rgba(111,180,216,.32)"></div>
+      </div>
+      <div class="grid" style="background:#0F5673"><div style="position:absolute;left:11px;top:19px;width:14px;height:19px;border-radius:4px;background:#FFD9B8"></div><div style="position:absolute;left:31px;top:19px;width:14px;height:19px;border-radius:4px;border:2.5px solid rgba(255,217,184,.42)"></div></div>
+      <div class="grid" style="background:#2B2B2B;border-radius:13px"><div style="position:absolute;left:11px;top:19px;width:14px;height:19px;border-radius:4px;background:#DADADA"></div><div style="position:absolute;left:31px;top:19px;width:14px;height:19px;border-radius:4px;border:2.5px solid #8F8F8F"></div></div>
+      <div class="grid chk"><div style="position:absolute;left:11px;top:19px;width:14px;height:19px;border-radius:4px;background:rgba(255,255,255,.92)"></div><div style="position:absolute;left:31px;top:19px;width:14px;height:19px;border-radius:4px;border:2.5px solid rgba(255,255,255,.62)"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Два места: одно занято, одно свободно — ровно то, на что человек смотрит в ленте и что заказчик закрывает. Знак ничего не украшает и не изображает: он показывает состояние. Внутри приложения точки мест уже работают на всех экранах, так что иконка оказывается корнем системы, а не картинкой рядом с ней.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> на 40 pt может читаться как индикатор заряда. Лечится пропорцией — места делаем заметно выше, чем шире, и не ставим в ряд больше двух.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">B</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Сутки</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Четыре неба системы, свёрнутые в круг. Не циферблат — шкала.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:#FBF8F4;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:26px;width:80px;height:80px;border-radius:50%;background:conic-gradient(from 180deg,#FFD9B8 0deg 90deg,#87C4EA 90deg 180deg,#FFC68C 180deg 270deg,#243459 270deg 360deg)"></div>
+        <div style="position:absolute;left:47px;top:47px;width:38px;height:38px;border-radius:50%;background:#FBF8F4"></div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:#11161C;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:26px;width:80px;height:80px;border-radius:50%;background:conic-gradient(from 180deg,#8C6A4E 0deg 90deg,#3E7EA8 90deg 180deg,#A86A52 180deg 270deg,#2A3A63 270deg 360deg)"></div>
+        <div style="position:absolute;left:47px;top:47px;width:38px;height:38px;border-radius:50%;background:#11161C"></div>
+      </div>
+      <div class="grid" style="background:#FBF8F4"><div style="position:absolute;left:11px;top:11px;width:34px;height:34px;border-radius:50%;background:conic-gradient(from 180deg,#FFD9B8 0deg 90deg,#87C4EA 90deg 180deg,#FFC68C 180deg 270deg,#243459 270deg 360deg)"></div><div style="position:absolute;left:20px;top:20px;width:16px;height:16px;border-radius:50%;background:#FBF8F4"></div></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:11px;top:11px;width:34px;height:34px;border-radius:50%;background:conic-gradient(from 180deg,#DADADA 0deg 90deg,#9E9E9E 90deg 180deg,#C4C4C4 180deg 270deg,#6E6E6E 270deg 360deg)"></div><div style="position:absolute;left:20px;top:20px;width:16px;height:16px;border-radius:50%;background:#2B2B2B"></div></div>
+      <div class="grid chk"><div style="position:absolute;left:11px;top:11px;width:34px;height:34px;border-radius:50%;border:9px solid rgba(255,255,255,.88);box-sizing:border-box"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Кольцо из четырёх секторов — утро, день, вечер, ночь. Это буквально палитра приложения, сложенная в знак: тот, кто пользовался приложением, узнаёт свои небеса, а тот, кто видит впервые, читает «сутки, разделённые на смены».</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> в монохроме четыре сектора превращаются в серую мишень. Если берём это направление, в tinted-версии оставляем два сектора вместо четырёх.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">C</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Интервал</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Смена — это отрезок времени. Знак — сам отрезок, с началом и концом.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:linear-gradient(160deg,#C6E4F7,#87C4EA);position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:40px;width:12px;height:52px;border-radius:6px;background:#0B3550"></div>
+        <div style="position:absolute;left:94px;top:40px;width:12px;height:52px;border-radius:6px;background:#0B3550"></div>
+        <div style="position:absolute;left:38px;top:60px;width:56px;height:12px;background:#0B3550"></div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:linear-gradient(160deg,#2E6089,#17415F);position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:40px;width:12px;height:52px;border-radius:6px;background:#DCEEF9"></div>
+        <div style="position:absolute;left:94px;top:40px;width:12px;height:52px;border-radius:6px;background:#DCEEF9"></div>
+        <div style="position:absolute;left:38px;top:60px;width:56px;height:12px;background:#DCEEF9"></div>
+      </div>
+      <div class="grid" style="background:linear-gradient(160deg,#C6E4F7,#87C4EA)"><div style="position:absolute;left:11px;top:17px;width:6px;height:22px;border-radius:3px;background:#0B3550"></div><div style="position:absolute;left:39px;top:17px;width:6px;height:22px;border-radius:3px;background:#0B3550"></div><div style="position:absolute;left:17px;top:25px;width:22px;height:6px;background:#0B3550"></div></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:11px;top:17px;width:6px;height:22px;border-radius:3px;background:#DADADA"></div><div style="position:absolute;left:39px;top:17px;width:6px;height:22px;border-radius:3px;background:#DADADA"></div><div style="position:absolute;left:17px;top:25px;width:22px;height:6px;background:#DADADA"></div></div>
+      <div class="grid chk"><div style="position:absolute;left:11px;top:17px;width:6px;height:22px;border-radius:3px;background:rgba(255,255,255,.92)"></div><div style="position:absolute;left:39px;top:17px;width:6px;height:22px;border-radius:3px;background:rgba(255,255,255,.92)"></div><div style="position:absolute;left:17px;top:25px;width:22px;height:6px;background:rgba(255,255,255,.92)"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Две засечки и перекладина между ними: «с 10 до 18». Это знак из языка расписаний и разметки, а не из языка иллюстраций, поэтому он взрослый и не сладкий. Небо остаётся фоном и продолжает кодировать час — но идея держится на форме, а не на градиенте.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> похоже на знак «I—I» из чертежей и может читаться как размерная линия. Проверяется тестом на 29 pt рядом с иконками банков.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">D</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Талон</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Пропуск на смену как предмет. Понятная штука из жизни, без ретро-стилизации.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:#F0EAE1;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:24px;top:34px;width:84px;height:64px;border-radius:14px;background:#0F5673"></div>
+        <div style="position:absolute;left:58px;top:24px;width:16px;height:16px;border-radius:50%;background:#F0EAE1"></div>
+        <div style="position:absolute;left:58px;top:92px;width:16px;height:16px;border-radius:50%;background:#F0EAE1"></div>
+        <div style="position:absolute;left:36px;top:58px;width:26px;height:8px;border-radius:4px;background:#FFD9B8"></div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:#1A2129;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:24px;top:34px;width:84px;height:64px;border-radius:14px;background:#6FB4D8"></div>
+        <div style="position:absolute;left:58px;top:24px;width:16px;height:16px;border-radius:50%;background:#1A2129"></div>
+        <div style="position:absolute;left:58px;top:92px;width:16px;height:16px;border-radius:50%;background:#1A2129"></div>
+        <div style="position:absolute;left:36px;top:58px;width:26px;height:8px;border-radius:4px;background:#0B2A3D"></div>
+      </div>
+      <div class="grid" style="background:#F0EAE1"><div style="position:absolute;left:10px;top:14px;width:36px;height:27px;border-radius:6px;background:#0F5673"></div><div style="position:absolute;left:24px;top:10px;width:8px;height:8px;border-radius:50%;background:#F0EAE1"></div><div style="position:absolute;left:24px;top:38px;width:8px;height:8px;border-radius:50%;background:#F0EAE1"></div></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:10px;top:14px;width:36px;height:27px;border-radius:6px;background:#DADADA"></div><div style="position:absolute;left:24px;top:10px;width:8px;height:8px;border-radius:50%;background:#2B2B2B"></div><div style="position:absolute;left:24px;top:38px;width:8px;height:8px;border-radius:50%;background:#2B2B2B"></div></div>
+      <div class="grid chk"><div style="position:absolute;left:10px;top:14px;width:36px;height:27px;border-radius:6px;border:4px solid rgba(255,255,255,.9);box-sizing:border-box"></div><div style="position:absolute;left:24px;top:11px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.9)"></div><div style="position:absolute;left:24px;top:38px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.9)"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Прямоугольник с двумя выемками по бокам — форма билета, узнаваемая мгновенно и без единой текстуры. Это самый радостный момент продукта: смена подтверждена, вот твой пропуск. Знак обещает результат, а не процесс поиска.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#FDEFE0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#7A4308"><b>Оговорка:</b> в ТЗ на приложение перфорация и «бумага» запрещены как декор внутри экранов. В иконке это силуэт, а не текстура, — но если ты считаешь, что это противоречие, направление снимаем.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">E</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Сигнал</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#D14705;margin-bottom:12px">Язык настоящей сменной работы: разметка, жилет, сигнальная полоса.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:#1F2226;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:-16px;top:0;width:46px;height:100%;background:#FF5C00;transform:skewX(-20deg)"></div>
+        <div style="position:absolute;left:44px;top:0;width:16px;height:100%;background:#FF5C00;opacity:.45;transform:skewX(-20deg)"></div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:#0E1012;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:-16px;top:0;width:46px;height:100%;background:#FF7A2E;transform:skewX(-20deg)"></div>
+        <div style="position:absolute;left:44px;top:0;width:16px;height:100%;background:#FF7A2E;opacity:.4;transform:skewX(-20deg)"></div>
+      </div>
+      <div class="grid" style="background:#1F2226"><div style="position:absolute;left:-7px;top:0;width:20px;height:100%;background:#FF5C00;transform:skewX(-20deg)"></div><div style="position:absolute;left:19px;top:0;width:7px;height:100%;background:#FF5C00;opacity:.45;transform:skewX(-20deg)"></div></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:-7px;top:0;width:20px;height:100%;background:#DADADA;transform:skewX(-20deg)"></div><div style="position:absolute;left:19px;top:0;width:7px;height:100%;background:#8F8F8F;transform:skewX(-20deg)"></div></div>
+      <div class="grid chk"><div style="position:absolute;left:-7px;top:0;width:20px;height:100%;background:rgba(255,255,255,.92);transform:skewX(-20deg)"></div><div style="position:absolute;left:19px;top:0;width:7px;height:100%;background:rgba(255,255,255,.5);transform:skewX(-20deg)"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Самое узнаваемое направление из шести: на домашнем экране такую иконку невозможно перепутать, она работает на 29 pt и в монохроме. Это язык гордости за работу, а не мягкости. Взято из отклонённой территории B, но как знак — не как система: внутри приложения остаётся «Небо смены».</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#FDEFE0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#7A4308"><b>Риск:</b> иконка обещает одно, приложение внутри — другое. Либо принимаем этот разрыв осознанно (так делают многие), либо тянем сигнальный оранжевый в акценты интерфейса.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">F</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Сегодня</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Один день из недели, закрашенный целиком. «Этот день занят — я работаю».</div>
+    <div class="row" style="margin-bottom:14px">
+      <div style="width:132px;height:132px;border-radius:30px;background:#FBF8F4;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:38px;display:flex;gap:7px">
+          <div style="width:22px;height:22px;border-radius:7px;background:#E2DBCF"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#E2DBCF"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#E2DBCF"></div>
+        </div>
+        <div style="position:absolute;left:26px;top:67px;display:flex;gap:7px;align-items:flex-start">
+          <div style="width:22px;height:22px;border-radius:7px;background:#E2DBCF"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#0F5673;box-shadow:0 4px 10px -2px rgba(15,86,115,.6)"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#E2DBCF"></div>
+        </div>
+      </div>
+      <div style="width:132px;height:132px;border-radius:30px;background:#11161C;position:relative;overflow:hidden;box-shadow:0 10px 22px -8px rgba(40,30,18,.4);flex:none">
+        <div style="position:absolute;left:26px;top:38px;display:flex;gap:7px">
+          <div style="width:22px;height:22px;border-radius:7px;background:#242E38"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#242E38"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#242E38"></div>
+        </div>
+        <div style="position:absolute;left:26px;top:67px;display:flex;gap:7px">
+          <div style="width:22px;height:22px;border-radius:7px;background:#242E38"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#6FB4D8"></div>
+          <div style="width:22px;height:22px;border-radius:7px;background:#242E38"></div>
+        </div>
+      </div>
+      <div class="grid" style="background:#FBF8F4"><div style="position:absolute;left:11px;top:16px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:#E2DBCF"></div><div style="width:9px;height:9px;border-radius:3px;background:#E2DBCF"></div><div style="width:9px;height:9px;border-radius:3px;background:#E2DBCF"></div></div><div style="position:absolute;left:11px;top:28px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:#E2DBCF"></div><div style="width:9px;height:9px;border-radius:3px;background:#0F5673"></div><div style="width:9px;height:9px;border-radius:3px;background:#E2DBCF"></div></div></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:11px;top:16px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:#5C5C5C"></div><div style="width:9px;height:9px;border-radius:3px;background:#5C5C5C"></div><div style="width:9px;height:9px;border-radius:3px;background:#5C5C5C"></div></div><div style="position:absolute;left:11px;top:28px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:#5C5C5C"></div><div style="width:9px;height:9px;border-radius:3px;background:#DADADA"></div><div style="width:9px;height:9px;border-radius:3px;background:#5C5C5C"></div></div></div>
+      <div class="grid chk"><div style="position:absolute;left:11px;top:16px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.42)"></div><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.42)"></div><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.42)"></div></div><div style="position:absolute;left:11px;top:28px;display:flex;gap:3px"><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.42)"></div><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.95)"></div><div style="width:9px;height:9px;border-radius:3px;background:rgba(255,255,255,.42)"></div></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Шесть клеток — дни, одна закрашена цветом бренда. Ни календаря с цифрами, ни месяца: только идея «я взял этот день». Хорошо ложится на Live Activity и уведомления, где нужен тот же знак в одну краску.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> сеточных иконок в сторе много, можно потеряться среди «календарей» и «задачников». Спасает только очень крупная закрашенная клетка и заметно меньшая сетка вокруг.</div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:26px;padding:20px 24px;max-width:1100px">
+  <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:12px">ЕСЛИ ХОЧЕШЬ МОЮ ОЦЕНКУ</div>
+  <div style="display:flex;flex-direction:column;gap:10px;font:400 13.5px/1.55 -apple-system,sans-serif;color:#332E28">
+    <div><b>Самое сильное как знак — <span style="color:#D14705">E «Сигнал»</span>.</b> Оно единственное проходит все четыре режима без компромиссов, узнаётся на 29 pt и не похоже ни на что в сторе. Плата — разрыв с интерфейсом, который придётся признать вслух.</div>
+    <div><b>Самое честное по смыслу — <span style="color:#0F5673">A «Место»</span>.</b> Продукт про свободное место в смене, и знак говорит именно это. Плата — нужна очень точная пропорция, иначе выйдет индикатор заряда.</div>
+    <div><b>Самое связанное с системой — <span style="color:#0F5673">B «Сутки»</span>.</b> Это палитра приложения, сложенная в круг. Плата — монохром.</div>
+    <div style="color:#6E6559"><b>Что бы я не брал:</b> D «Талон» спорит с прямым запретом в ТЗ, а F «Сегодня» рискует утонуть среди календарей.</div>
+  </div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:1100}}"></script>
+</body>
+</html>

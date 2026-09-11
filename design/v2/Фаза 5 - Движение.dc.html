@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#E9E6E0;color:#1B1917;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0F5673;text-decoration:none}
+a:hover{color:#0B4459}
+#m5[data-theme="light"]{--bg:#FBF8F4;--surf:#FFFFFF;--surf2:#F0EAE1;--surf3:#E7DFD3;--line:#EAE3D8;--lineS:#D6CCBC;--ink:#1B1917;--ink2:#6E6559;--ink3:#5C544A;--inkD:#A79C8E;--brand:#0F5673;--brandP:#0B4459;--bt:#E4F0F5;--on:#FFFFFF;--urg:#E07A1F;--urgi:#8A4408;--urgt:#FDEFE0;--suc:#1C7A5A;--suct:#E8F2E9;--err:#C0392B;--errt:#FAEAE7;--star:#E0A32B;--skyM:linear-gradient(100deg,#FFD9B8,#CFE6F4);--skyD:linear-gradient(100deg,#C6E4F7,#87C4EA);--skyE:linear-gradient(100deg,#FFC68C,#F0A2AC);--skyX:linear-gradient(100deg,#F3E4D6,#E8DCD8);--smi:#3D2410;--smi2:#6A4425;--sdi:#0B3550;--sdi2:#16405A;--sxi:#6A5B4E;--glass:rgba(251,248,244,.88);--e1:0 8px 20px -10px rgba(40,30,18,.22),0 1px 2px rgba(40,30,18,.06);--e2:0 12px 28px -12px rgba(40,30,18,.3);--bsh:0 8px 18px -8px rgba(15,86,115,.6);--dev:0 22px 44px -16px rgba(40,30,18,.34);--p0:#D7E7F3;--p0i:#0E4361;--p1:#F3E0CE;--p1i:#5C3A18;--p2:#E6E8D6;--p2i:#43491F}
+#m5[data-theme="dark"]{--bg:#11161C;--surf:#1A2129;--surf2:#222B35;--surf3:#2B3541;--line:#232C36;--lineS:#38434F;--ink:#F7F3EC;--ink2:#93A0AD;--ink3:#B6C1CB;--inkD:#5E6A75;--brand:#6FB4D8;--brandP:#8AC5E4;--bt:#17303D;--on:#08131A;--urg:#F0A65A;--urgi:#F5C68F;--urgt:#33230F;--suc:#4FBE95;--suct:#0E2A22;--err:#FF7A68;--errt:#33140F;--star:#E0A32B;--skyM:linear-gradient(100deg,#5A4433,#264257);--skyD:linear-gradient(100deg,#2E6089,#17415F);--skyE:linear-gradient(100deg,#6A4433,#5A2F45);--skyX:linear-gradient(100deg,#2A3138,#22282E);--smi:#F2E3D3;--smi2:#CDB6A0;--sdi:#DCEEF9;--sdi2:#AFC9DA;--sxi:#98A3AD;--glass:rgba(17,22,28,.88);--e1:0 10px 24px -12px rgba(0,0,0,.6);--e2:0 14px 30px -12px rgba(0,0,0,.7);--bsh:none;--dev:0 22px 44px -16px rgba(6,10,14,.6);--p0:#1D3441;--p0i:#BFE0F2;--p1:#3A2E22;--p1i:#EBD6BE;--p2:#2F3326;--p2i:#D9DDBF}
+.h{font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);letter-spacing:.02em}
+.m{font:400 11.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55)}
+.card{background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px}
+.lab{font:600 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45)}
+.sec{margin:36px 0 14px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sec h2{margin:0;font:800 22px/1.2 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em;color:#1B1917}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:11px;background:#1B1917;color:#fff;font:700 13px/1 -apple-system,sans-serif;cursor:pointer;user-select:none}
+.btn2{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.14);color:#332E28;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;user-select:none}
+@keyframes sh-a{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(2px)}}
+@keyframes sh-b{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(2px)}}
+@keyframes sheen-a{0%{transform:translateX(-140%)}100%{transform:translateX(260%)}}
+@keyframes sheen-b{0%{transform:translateX(-140%)}100%{transform:translateX(260%)}}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.4);opacity:0}}
+#m5[data-motion="reduced"] *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:200ms!important;transition-property:opacity!important}
+</style></helmet>
+
+<div style="padding:36px 40px 56px;max-width:1600px">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+  <span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:4px 8px;background:#1B1917;color:#fff;border-radius:5px">ФАЗА 5</span>
+  <h1 style="margin:0;font:800 29px/1.1 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em">Движение</h1>
+  <span style="font:400 13px/1.4 -apple-system,sans-serif;color:rgba(0,0,0,.55)">СменаБел · Небо смены · 11 сентября 2026</span>
+</div>
+<p style="margin:0 0 20px;max-width:980px;font:400 14.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Пять моментов §9.1 — играющие прототипы, а не описания: нажми «Играть» и смотри. Ниже переходы между экранами и таблица «анимация → токен → параметры Reanimated → haptic → вариант для Reduce Motion» для К4. Анимируются только transform и opacity, поэтому всё держит 120 Гц на UI-потоке.</p>
+
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+  <span class="h">ТЕМА</span>
+  <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+    <div onClick="{{ onLight }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ lBg }};color:{{ lInk }};box-shadow:{{ lSh }}">Светлая</div>
+    <div onClick="{{ onDark }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ dBg }};color:{{ dInk }};box-shadow:{{ dSh }}">Тёмная</div>
+  </div>
+  <span class="h" style="margin-left:14px">ДВИЖЕНИЕ</span>
+  <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+    <div onClick="{{ onFull }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ fBg }};color:{{ fInk }};box-shadow:{{ fSh }}">Обычное</div>
+    <div onClick="{{ onRed }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ rBg }};color:{{ rInk }};box-shadow:{{ rSh }}">Reduce Motion</div>
+  </div>
+  <span class="m" style="margin-left:6px">{{ motionNote }}</span>
+</div>
+
+<div id="m5" data-theme="{{ theme }}" data-motion="{{ motion }}">
+
+<div class="sec"><h2>Пять моментов</h2><span class="m">§9.1 · каждый играется и повторяется</span></div>
+
+<div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+
+  <div style="width:393px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+      <span style="font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#1B1917">1 · Отклик в одно касание</span>
+    </div>
+    <div style="width:393px;height:376px;border-radius:30px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="padding:22px 20px 0">
+        <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="height:32px;background:var(--skyD);display:flex;align-items:center;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span></div>
+          <div style="padding:10px 12px 11px;display:flex;align-items:flex-end;justify-content:space-between">
+            <div><div style="font:700 15px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div><div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · ★ 4.6</div></div>
+            <div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:13px;color:var(--ink2)">&nbsp;BYN</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:76px;padding:0 20px 14px">
+        <div style="height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;gap:9px;background:{{ a1bg }};box-shadow:{{ a1sh }};transform:{{ a1scale }};transition:transform .12s cubic-bezier(.23,1,.32,1),background-color .25s cubic-bezier(.23,1,.32,1);animation:{{ a1shake }}">
+          <span style="display:flex;color:{{ a1ink }};transform:{{ a1icon }};opacity:{{ a1iconO }};transition:transform .25s cubic-bezier(.23,1,.32,1),opacity .18s linear"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>
+          <span style="font:700 17.5px/1 -apple-system,sans-serif;color:{{ a1ink }};transition:color .25s linear">{{ a1label }}</span>
+          <span style="display:{{ a1sumD }};width:5px;height:5px;border-radius:3px;background:{{ a1ink }};opacity:.5"></span>
+          <span style="display:{{ a1sumD }};font:700 17.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ a1ink }};font-variant-numeric:tabular-nums">65 BYN</span>
+        </div>
+        <div style="margin-top:8px;text-align:center;font:400 12.5px/1.4 -apple-system,sans-serif;color:var(--ink2);opacity:{{ a1noteO }};transition:opacity .25s linear;height:17px">{{ a1note }}</div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:76px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;align-items:flex-start;padding-top:9px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--brand)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:600 10px/1 -apple-system,sans-serif">Смены</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2);position:relative"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/><path d="m9 14.5 2 2 4-4"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Мои смены</span><span style="position:absolute;top:-2px;left:56%;min-width:17px;height:17px;border-radius:9px;background:var(--err);color:#fff;font:700 10.5px/17px -apple-system,sans-serif;text-align:center;transform:{{ a1badge }};transition:transform .3s cubic-bezier(.23,1,.32,1) .12s">1</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Чат</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ play1 }}" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4.5 19 12 7 19.5z"/></svg>Играть · успех</div>
+      <div onClick="{{ play1err }}" class="btn2">Мест нет · отказ</div>
+    </div>
+    <div style="margin-top:11px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#332E28">Нажатие — <b>scale 0.97 за 120 мс</b>. Отпускание — кнопка морфится в статус, success-haptic ровно в кадре начала морфа, бейдж вкладки всплывает через 120 мс после него. Отказ: <b>shake 450 мс ×2</b>, error-haptic, «Места только что закончились».</div>
+  </div>
+
+  <div style="width:393px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+      <span style="font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#1B1917">2 · Смена подтверждена → пропуск</span>
+    </div>
+    <div style="width:393px;height:376px;border-radius:30px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="padding:22px 20px 0">
+        <div style="border-radius:22px;overflow:hidden;box-shadow:var(--e2)">
+          <div style="background:{{ a2sky }};padding:0 15px;height:{{ a2h }};transition:height .42s cubic-bezier(.23,1,.32,1),background .42s linear;position:relative;overflow:hidden">
+            <div style="position:absolute;left:-30%;top:0;width:60%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.42),rgba(255,255,255,0));animation:{{ a2sheen }}"></div>
+            <div style="padding-top:13px;position:relative">
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px 4px 7px;border-radius:8px;background:var(--urgt);transform:{{ a2pill }};transition:transform .3s cubic-bezier(.23,1,.32,1) .18s">
+                <span style="position:relative;display:flex;width:8px;height:8px;align-items:center;justify-content:center"><span style="position:absolute;width:8px;height:8px;border-radius:5px;background:var(--suc);animation:{{ a2breathe }}"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--suc)"></span></span>
+                <span style="font:700 11.5px/1 -apple-system,sans-serif;color:{{ a2pillInk }}">{{ a2pillText }}</span>
+              </span>
+              <div style="margin-top:10px;opacity:{{ a2cdO }};transform:{{ a2cd }};transition:opacity .3s linear .2s,transform .42s cubic-bezier(.23,1,.32,1) .2s">
+                <div style="font:600 12.5px/1 -apple-system,sans-serif;color:{{ a2ink2 }}">Начнётся через</div>
+                <div style="margin-top:3px;font:800 32px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ a2ink }};font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ a2count }}</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--surf);padding:11px 15px 12px">
+            <div style="font:700 15.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ Wildberries</div>
+            <div style="margin-top:3px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Завтра · 09:00–21:00 · 95 BYN</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;opacity:{{ a2extraO }};transform:{{ a2extra }};transition:opacity .3s linear .3s,transform .42s cubic-bezier(.23,1,.32,1) .3s">
+          <div style="background:var(--surf);border-radius:16px;padding:11px 13px;box-shadow:var(--e1);display:flex;align-items:center;gap:11px">
+            <div style="width:36px;height:36px;border-radius:12px;background:var(--bt);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s6.5-6 6.5-10.5a6.5 6.5 0 0 0-13 0C5.5 14 12 20 12 20z"/><circle cx="12" cy="9.5" r="2.4"/></svg></div>
+            <div style="flex:1;min-width:0"><div style="font:600 11.5px/1 -apple-system,sans-serif;color:var(--ink2)">Куда идти</div><div style="margin-top:3px;font:700 14.5px/1.25 -apple-system,sans-serif;color:var(--ink)">ул. Притыцкого, 83</div></div>
+            <div style="padding:9px 12px;border-radius:11px;background:var(--brand);font:700 13px/1 -apple-system,sans-serif;color:var(--on);flex:none">Маршрут</div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 18px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);opacity:{{ a2btnO }};transform:{{ a2btn }};transition:opacity .25s linear,transform .3s cubic-bezier(.23,1,.32,1)">
+        <div style="height:50px;border-radius:16px;background:var(--brand);box-shadow:var(--bsh);display:flex;align-items:center;justify-content:center"><span style="font:700 16.5px/1 -apple-system,sans-serif;color:var(--on)">Заказчик подтверждает…</span></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ play2 }}" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4.5 19 12 7 19.5z"/></svg>Играть</div>
+    </div>
+    <div style="margin-top:11px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#332E28">Небо смены вырастает с 62 до 126 pt, отсчёт выезжает снизу, метка меняется с «Ждёт ответа» на «Подтверждена» и начинает дышать. Один блик по небу — 800 мс, один раз. Метафора в структуре и движении: ни бумаги, ни перфорации.</div>
+  </div>
+
+  <div style="width:393px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+      <span style="font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#1B1917">3 · Лента ⇄ карта</span>
+    </div>
+    <div style="width:393px;height:376px;border-radius:30px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="position:absolute;inset:0;background:#E7EDE4;transform:{{ a3map }};transition:transform .5s cubic-bezier(.23,1,.32,1)">
+        <div style="position:absolute;left:-60px;top:96px;width:560px;height:14px;background:#FAF8F3;transform:rotate(-6deg)"></div>
+        <div style="position:absolute;left:-60px;top:250px;width:560px;height:8px;background:#FAF8F3;transform:rotate(-6deg)"></div>
+        <div style="position:absolute;left:130px;top:-60px;width:12px;height:560px;background:#FAF8F3;transform:rotate(7deg)"></div>
+        <div style="position:absolute;left:300px;top:-60px;width:7px;height:560px;background:#FAF8F3;transform:rotate(7deg)"></div>
+        <div style="position:absolute;left:44px;top:140px;width:66px;height:40px;border-radius:4px;background:#DDE4D8"></div>
+        <div style="position:absolute;left:210px;top:200px;width:96px;height:52px;border-radius:4px;background:#DDE4D8"></div>
+        <div onClick="{{ pin1 }}" style="position:absolute;left:152px;top:118px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:{{ a3p1 }};transition:transform .25s cubic-bezier(.23,1,.32,1);z-index:5">
+          <div style="padding:6px 11px;border-radius:12px;background:{{ a3p1bg }};box-shadow:0 5px 12px -3px rgba(11,53,80,.45);font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ a3p1ink }};font-variant-numeric:tabular-nums">65 BYN</div>
+          <div style="width:10px;height:10px;border-radius:2px;background:{{ a3p1bg }};transform:rotate(45deg);margin-top:-5px"></div>
+        </div>
+        <div onClick="{{ pin2 }}" style="position:absolute;left:58px;top:236px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:{{ a3p2 }};transition:transform .25s cubic-bezier(.23,1,.32,1);z-index:4">
+          <div style="padding:6px 11px;border-radius:12px;background:{{ a3p2bg }};box-shadow:0 5px 12px -3px rgba(11,53,80,.4);font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ a3p2ink }};font-variant-numeric:tabular-nums">75 BYN</div>
+          <div style="width:10px;height:10px;border-radius:2px;background:{{ a3p2bg }};transform:rotate(45deg);margin-top:-5px"></div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;background:var(--bg);opacity:{{ a3listO }};transition:opacity .2s linear;pointer-events:{{ a3listPE }};padding:22px 20px 0">
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+            <div style="height:32px;background:var(--skyD);display:flex;align-items:center;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span></div>
+            <div style="padding:10px 12px 11px;display:flex;align-items:flex-end;justify-content:space-between"><div><div style="font:700 15px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div><div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск</div></div><div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:13px;color:var(--ink2)">&nbsp;BYN</span></div></div>
+          </div>
+          <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+            <div style="height:32px;background:var(--skyM);display:flex;align-items:center;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">08:00–16:00 · 8 ч</span></div>
+            <div style="padding:10px 12px 11px;display:flex;align-items:flex-end;justify-content:space-between"><div><div style="font:700 15px/1.2 -apple-system,sans-serif;color:var(--ink)">Грузчик</div><div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Склад-Логистик</div></div><div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">75<span style="font-size:13px;color:var(--ink2)">&nbsp;BYN</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;top:14px;padding:0 20px;z-index:20;display:flex;justify-content:flex-end">
+        <div style="display:flex;padding:3px;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:12px;gap:2px;box-shadow:0 4px 12px -6px rgba(40,30,18,.3)">
+          <div onClick="{{ toList }}" style="padding:6px 11px;border-radius:9px;cursor:pointer;background:{{ a3lBg }};box-shadow:{{ a3lSh }};color:{{ a3lInk }};display:flex;align-items:center"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+          <div onClick="{{ toMap }}" style="padding:6px 11px;border-radius:9px;cursor:pointer;background:{{ a3mBg }};box-shadow:{{ a3mSh }};color:{{ a3mInk }};display:flex;align-items:center"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg></div>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:0 14px 14px;z-index:22;opacity:{{ a3cardO }};transform:{{ a3card }};transition:opacity .25s linear,transform .42s cubic-bezier(.23,1,.32,1);pointer-events:{{ a3listPE2 }}">
+        <div style="background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:0 14px 30px -12px rgba(40,30,18,.35)">
+          <div style="height:32px;background:{{ a3sky }};display:flex;align-items:center;padding:0 13px;transition:background .25s linear"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ a3skyInk }};font-variant-numeric:tabular-nums">{{ a3when }}</span></div>
+          <div style="padding:10px 13px 12px;display:flex;align-items:center;gap:11px">
+            <div style="flex:1;min-width:0"><div style="font:700 16px/1.25 -apple-system,sans-serif;color:var(--ink)">{{ a3title }}</div><div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">{{ a3co }}</div><div style="margin-top:6px;font:800 23px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ a3money }}<span style="font-size:14px;color:var(--ink2)">&nbsp;BYN</span></div></div>
+            <div style="width:42px;height:42px;border-radius:21px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:var(--on);flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ toMap }}" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4.5 19 12 7 19.5z"/></svg>Перейти на карту</div>
+      <div onClick="{{ pin2 }}" class="btn2">Выбрать булавку 75</div>
+      <div onClick="{{ toList }}" class="btn2">Вернуться в ленту</div>
+    </div>
+    <div style="margin-top:11px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#332E28">Одно пространство: лента уходит фейдом 200 мс, карта под ней уже стоит. Выбор булавки — <b>scale 1.12, selection-haptic</b> — и карта доезжает так, чтобы булавка встала над карточкой. Листание карточек двигает карту тем же движением в обратную сторону.</div>
+  </div>
+
+  <div style="width:393px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+      <span style="font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#1B1917">4 · Разбор откликов</span>
+    </div>
+    <div style="width:393px;height:376px;border-radius:30px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev);padding:22px 20px 0">
+      <div style="border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+        <div style="background:var(--skyD);padding:12px 14px 13px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div><div style="font:600 11.5px/1 -apple-system,sans-serif;color:var(--sdi2)">Закрыто мест</div><div style="margin-top:4px;font:800 28px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ a4label }}</div></div>
+            <div style="display:flex;gap:7px;align-items:center">
+              <span style="width:15px;height:15px;border-radius:8px;background:var(--sdi);opacity:.9"></span>
+              <span style="width:15px;height:15px;border-radius:8px;background:{{ a4dot }};transform:{{ a4dotS }};transition:transform .4s cubic-bezier(.23,1,.32,1),background .3s linear"></span>
+            </div>
+          </div>
+          <div style="margin-top:10px;height:6px;border-radius:3px;background:var(--urgt);overflow:hidden"><div style="width:{{ a4fill }};height:6px;border-radius:3px;background:var(--sdi);transition:width .48s cubic-bezier(.34,1.36,.64,1)"></div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;background:var(--surf);border-radius:18px;padding:12px 13px;box-shadow:var(--e1);border:1px solid {{ a4border }};transition:border-color .3s linear">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:42px;height:42px;border-radius:21px;background:var(--p0);color:var(--p0i);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;flex:none">ДН</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font:700 15.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Дарья Новикова</span>
+              <span style="padding:3px 7px;border-radius:6px;background:var(--bt);font:700 10px/1 -apple-system,sans-serif;color:var(--brand);opacity:{{ a4recO }};transform:{{ a4rec }};transition:opacity .25s linear,transform .3s cubic-bezier(.23,1,.32,1)">Подходит лучше всех</span>
+            </div>
+            <div style="margin-top:3px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">★ 4.7 · 42 смены · без отмен</div>
+          </div>
+        </div>
+        <div style="margin-top:11px;display:flex;gap:8px;align-items:center">
+          <div onClick="{{ play4 }}" style="flex:1;height:44px;border-radius:14px;background:{{ a4btnBg }};display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;transform:{{ a4btnS }};transition:transform .12s cubic-bezier(.23,1,.32,1),background .25s cubic-bezier(.23,1,.32,1)">
+            <span style="display:flex;color:{{ a4btnInk }};transform:{{ a4chk }};opacity:{{ a4chkO }};transition:transform .25s cubic-bezier(.23,1,.32,1),opacity .18s linear"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>
+            <span style="font:700 15.5px/1 -apple-system,sans-serif;color:{{ a4btnInk }}">{{ a4btnLabel }}</span>
+          </div>
+          <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink3);flex:none"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg></div>
+        </div>
+      </div>
+
+      <div style="margin-top:9px;background:var(--surf);border-radius:16px;padding:10px 12px;box-shadow:var(--e1);display:flex;align-items:center;gap:10px;opacity:{{ a4otherO }};transition:opacity .3s linear">
+        <div style="width:36px;height:36px;border-radius:18px;background:var(--p2);color:var(--p2i);display:flex;align-items:center;justify-content:center;font:800 13px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;flex:none">ИБ</div>
+        <div style="flex:1;min-width:0"><div style="font:700 14.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Иван Белый</div><div style="margin-top:2px;font:400 11.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">★ 4.5 · 120 смен</div></div>
+        <div style="padding:9px 12px;border-radius:11px;background:var(--bt);font:600 13px/1 -apple-system,sans-serif;color:var(--brand);flex:none">{{ a4otherLabel }}</div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ play4 }}" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4.5 19 12 7 19.5z"/></svg>Подтвердить Дарью</div>
+      <div onClick="{{ reset4 }}" class="btn2">Сбросить</div>
+    </div>
+    <div style="margin-top:11px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#332E28">Рекомендация выделена один раз и исчезает после выбора — она не мешает взять другого. Заполнение <b>«1 из 2 → 2 из 2» наливается пружиной 480 мс</b> с лёгким перелётом, вторая точка всплывает. Остальные кандидаты гаснут до 55%, но остаются нажимаемыми.</div>
+  </div>
+
+  <div style="width:393px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:10px">
+      <span style="font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#1B1917">5 · Все места закрыты</span>
+    </div>
+    <div style="width:393px;height:376px;border-radius:30px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev);padding:22px 20px 0">
+      <div style="border-radius:20px;overflow:hidden;box-shadow:var(--e2)">
+        <div style="background:var(--skyD);padding:14px 16px 16px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="color:{{ a5kickerInk }};display:flex;transition:color .3s linear">{{ a5icon }}</span>
+            <span style="font:700 11.5px/1 -apple-system,sans-serif;color:{{ a5kickerInk }};letter-spacing:.02em;transition:color .3s linear">{{ a5kicker }}</span>
+          </div>
+          <div style="margin-top:9px;font:800 20px/1.25 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);text-wrap:pretty">{{ a5title }}</div>
+          <div style="margin-top:7px;font:500 13px/1.4 -apple-system,sans-serif;color:var(--sdi2)">{{ a5line }}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <div style="flex:1;background:var(--surf);border-radius:14px;padding:10px 11px;box-shadow:var(--e1)"><div style="font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ a5wait }}</div><div style="margin-top:3px;font:400 11px/1.2 -apple-system,sans-serif;color:var(--ink2)">ждут ответа</div></div>
+        <div style="flex:1;background:var(--surf);border-radius:14px;padding:10px 11px;box-shadow:var(--e1)"><div style="font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">2</div><div style="margin-top:3px;font:400 11px/1.2 -apple-system,sans-serif;color:var(--ink2)">активных смены</div></div>
+        <div style="flex:1.3;background:var(--surf);border-radius:14px;padding:10px 11px;box-shadow:var(--e1)"><div style="font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">43%</div><div style="margin-top:3px;font:400 11px/1.2 -apple-system,sans-serif;color:var(--ink2)">заполнено</div></div>
+      </div>
+
+      <div style="position:absolute;left:16px;right:16px;bottom:18px;border-radius:20px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(20,14,8,.45);opacity:{{ a5cO }};transform:{{ a5c }};transition:opacity .25s linear,transform .5s cubic-bezier(.34,1.36,.64,1);pointer-events:none">
+        <div style="background:var(--skyD);padding:15px 17px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:-30%;top:0;width:60%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.5),rgba(255,255,255,0));animation:{{ a5sheen }}"></div>
+          <div style="position:relative;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:22px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--suc);flex:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:800 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi)">Все места закрыты</div>
+              <div style="margin-top:3px;font:500 13px/1.35 -apple-system,sans-serif;color:var(--sdi2)">Оператор ПВЗ · 2 из 2 · смена в 10:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ play5 }}" class="btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4.5 19 12 7 19.5z"/></svg>Играть</div>
+    </div>
+    <div style="margin-top:11px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#332E28">Единственное место в приложении, где разрешён праздник. Карточка всплывает пружиной с перелётом, один блик 800 мс, success-haptic, и через 2,8 с она уходит сама. Заголовок сводки меняется с «Главное сейчас» на «Всё под контролем». Больше нигде этого движения нет — поэтому оно и работает.</div>
+  </div>
+
+</div>
+
+<div class="sec"><h2>Переходы между экранами</h2><span class="m">нативный push · лист с detents · модально · вкладки</span></div>
+<div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+
+  <div style="width:276px">
+    <div style="width:276px;height:360px;border-radius:26px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="position:absolute;inset:0;padding:18px 14px 0;transform:{{ t1base }};transition:transform .42s cubic-bezier(.32,.72,0,1)">
+        <div style="font:800 22px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.02em">Смены</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyD)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div><div style="margin-top:5px;font:800 18px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:11px;color:var(--ink2)">&nbsp;BYN</span></div></div></div>
+          <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyM)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Грузчик</div><div style="margin-top:5px;font:800 18px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">75<span style="font-size:11px;color:var(--ink2)">&nbsp;BYN</span></div></div></div>
+        </div>
+      </div>
+      <div style="position:absolute;inset:0;background:var(--bg);transform:{{ t1push }};transition:transform .42s cubic-bezier(.32,.72,0,1);box-shadow:-8px 0 24px -8px rgba(20,14,8,.28)">
+        <div style="background:var(--skyD);padding:16px 14px 14px">
+          <div style="width:32px;height:32px;border-radius:16px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--sdi)"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg></div>
+          <div style="margin-top:14px;font:800 19px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);letter-spacing:-.02em">Оператор ПВЗ</div>
+          <div style="margin-top:8px;font:800 34px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">65<span style="font-size:17px;color:var(--sdi2)">&nbsp;BYN</span></div>
+        </div>
+        <div style="padding:12px 14px"><div style="background:var(--surf);border-radius:14px;padding:10px 12px;box-shadow:var(--e1);font:600 13px/1.3 -apple-system,sans-serif;color:var(--ink)">Ozon ПВЗ Минск<div style="margin-top:3px;font:400 11.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">★ 4.6 · 45 отзывов</div></div></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px">
+      <div onClick="{{ t1go }}" class="btn">Открыть</div>
+      <div onClick="{{ t1back }}" class="btn2">Назад</div>
+    </div>
+    <div style="margin-top:10px;font:400 12px/1.5 -apple-system,sans-serif;color:#332E28"><b>Нативный push.</b> Экран приезжает справа, лента уходит на 26% влево и притемняется — так видно, что она осталась. Свайп от края возвращает с той же кривой. Токен <span class="m" style="color:#0F5673">spring.default</span>.</div>
+  </div>
+
+  <div style="width:276px">
+    <div style="width:276px;height:360px;border-radius:26px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="position:absolute;inset:0;padding:18px 14px 0;transform:{{ t2base }};transition:transform .4s cubic-bezier(.23,1,.32,1)">
+        <div style="font:800 22px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.02em">Смены</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyD)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div></div></div>
+          <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyM)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Грузчик</div></div></div>
+        </div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(20,14,8,.42);opacity:{{ t2backO }};transition:opacity .3s linear;pointer-events:none"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:22px 22px 0 0;padding:8px 14px 16px;box-shadow:0 -10px 34px -10px rgba(20,14,8,.32);transform:{{ t2sheet }};transition:transform .38s cubic-bezier(.23,1,.32,1)">
+        <div style="width:34px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 11px"></div>
+        <div style="font:800 18px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Фильтры</div>
+        <div style="margin-top:12px;font:600 12.5px/1 -apple-system,sans-serif;color:var(--ink3)">Оплата за смену</div>
+        <div style="margin-top:8px;position:relative;height:22px;display:flex;align-items:center">
+          <div style="position:absolute;left:0;right:0;height:5px;border-radius:3px;background:var(--surf3)"></div>
+          <div style="position:absolute;left:16%;right:0;height:5px;border-radius:3px;background:var(--brand)"></div>
+          <div style="position:absolute;left:16%;width:22px;height:22px;margin-left:-11px;border-radius:12px;background:var(--surf);box-shadow:0 2px 5px rgba(40,30,18,.3);border:1px solid var(--line)"></div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:5px;flex-wrap:wrap"><span style="padding:6px 10px;border-radius:9px;background:var(--bt);font:600 12px/1 -apple-system,sans-serif;color:var(--brand)">Без опыта</span><span style="padding:6px 10px;border-radius:9px;background:var(--surf);border:1px solid var(--line);font:500 12px/1 -apple-system,sans-serif;color:var(--ink3)">Ночные</span></div>
+        <div style="margin-top:14px;height:46px;border-radius:15px;background:var(--brand);display:flex;align-items:center;justify-content:center"><span style="font:700 15px/1 -apple-system,sans-serif;color:var(--on)">Показать 9 смен</span></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px;flex-wrap:wrap">
+      <div onClick="{{ t2half }}" class="btn">Detent 0.5</div>
+      <div onClick="{{ t2full }}" class="btn2">Detent 1.0</div>
+      <div onClick="{{ t2close }}" class="btn2">Закрыть</div>
+    </div>
+    <div style="margin-top:10px;font:400 12px/1.5 -apple-system,sans-serif;color:#332E28"><b>Лист с detents.</b> Два положения: 0.5 и 1.0. Лента за листом слегка отъезжает и притемняется, но остаётся видимой — человек не теряет, что фильтрует. На каждом detent — light haptic. Токен <span class="m" style="color:#0F5673">spring.sheet</span>.</div>
+  </div>
+
+  <div style="width:276px">
+    <div style="width:276px;height:360px;border-radius:26px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="position:absolute;inset:0;padding:18px 14px 0;transform:{{ t3base }};transition:transform .42s cubic-bezier(.23,1,.32,1)">
+        <div style="font:800 22px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.02em">Сводка</div>
+        <div style="margin-top:12px;border-radius:18px;overflow:hidden;box-shadow:var(--e1)"><div style="background:var(--skyD);padding:12px 13px"><div style="font:700 10.5px/1 -apple-system,sans-serif;color:var(--urgi)">ГЛАВНОЕ СЕЙЧАС</div><div style="margin-top:7px;font:800 15px/1.25 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi)">Сегодня в 10:00 не хватает человека</div></div></div>
+      </div>
+      <div style="position:absolute;inset:0;background:rgba(20,14,8,.38);opacity:{{ t3backO }};transition:opacity .3s linear;pointer-events:none"></div>
+      <div style="position:absolute;left:0;right:0;top:10px;bottom:0;background:var(--bg);border-radius:20px 20px 0 0;overflow:hidden;transform:{{ t3modal }};transition:transform .42s cubic-bezier(.23,1,.32,1);box-shadow:0 -10px 34px -10px rgba(20,14,8,.32)">
+        <div style="padding:11px 14px 0;display:flex;align-items:center;justify-content:space-between"><span style="font:600 13px/1 -apple-system,sans-serif;color:var(--ink2)">Отмена</span><span style="font:700 14px/1 -apple-system,sans-serif;color:var(--ink)">Новая смена</span><span style="font:600 13px/1 -apple-system,sans-serif;color:var(--inkD)">Ещё</span></div>
+        <div style="padding:12px 14px 0">
+          <div style="border-radius:16px;background:var(--skyD);padding:11px 13px 13px">
+            <div style="font:600 10.5px/1 -apple-system,sans-serif;color:var(--sdi2)">Оплата за смену</div>
+            <div style="margin-top:5px;font:800 30px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">65<span style="font-size:15px;color:var(--sdi2)">&nbsp;BYN</span></div>
+            <div style="margin-top:9px;position:relative;height:20px;display:flex;align-items:center"><div style="position:absolute;left:0;right:0;height:4px;border-radius:2px;background:var(--urgt);opacity:.6"></div><div style="position:absolute;left:0;width:44%;height:4px;border-radius:2px;background:var(--sdi)"></div><div style="position:absolute;left:44%;width:20px;height:20px;margin-left:-10px;border-radius:11px;background:var(--bg);box-shadow:0 2px 5px rgba(11,53,80,.3)"></div></div>
+          </div>
+          <div style="margin-top:10px;background:var(--surf);border-radius:14px;overflow:hidden;box-shadow:var(--e1)">
+            <div style="padding:9px 12px;display:flex;gap:10px"><span style="width:64px;flex:none;font:400 12px/1 -apple-system,sans-serif;color:var(--ink2)">Должность</span><span style="flex:1;font:500 13px/1 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</span></div>
+            <div style="height:1px;background:var(--line);margin-left:12px"></div>
+            <div style="padding:9px 12px;display:flex;gap:10px"><span style="width:64px;flex:none;font:400 12px/1 -apple-system,sans-serif;color:var(--ink2)">Время</span><span style="flex:1;font:500 13px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">10:00 – 18:00</span></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:9px 14px 12px;background:var(--glass);border-top:1px solid var(--line)"><div style="height:46px;border-radius:15px;background:var(--brand);display:flex;align-items:center;justify-content:center"><span style="font:700 15px/1 -apple-system,sans-serif;color:var(--on)">Опубликовать</span></div></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px">
+      <div onClick="{{ t3go }}" class="btn">Создать смену</div>
+      <div onClick="{{ t3close }}" class="btn2">Закрыть</div>
+    </div>
+    <div style="margin-top:10px;font:400 12px/1.5 -apple-system,sans-serif;color:#332E28"><b>Модально.</b> Фокусная задача приходит снизу и накрывает почти весь экран, оставляя 10 pt контекста сверху. Сводка отъезжает на 3% — намёк, что она под листом. Токен <span class="m" style="color:#0F5673">spring.sheet</span>.</div>
+  </div>
+
+  <div style="width:276px">
+    <div style="width:276px;height:360px;border-radius:26px;overflow:hidden;position:relative;background:var(--bg);box-shadow:var(--dev)">
+      <div style="position:absolute;left:0;right:0;top:0;bottom:62px;padding:18px 14px 0">
+        <div style="position:absolute;inset:18px 14px auto;opacity:{{ t4aO }};transition:opacity .2s linear">
+          <div style="font:800 22px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.02em">Смены</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyD)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div></div></div>
+            <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)"><div style="height:26px;background:var(--skyM)"></div><div style="padding:9px 11px"><div style="font:700 13.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Грузчик</div></div></div>
+          </div>
+        </div>
+        <div style="position:absolute;inset:18px 14px auto;opacity:{{ t4bO }};transition:opacity .2s linear">
+          <div style="font:800 22px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.02em">Мои смены</div>
+          <div style="margin-top:12px;border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+            <div style="background:var(--skyM);padding:11px 13px"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 6px;border-radius:7px;background:var(--urgt)"><span style="width:6px;height:6px;border-radius:3px;background:var(--suc)"></span><span style="font:700 10px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждена</span></span><div style="margin-top:8px;font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">23 ч 20 мин</div></div>
+            <div style="background:var(--surf);padding:9px 13px"><div style="font:700 13px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ Wildberries</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:62px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;align-items:flex-start;padding-top:7px">
+        <div onClick="{{ t4a }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:{{ t4aInk }};transform:{{ t4aS }};transition:color .18s linear,transform .18s cubic-bezier(.23,1,.32,1)"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:600 9px/1 -apple-system,sans-serif">Смены</span></div>
+        <div onClick="{{ t4b }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:{{ t4bInk }};transform:{{ t4bS }};transition:color .18s linear,transform .18s cubic-bezier(.23,1,.32,1)"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/><path d="m9 14.5 2 2 4-4"/></svg><span style="font:600 9px/1 -apple-system,sans-serif">Мои смены</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 9px/1 -apple-system,sans-serif">Чат</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 9px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+    </div>
+    <div style="margin-top:11px;display:flex;gap:8px">
+      <div onClick="{{ t4b }}" class="btn">Мои смены</div>
+      <div onClick="{{ t4a }}" class="btn2">Смены</div>
+    </div>
+    <div style="margin-top:10px;font:400 12px/1.5 -apple-system,sans-serif;color:#332E28"><b>Вкладки.</b> Никакого скольжения: кросс-фейд 200 мс, иконка активной вкладки подпрыгивает на 1.08 и садится. Переключение вкладок — не путешествие, а смена комнаты. Токен <span class="m" style="color:#0F5673">timing.fade</span>.</div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:34px;padding:20px 24px">
+  <div class="h" style="margin-bottom:6px">ТАБЛИЦА ДЛЯ К4 · АНИМАЦИЯ → ТОКЕН → REANIMATED → HAPTIC → REDUCE MOTION</div>
+  <p style="margin:0 0 14px;max-width:1000px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Пружины заданы через <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">withSpring</code> с параметрами <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">damping / stiffness / mass</code>; тайминги — через <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">withTiming</code> с <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">Easing.bezier(.23,1,.32,1)</code>. Анимируются только <b>transform</b> и <b>opacity</b> — никаких width, height и цвета на UI-потоке; в прототипе height и background использованы для наглядности, в коде их заменяют scale и наложенные слои. Haptics — <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">expo-haptics</code>.</p>
+  <div style="overflow-x:auto">
+  <div style="min-width:1060px;display:grid;grid-template-columns:168px 128px 1fr 132px 1fr;gap:9px 16px;font:400 11.5px/1.5 ui-monospace,Menlo,monospace;color:#3A342C">
+    <div style="display:contents;color:rgba(0,0,0,.55)"><span style="padding-bottom:8px;border-bottom:1px solid #EDE7DD">анимация · цель</span><span style="padding-bottom:8px;border-bottom:1px solid #EDE7DD">токен</span><span style="padding-bottom:8px;border-bottom:1px solid #EDE7DD">Reanimated</span><span style="padding-bottom:8px;border-bottom:1px solid #EDE7DD">haptic</span><span style="padding-bottom:8px;border-bottom:1px solid #EDE7DD">Reduce Motion</span></div>
+
+    <span><b style="font-family:-apple-system,sans-serif">Нажатие</b><br>любая кнопка, карточка</span><span style="color:#0F5673">timing.press</span><span>withTiming(0.97, 120, bezier(.23,1,.32,1)) на scale; отпускание — обратно 120</span><span>—</span><span>opacity 0.92 вместо scale, 120 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Морф отклика</b><br>кнопка → «Отклик отправлен»</span><span style="color:#0F5673">spring.snappy</span><span>withSpring: damping 18, stiffness 250, mass 1 · галочка scale 0.6→1, текст и сумма opacity 0→1 через 80 мс</span><span style="color:#1C7A5A">success<br>в кадре начала морфа</span><span>кросс-фейд 200 мс между двумя состояниями кнопки</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Бейдж вкладки</b><br>появление числа</span><span style="color:#0F5673">spring.snappy</span><span>withDelay(120, withSpring(scale 0→1, damping 14, stiffness 260))</span><span>—</span><span>opacity 0→1, 200 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Отказ</b><br>«Места закончились»</span><span style="color:#C0392B">shake ×2</span><span>withRepeat(withSequence(±7, ±6, ±4, ±2 по translateX), 2) · 450 мс всего</span><span style="color:#C0392B">error</span><span>тряски нет: тост + рамка error на 200 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Пропуск</b><br>подтверждена → отсчёт</span><span style="color:#0F5673">spring.default</span><span>withSpring на scaleY шапки (0.49→1) 420 мс, damping 20, stiffness 400 · отсчёт translateY 14→0 + opacity, задержка 200</span><span style="color:#1C7A5A">success</span><span>обе части появляются кросс-фейдом 200 мс, без роста</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Блик по небу</b><br>пропуск, праздник</span><span style="color:#0F5673">celebrate</span><span>withTiming(translateX −140%→260%, 800, bezier(.23,1,.32,1)), один раз</span><span>—</span><span>блика нет</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Пульс метки</b><br>«Подтверждена»</span><span style="color:#0F5673">breathe</span><span>withRepeat(withTiming(scale 1→1.4 + opacity .55→0, 1000), −1) на подложке точки</span><span>—</span><span>точка статичная</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Отсчёт</b><br>шаг 1 с</span><span style="color:#0F5673">timing.number</span><span>withTiming(opacity, 400) на новом значении; цифры табличные, поэтому ширина не скачет</span><span>—</span><span>мгновенная подстановка</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Выбор булавки</b><br>карта</span><span style="color:#0F5673">spring.snappy</span><span>withSpring(scale 1→1.12, damping 16, stiffness 250) · карта translate withSpring 500 мс, damping 22</span><span style="color:#0F5673">selection</span><span>scale без пружины, 200 мс; карта переставляется мгновенно</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Лента ⇄ карта</b><br>смена режима</span><span style="color:#0F5673">timing.fade</span><span>withTiming(opacity, 200, ease-out) на слое ленты; карта под ним смонтирована заранее</span><span>—</span><span>как есть</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Карточка карты</b><br>подъём в листе</span><span style="color:#0F5673">spring.default</span><span>withSpring(translateY 24→0, damping 20, stiffness 400) + opacity 250</span><span>—</span><span>opacity 200 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Заполнение мест</b><br>1 из 2 → 2 из 2</span><span style="color:#0F5673">spring.snappy</span><span>withSpring(scaleX 0.5→1, damping 12, stiffness 200) — перелёт 4% · точка scale 0.72→1 с тем же спрингом</span><span style="color:#1C7A5A">success</span><span>scaleX без перелёта, 200 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Праздник</b><br>«Все места закрыты»</span><span style="color:#0F5673">celebrate</span><span>withSpring(translateY 16→0 + scale .94→1, damping 12, stiffness 180) · блик 800 · автоуход через 2800</span><span style="color:#1C7A5A">success</span><span>карточка появляется фейдом 200 мс, стоит 2800, уходит фейдом</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Push экрана</b><br>детали, профиль</span><span style="color:#0F5673">spring.default</span><span>Экран: translateX 100%→0. Родитель: translateX 0→−26% + overlay opacity 0→.12. damping 20, stiffness 400, кривая (.32,.72,0,1)</span><span>—</span><span>кросс-фейд 200 мс, без сдвига</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Лист</b><br>фильтры, отмена, вход</span><span style="color:#0F5673">spring.sheet</span><span>translateY по detents 0.5 / 1.0, damping 26, stiffness 300, mass 0.8 + velocity жеста; backdrop opacity 300</span><span style="color:#0F5673">light<br>на каждом detent</span><span>появляется фейдом 200 мс сразу в конечном detent</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Модально</b><br>создать смену</span><span style="color:#0F5673">spring.sheet</span><span>translateY 100%→0, damping 26, stiffness 300 · родитель scale 1→0.97</span><span>—</span><span>кросс-фейд 200 мс</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Вкладки</b><br>смена комнаты</span><span style="color:#0F5673">timing.fade</span><span>withTiming(opacity, 200) между экранами · иконка withSpring(scale 1→1.08→1, damping 14)</span><span style="color:#0F5673">selection</span><span>только opacity, иконка не прыгает</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Скелетон</b><br>загрузка</span><span style="color:#0F5673">skeleton</span><span>withRepeat(withTiming(opacity .55→1, 700), −1, true), сдвиг фазы 100 мс на строку</span><span>—</span><span>статичная плашка surface.2 без пульсации</span>
+
+    <span><b style="font-family:-apple-system,sans-serif">Тост</b><br>подтверждение действия</span><span style="color:#0F5673">spring.default</span><span>withSpring(translateY 10→0 + opacity, damping 20, stiffness 400) · автоуход 3200</span><span>по событию:<br>success / error</span><span>opacity 200 мс, время жизни то же</span>
+  </div>
+  </div>
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid #EDE7DD;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:9px 26px;font:400 13px/1.5 -apple-system,sans-serif;color:#332E28">
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Пять моментов §9.1</b> играются и повторяются, включая отказ и праздник.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Переходы</b> — push, лист с detents, модально, вкладки, лента ⇄ карта.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>У каждой анимации</b> есть токен, цель одним словом, параметры Reanimated, haptic и вариант для Reduce Motion.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Reduce Motion</b> переключается на этой странице и проверяется на всех пяти моментах.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Праздник только один</b> — «Все места закрыты», до 800 мс, один раз. Больше нигде.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Haptics не дублируются:</b> один жест — один отклик, success только на реальном результате.</span></div>
+  </div>
+  <p style="margin:16px 0 0;max-width:1000px;font:400 13.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty"><b>Что дальше.</b> К4 · Движение в коде: Reanimated 4 и expo-haptics по таблице, затем сборка на твой iPhone — движение и отклик проверяются только на устройстве, не в симуляторе. После этого Фаза 6 · Упаковка: иконка в четырёх режимах, экран запуска, 6–8 скриншотов для App Store 1320×2868 на вымышленных названиях, макеты уведомлений и Live Activity.</p>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  state = {
+    theme:'light', motion:'full',
+    m1:'idle', tick1:0,
+    m2:'wait', tick2:0,
+    mode:'list', sel:'ozon',
+    m4:'idle',
+    m5:'idle', tick5:0,
+    t1:false, t2:'closed', t3:false, t4:'a'
+  };
+  componentWillUnmount(){ (this.t||[]).forEach(clearTimeout); }
+  seq(steps){
+    (this.t||[]).forEach(clearTimeout); this.t=[];
+    steps.forEach(([ms,fn])=>{ this.t.push(setTimeout(fn,ms)); });
+  }
+  renderVals(){
+    const s=this.state, red = s.motion==='reduced';
+    const seg=(on)=>({bg:on?'#FFFFFF':'transparent', ink:on?'#0F5673':'#6E6559', sh:on?'0 1px 3px rgba(40,30,18,.18)':'none'});
+    const l=seg(s.theme==='light'), d=seg(s.theme==='dark'), f=seg(s.motion==='full'), r=seg(s.motion==='reduced');
+
+    const sent = s.m1==='sent', err = s.m1==='err', pressed = s.m1==='press';
+    const confirmed = s.m2==='done';
+    const onMap = s.mode==='map';
+    const selO = s.sel==='ozon';
+    const filled = s.m4==='done';
+    const closed = s.m5==='done';
+
+    const chk = React.createElement('svg',{viewBox:'0 0 24 24',width:13,height:13,fill:'none',stroke:'currentColor',strokeWidth:2.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'m5 12.5 4.5 4.5L19 7'}));
+    const bolt = React.createElement('svg',{viewBox:'0 0 24 24',width:13,height:13,fill:'currentColor'},React.createElement('path',{d:'M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z'}));
+
+    return {
+      theme:s.theme, motion:s.motion,
+      lBg:l.bg,lInk:l.ink,lSh:l.sh,dBg:d.bg,dInk:d.ink,dSh:d.sh,
+      fBg:f.bg,fInk:f.ink,fSh:f.sh,rBg:r.bg,rInk:r.ink,rSh:r.sh,
+      motionNote: red ? 'каждое движение заменено кросс-фейдом 200 мс — ничего не пропадает' : 'spring и timing по токенам §8.6',
+      onLight:()=>this.setState({theme:'light'}), onDark:()=>this.setState({theme:'dark'}),
+      onFull:()=>this.setState({motion:'full'}), onRed:()=>this.setState({motion:'reduced'}),
+
+      a1bg: err?'var(--errt)':(sent?'var(--suct)':'var(--brand)'),
+      a1ink: err?'var(--err)':(sent?'var(--suc)':'var(--on)'),
+      a1sh: (sent||err)?'none':'var(--bsh)',
+      a1scale: pressed?'scale(.97)':'scale(1)',
+      a1label: err?'Мест нет':(sent?'Отклик отправлен':'Откликнуться'),
+      a1sumD: (sent||err)?'none':'flex',
+      a1icon: sent?'scale(1)':'scale(.6)',
+      a1iconO: sent?'1':'0',
+      a1shake: err ? ((s.tick1%2) ? 'sh-a .45s cubic-bezier(.23,1,.32,1) 2' : 'sh-b .45s cubic-bezier(.23,1,.32,1) 2') : 'none',
+      a1badge: sent?'scale(1)':'scale(0)',
+      a1note: sent?'Ждёт ответа заказчика · 10 минут':(err?'Места только что закончились':''),
+      a1noteO: (sent||err)?'1':'0',
+      play1: ()=>{ this.setState({m1:'press'}); this.seq([[130,()=>this.setState({m1:'sent'})],[2600,()=>this.setState({m1:'idle'})]]); },
+      play1err: ()=>{ this.setState({m1:'press'}); this.seq([[130,()=>this.setState(st=>({m1:'err',tick1:st.tick1+1}))],[2600,()=>this.setState({m1:'idle'})]]); },
+
+      a2sky: confirmed?'var(--skyM)':'var(--skyX)',
+      a2h: confirmed?'126px':'62px',
+      a2pill: confirmed?'scale(1)':'scale(1)',
+      a2pillText: confirmed?'Подтверждена':'Ждёт ответа',
+      a2pillInk: confirmed?'var(--suc)':'var(--sxi)',
+      a2breathe: confirmed && !red ? 'breathe 2s ease-out infinite' : 'none',
+      a2sheen: confirmed ? ((s.tick2%2)?'sheen-a .8s cubic-bezier(.23,1,.32,1) .2s 1':'sheen-b .8s cubic-bezier(.23,1,.32,1) .2s 1') : 'none',
+      a2cd: confirmed?'translateY(0)':'translateY(14px)',
+      a2cdO: confirmed?'1':'0',
+      a2count:'23 ч 20 мин',
+      a2ink: confirmed?'var(--smi)':'var(--sxi)',
+      a2ink2: confirmed?'var(--smi2)':'var(--sxi)',
+      a2extra: confirmed?'translateY(0)':'translateY(12px)',
+      a2extraO: confirmed?'1':'0',
+      a2btn: confirmed?'translateY(100%)':'translateY(0)',
+      a2btnO: confirmed?'0':'1',
+      play2: ()=>{ this.setState({m2:'wait'}); this.seq([[420,()=>this.setState(st=>({m2:'done',tick2:st.tick2+1}))],[5200,()=>this.setState({m2:'wait'})]]); },
+
+      a3map: onMap ? (selO?'translate(0,0)':'translate(58px,-72px)') : 'translate(0,0)',
+      a3listO: onMap?'0':'1',
+      a3listPE: onMap?'none':'auto',
+      a3listPE2: onMap?'auto':'none',
+      a3cardO: onMap?'1':'0',
+      a3card: onMap?'translateY(0)':'translateY(24px)',
+      a3p1: selO?'scale(1.12)':'scale(1)',
+      a3p1bg: selO?'var(--brand)':'var(--surf)',
+      a3p1ink: selO?'var(--on)':'var(--ink)',
+      a3p2: selO?'scale(1)':'scale(1.12)',
+      a3p2bg: selO?'var(--surf)':'var(--brand)',
+      a3p2ink: selO?'var(--ink)':'var(--on)',
+      a3sky: selO?'var(--skyD)':'var(--skyM)',
+      a3skyInk: selO?'var(--sdi)':'var(--smi)',
+      a3when: selO?'10:00–18:00 · 8 ч':'08:00–16:00 · 8 ч',
+      a3title: selO?'Оператор ПВЗ':'Грузчик',
+      a3co: selO?'Ozon ПВЗ Минск · ★ 4.6 · 1,2 км':'Склад-Логистик · ★ 4.4 · 2,8 км',
+      a3money: selO?'65':'75',
+      a3lBg: onMap?'transparent':'var(--surf)', a3lSh: onMap?'none':'0 1px 3px rgba(40,30,18,.14)', a3lInk: onMap?'var(--ink2)':'var(--brand)',
+      a3mBg: onMap?'var(--surf)':'transparent', a3mSh: onMap?'0 1px 3px rgba(40,30,18,.14)':'none', a3mInk: onMap?'var(--brand)':'var(--ink2)',
+      toMap: ()=>this.setState({mode:'map'}),
+      toList: ()=>this.setState({mode:'list'}),
+      pin1: ()=>this.setState({mode:'map',sel:'ozon'}),
+      pin2: ()=>this.setState({mode:'map',sel:'sklad'}),
+
+      a4label: filled?'2 из 2':'1 из 2',
+      a4fill: filled?'100%':'50%',
+      a4dot: filled?'var(--sdi)':'rgba(255,253,249,.45)',
+      a4dotS: filled?'scale(1)':'scale(.72)',
+      a4border: filled?'var(--line)':'var(--brand)',
+      a4recO: filled?'0':'1',
+      a4rec: filled?'scale(.8)':'scale(1)',
+      a4btnBg: s.m4==='press'?'var(--brandP)':(filled?'var(--suct)':'var(--brand)'),
+      a4btnInk: filled?'var(--suc)':'var(--on)',
+      a4btnLabel: filled?'Подтверждена':'Подтвердить',
+      a4btnS: s.m4==='press'?'scale(.97)':'scale(1)',
+      a4chk: filled?'scale(1)':'scale(.6)',
+      a4chkO: filled?'1':'0',
+      a4otherO: filled?'.55':'1',
+      a4otherLabel: filled?'Мест нет':'Подтвердить',
+      play4: ()=>{ if(this.state.m4==='done') return; this.setState({m4:'press'}); this.seq([[130,()=>this.setState({m4:'done'})]]); },
+      reset4: ()=>this.setState({m4:'idle'}),
+
+      a5kicker: closed?'ВСЁ ПОД КОНТРОЛЕМ':'ГЛАВНОЕ СЕЙЧАС',
+      a5kickerInk: closed?'var(--suc)':'var(--urgi)',
+      a5icon: closed?chk:bolt,
+      a5title: closed?'Сегодня в 10:00 люди придут':'Сегодня в 10:00 не хватает человека',
+      a5line: closed?'Оператор ПВЗ · 65 BYN · 2 из 2 мест':'Оператор ПВЗ · 65 BYN · 1 из 2 мест',
+      a5wait: closed?'2':'3',
+      a5cO: closed?'1':'0',
+      a5c: closed?'translateY(0) scale(1)':'translateY(16px) scale(.94)',
+      a5sheen: closed ? ((s.tick5%2)?'sheen-a .8s cubic-bezier(.23,1,.32,1) .15s 1':'sheen-b .8s cubic-bezier(.23,1,.32,1) .15s 1') : 'none',
+      play5: ()=>{ this.setState({m5:'idle'}); this.seq([[180,()=>this.setState(st=>({m5:'done',tick5:st.tick5+1}))],[3200,()=>this.setState({m5:'idle'})]]); },
+
+      t1base: s.t1?'translateX(-26%)':'translateX(0)',
+      t1push: s.t1?'translateX(0)':'translateX(100%)',
+      t1go: ()=>this.setState({t1:true}),
+      t1back: ()=>this.setState({t1:false}),
+
+      t2sheet: s.t2==='full'?'translateY(0)':(s.t2==='half'?'translateY(42%)':'translateY(100%)'),
+      t2base: s.t2==='closed'?'translateY(0)':'translateY(-2%)',
+      t2backO: s.t2==='closed'?'0':(s.t2==='half'?'.55':'1'),
+      t2half: ()=>this.setState({t2:'half'}),
+      t2full: ()=>this.setState({t2:'full'}),
+      t2close: ()=>this.setState({t2:'closed'}),
+
+      t3modal: s.t3?'translateY(0)':'translateY(100%)',
+      t3base: s.t3?'scale(.97)':'scale(1)',
+      t3backO: s.t3?'1':'0',
+      t3go: ()=>this.setState({t3:true}),
+      t3close: ()=>this.setState({t3:false}),
+
+      t4aO: s.t4==='a'?'1':'0',
+      t4bO: s.t4==='b'?'1':'0',
+      t4aInk: s.t4==='a'?'var(--brand)':'var(--ink2)',
+      t4bInk: s.t4==='b'?'var(--brand)':'var(--ink2)',
+      t4aS: s.t4==='a'?'scale(1.08)':'scale(1)',
+      t4bS: s.t4==='b'?'scale(1.08)':'scale(1)',
+      t4a: ()=>this.setState({t4:'a'}),
+      t4b: ()=>this.setState({t4:'b'})
+    };
+  }
+}
+</script>
+</body>
+</html>

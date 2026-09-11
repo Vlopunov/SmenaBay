@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#E9E6E0;color:#1B1917;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0F5673;text-decoration:none}
+a:hover{color:#0B4459}
+#sys[data-theme="light"]{--bg:#FBF8F4;--surf:#FFFFFF;--surf2:#F0EAE1;--surf3:#E7DFD3;--line:#EAE3D8;--lineS:#D6CCBC;--ink:#1B1917;--ink2:#6E6559;--ink3:#5C544A;--inkD:#A79C8E;--brand:#0F5673;--brandP:#0B4459;--bt:#E4F0F5;--on:#FFFFFF;--urg:#E07A1F;--urgi:#8A4408;--urgt:#FDEFE0;--suc:#1C7A5A;--suct:#E8F2E9;--err:#C0392B;--errt:#FAEAE7;--warn:#B5761A;--star:#E0A32B;--skyM:linear-gradient(100deg,#FFD9B8,#CFE6F4);--skyD:linear-gradient(100deg,#C6E4F7,#87C4EA);--skyE:linear-gradient(100deg,#FFC68C,#F0A2AC);--skyN:linear-gradient(100deg,#33477F,#151F3C);--skyX:linear-gradient(100deg,#F3E4D6,#E8DCD8);--smi:#3D2410;--smi2:#6A4425;--sdi:#0B3550;--sdi2:#16405A;--sei:#5A2430;--sei2:#6B2B2F;--sni:#DCEEF9;--sxi:#6A5B4E;--glass:rgba(251,248,244,.86);--e1:0 8px 20px -10px rgba(40,30,18,.22),0 1px 2px rgba(40,30,18,.06);--e2:0 12px 28px -12px rgba(40,30,18,.3),0 1px 2px rgba(40,30,18,.08);--bsh:0 8px 18px -8px rgba(15,86,115,.6)}
+#sys[data-theme="dark"]{--bg:#11161C;--surf:#1A2129;--surf2:#222B35;--surf3:#2B3541;--line:#232C36;--lineS:#38434F;--ink:#F7F3EC;--ink2:#93A0AD;--ink3:#B6C1CB;--inkD:#5E6A75;--brand:#6FB4D8;--brandP:#8AC5E4;--bt:#17303D;--on:#08131A;--urg:#F0A65A;--urgi:#F5C68F;--urgt:#33230F;--suc:#4FBE95;--suct:#0E2A22;--err:#FF7A68;--errt:#33140F;--warn:#E0A94F;--star:#E0A32B;--skyM:linear-gradient(100deg,#5A4433,#264257);--skyD:linear-gradient(100deg,#2E6089,#17415F);--skyE:linear-gradient(100deg,#6A4433,#5A2F45);--skyN:linear-gradient(100deg,#243459,#131C34);--skyX:linear-gradient(100deg,#2A3138,#22282E);--smi:#F2E3D3;--smi2:#CDB6A0;--sdi:#DCEEF9;--sdi2:#AFC9DA;--sei:#F7DCD9;--sei2:#D8AFAB;--sni:#DCEEF9;--sxi:#98A3AD;--glass:rgba(17,22,28,.86);--e1:0 10px 24px -12px rgba(0,0,0,.6);--e2:0 14px 30px -12px rgba(0,0,0,.7);--bsh:none}
+#sys[data-theme="contrast"]{--bg:#FFFFFF;--surf:#FFFFFF;--surf2:#F2EEE8;--surf3:#E6E0D6;--line:#8A8075;--lineS:#1B1917;--ink:#000000;--ink2:#3A342C;--ink3:#26221C;--inkD:#6E6559;--brand:#0A4258;--brandP:#06313F;--bt:#DCEBF2;--on:#FFFFFF;--urg:#8A4408;--urgi:#5E2D04;--urgt:#FBE8D5;--suc:#14563F;--suct:#DEEEE4;--err:#8E2418;--errt:#F7E2DE;--warn:#7A4E0C;--star:#8A5E10;--skyM:#F6E2CF;--skyD:#D7EAF7;--skyE:#FADFD7;--skyN:#1D2A4E;--skyX:#EDE7DF;--smi:#3D2410;--smi2:#5A3316;--sdi:#062A42;--sdi2:#0B3550;--sei:#4A1720;--sei2:#5A2430;--sni:#EAF4FB;--sxi:#3A342C;--glass:rgba(255,255,255,.94);--e1:0 0 0 1px #1B1917;--e2:0 0 0 2px #1B1917;--bsh:none}
+.h{font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);letter-spacing:.02em}
+.m{font:400 11px/1.5 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55)}
+.card{background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px}
+.sw{display:flex;align-items:center;gap:7px;font:400 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.6)}
+.sw i{width:16px;height:16px;border-radius:5px;border:1px solid rgba(0,0,0,.14);flex:none}
+.lab{font:600 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45)}
+@keyframes om-pop{0%{transform:scale(.86);opacity:0}62%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes om-skel{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes om-spin{to{transform:rotate(360deg)}}
+@keyframes om-breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.35);opacity:0}}
+</style></helmet>
+
+<div style="padding:36px 40px 56px;max-width:1560px">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+  <span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:4px 8px;background:#1B1917;color:#fff;border-radius:5px">ФАЗА 3</span>
+  <h1 style="margin:0;font:800 29px/1.1 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em">Система</h1>
+  <span style="font:400 13px/1.4 -apple-system,sans-serif;color:rgba(0,0,0,.55)">СменаБел · Небо смены · 11 сентября 2026</span>
+</div>
+<p style="margin:0 0 22px;max-width:940px;font:400 14.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Всё, что нужно для К2: <a href="handoff/tokens.json">tokens.json</a> с тремя темами, шкала шрифтов с поведением на AX3, восемь пиктограмм в SVG (<a href="handoff/icons/category-pvz.svg">handoff/icons/</a>), система монограмм, библиотека компонентов §8.8 со всеми состояниями и таблица SF Symbols. Расхождений с Фазой 2 нет: те же значения, только собранные в одном месте и доведённые до состояний, которых в ключевых экранах не было.</p>
+
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;flex-wrap:wrap">
+  <span class="h">ТЕМА</span>
+  <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+    <div onClick="{{ onLight }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ lBg }};color:{{ lInk }};box-shadow:{{ lSh }}">Светлая</div>
+    <div onClick="{{ onDark }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ dBg }};color:{{ dInk }};box-shadow:{{ dSh }}">Тёмная</div>
+    <div onClick="{{ onContrast }}" style="padding:8px 16px;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ cBg }};color:{{ cInk }};box-shadow:{{ cSh }}">Повышенный контраст</div>
+  </div>
+  <span class="m" style="margin-left:6px">{{ themeNote }}</span>
+</div>
+
+<div id="sys" data-theme="{{ theme }}">
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:22px;align-items:start">
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ЦВЕТ · РОЛИ</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:11px 14px">
+      <div class="sw"><i style="background:var(--bg)"></i>bg</div>
+      <div class="sw"><i style="background:var(--surf)"></i>surface</div>
+      <div class="sw"><i style="background:var(--surf2)"></i>surface.2</div>
+      <div class="sw"><i style="background:var(--surf3)"></i>surface.3</div>
+      <div class="sw"><i style="background:var(--line)"></i>line</div>
+      <div class="sw"><i style="background:var(--lineS)"></i>line.strong</div>
+      <div class="sw"><i style="background:var(--ink)"></i>ink</div>
+      <div class="sw"><i style="background:var(--ink2)"></i>ink.2</div>
+      <div class="sw"><i style="background:var(--ink3)"></i>ink.3</div>
+      <div class="sw"><i style="background:var(--inkD)"></i>ink.disabled</div>
+      <div class="sw"><i style="background:var(--brand)"></i>brand</div>
+      <div class="sw"><i style="background:var(--bt)"></i>brand.tint</div>
+      <div class="sw"><i style="background:var(--urg)"></i>urgent</div>
+      <div class="sw"><i style="background:var(--urgt)"></i>urgent.tint</div>
+      <div class="sw"><i style="background:var(--suc)"></i>success</div>
+      <div class="sw"><i style="background:var(--suct)"></i>success.tint</div>
+      <div class="sw"><i style="background:var(--err)"></i>error</div>
+      <div class="sw"><i style="background:var(--errt)"></i>error.tint</div>
+      <div class="sw"><i style="background:var(--warn)"></i>warning</div>
+      <div class="sw"><i style="background:var(--star)"></i>star</div>
+    </div>
+    <div style="margin-top:16px;padding:14px 16px;border-radius:12px;background:var(--surf);border:1px solid var(--line);box-shadow:var(--e1)">
+      <div style="font:700 17px/1.3 -apple-system,sans-serif;color:var(--ink)">Текст на поверхности · ink</div>
+      <div style="margin-top:4px;font:400 15px/1.4 -apple-system,sans-serif;color:var(--ink2)">Второй уровень · ink.2 — 4.6:1 в светлой, 4.8:1 в тёмной</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="padding:6px 11px;border-radius:9px;background:var(--bt);font:600 13px/1 -apple-system,sans-serif;color:var(--brand)">brand на тинте</span>
+        <span style="padding:6px 11px;border-radius:9px;background:var(--urgt);font:600 13px/1 -apple-system,sans-serif;color:var(--urgi)">Срочно</span>
+        <span style="padding:6px 11px;border-radius:9px;background:var(--suct);font:600 13px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждена</span>
+        <span style="padding:6px 11px;border-radius:9px;background:var(--errt);font:600 13px/1 -apple-system,sans-serif;color:var(--err)">Отменена</span>
+      </div>
+    </div>
+    <p style="margin:12px 0 0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">В повышенном контрасте линии становятся видимыми (#8A8075), тени заменяются рамкой в 1 pt, а градиенты неба — плоским тинтом: у Differentiate Without Colour статус обязан читаться символом и текстом.</p>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:6px">ШКАЛА НЕБА · КОДИРУЕТ ЧАС НАЧАЛА</div>
+    <p style="margin:0 0 14px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Одно небо на объект. Определяется часом начала смены — не категорией и не статусом. Чернила подобраны под каждое небо и переключаются вместе с темой.</p>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="height:56px;border-radius:12px;background:var(--skyM);display:flex;align-items:center;justify-content:space-between;padding:0 14px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">08:00–16:00 · 8 ч</span><span style="font:600 12px/1 -apple-system,sans-serif;color:var(--smi2)">sky.morning · 06–11</span></div>
+      <div style="height:56px;border-radius:12px;background:var(--skyD);display:flex;align-items:center;justify-content:space-between;padding:0 14px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span><span style="font:600 12px/1 -apple-system,sans-serif;color:var(--sdi2)">sky.day · 11–17</span></div>
+      <div style="height:56px;border-radius:12px;background:var(--skyE);display:flex;align-items:center;justify-content:space-between;padding:0 14px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sei);font-variant-numeric:tabular-nums">17:00–23:00 · 6 ч</span><span style="font:600 12px/1 -apple-system,sans-serif;color:var(--sei2)">sky.evening · 17–22</span></div>
+      <div style="height:56px;border-radius:12px;background:var(--skyN);display:flex;align-items:center;justify-content:space-between;padding:0 14px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sni);font-variant-numeric:tabular-nums">22:00–06:00 · 8 ч</span><span style="font:600 12px/1 -apple-system,sans-serif;color:var(--sni);opacity:.8">sky.night · 22–06</span></div>
+      <div style="height:56px;border-radius:12px;background:var(--skyX);display:flex;align-items:center;justify-content:space-between;padding:0 14px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sxi);font-variant-numeric:tabular-nums">12:00–22:00 · 10 ч</span><span style="font:600 12px/1 -apple-system,sans-serif;color:var(--sxi)">sky.closed · мест нет</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:22px;padding:20px 24px">
+  <div class="h" style="margin-bottom:6px">ТИПОГРАФИКА · ШКАЛА И ПОВЕДЕНИЕ НА AX3</div>
+  <p style="margin:0 0 16px;max-width:940px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Две гарнитуры: SF Pro Rounded — заголовки, деньги, отсчёт; SF Pro Text — всё остальное. Все цифры табличные. На AX3 кегль растёт, кроме <b>money.hero</b> и <b>countdown</b>: они растут медленнее (×1.17), иначе сумма ломает строку на iPhone SE.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:22px">
+    <div>
+      <div style="display:grid;grid-template-columns:104px 1fr 74px 74px;gap:8px 10px;font:400 11px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55);padding-bottom:8px;border-bottom:1px solid #EDE7DD"><span>токен</span><span>вес · интерлиньяж</span><span>обычный</span><span>AX3</span></div>
+      <div style="display:grid;grid-template-columns:104px 1fr 74px 74px;gap:9px 10px;margin-top:10px;font:400 11.5px/1.4 ui-monospace,Menlo,monospace;color:#3A342C">
+        <span>title.large</span><span style="color:rgba(0,0,0,.55)">Rounded 800 · 39 · −2%</span><span>34</span><span>44</span>
+        <span>title.screen</span><span style="color:rgba(0,0,0,.55)">Rounded 800 · 31 · −2%</span><span>27</span><span>36</span>
+        <span>title.section</span><span style="color:rgba(0,0,0,.55)">Rounded 700 · 23</span><span>19</span><span>26</span>
+        <span>money.hero</span><span style="color:rgba(0,0,0,.55)">Rounded 800 · 50 · tnum</span><span>52</span><span>60</span>
+        <span>money.card</span><span style="color:rgba(0,0,0,.55)">Rounded 800 · 28 · tnum</span><span>28</span><span>34</span>
+        <span>money.inline</span><span style="color:rgba(0,0,0,.55)">Rounded 700 · 16 · tnum</span><span>16</span><span>21</span>
+        <span>countdown</span><span style="color:rgba(0,0,0,.55)">Rounded 800 · 46 · tnum</span><span>46</span><span>54</span>
+        <span>row.title</span><span style="color:rgba(0,0,0,.55)">Text 700 · 21</span><span>17</span><span>26</span>
+        <span>body</span><span style="color:rgba(0,0,0,.55)">Text 400 · 24</span><span>17</span><span>30</span>
+        <span>body.strong</span><span style="color:rgba(0,0,0,.55)">Text 600 · 20</span><span>15</span><span>26</span>
+        <span>caption</span><span style="color:rgba(0,0,0,.55)">Text 400 · 17</span><span>13</span><span>22</span>
+        <span>label.badge</span><span style="color:rgba(0,0,0,.55)">Text 700 · 11 · +2%</span><span>11</span><span>17</span>
+        <span>button</span><span style="color:rgba(0,0,0,.55)">Text 700 · 17.5</span><span>17.5</span><span>24</span>
+      </div>
+      <div style="margin-top:14px;padding:12px 14px;border-radius:11px;background:#F3EFE7;font:400 12.5px/1.55 -apple-system,sans-serif;color:#3A342C"><b>Правило контейнеров:</b> ни у одного текстового блока нет фиксированной высоты — только hug. Ряд «пиктограмма + текст + сумма» на AX3 переходит в две строки: сумма уезжает под заголовок, пиктограмма остаётся слева. Кнопка 54 → 76 pt и становится двухстрочной.</div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div>
+        <div class="lab" style="margin-bottom:7px">ОБЫЧНЫЙ · 17 pt</div>
+        <div style="width:300px;background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="height:38px;background:var(--skyD);display:flex;align-items:center;padding:0 14px"><span style="font:700 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span></div>
+          <div style="padding:12px 14px 13px">
+            <div style="display:flex;gap:11px;align-items:flex-start">
+              <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 17px/21px -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+                <div style="margin-top:2px;font:400 13px/17px -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · ★ 4.6</div>
+              </div>
+            </div>
+            <div style="margin-top:11px;display:flex;align-items:flex-end;justify-content:space-between">
+              <span style="font:800 28px/28px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:17px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+              <span style="font:500 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">1 из 2 мест</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="lab" style="margin-bottom:7px">AX3 · 30 pt · ДВЕ СТРОКИ</div>
+        <div style="width:300px;background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="background:var(--skyD);display:flex;align-items:center;padding:11px 14px"><span style="font:700 22px/26px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00<br>8 ч</span></div>
+          <div style="padding:14px">
+            <div style="display:flex;gap:11px;align-items:flex-start">
+              <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 26px/32px -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+                <div style="margin-top:6px;font:400 22px/28px -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск<br>★ 4.6</div>
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <div style="font:800 34px/34px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:20px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></div>
+              <div style="margin-top:8px;font:500 22px/28px -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">1 из 2 мест</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:22px;align-items:start">
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:6px">ВОСЕМЬ ПИКТОГРАММ · ФИНАЛ В SVG</div>
+    <p style="margin:0 0 14px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Сетка 24, штрих 1.7, скругления круглые, живой контур — не заливка. Цвет категориям не присвоен: в этом направлении цвет занят временем суток, поэтому пиктограмма всегда живёт на нейтральной плитке surface.2 и красится в brand. Файлы: <a href="handoff/icons/category-pvz.svg">handoff/icons/category-*.svg</a>.</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">ПВЗ</div><div class="lab">pvz</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14.5" rx="1.5"/><path d="M3.5 10.2h17M3.5 15h17M8 5v5.2M14.8 15v4.5"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Склад</div><div class="lab">sklad</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="4.5" width="10.5" height="8" rx="1"/><path d="M4 4h2l3 13.5"/><circle cx="10.5" cy="19.5" r="1.7"/><circle cx="17" cy="19.5" r="1.7"/><path d="M9.6 17.5h8"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Грузчик</div><div class="lab">gruzchik</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v5a5.5 5.5 0 0 1-11 0z"/><path d="M16 9.6h1.6a2.2 2.2 0 0 1 0 4.4H16"/><path d="M4 20h13"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Общепит</div><div class="lab">obshchepit</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8h13l-1.1 11.5H6.6z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Ритейл</div><div class="lab">riteyl</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v9"/><path d="M7 12.5h10l-1.3 7H8.3z"/><path d="M10 15.5v4M14 15.5v4"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Клининг</div><div class="lab">klining</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10.5l5 3v-3l5 3v-3l5 3V20z"/><path d="M17 7.5V4h2v3.5"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Производство</div><div class="lab">proizvodstvo</div></div>
+      <div style="text-align:center"><div style="height:58px;border-radius:16px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="11" height="9" rx="1"/><path d="M14.5 10.5h3l2.5 3.5v2h-5.5z"/><circle cx="8" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Курьер</div><div class="lab">kuryer</div></div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:var(--surf);border:1px solid var(--line)">
+      <span class="lab" style="flex:none">20 · 30 · 44 pt</span>
+      <span style="color:var(--brand);display:flex"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></span>
+      <span style="color:var(--brand);display:flex"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></span>
+      <span style="color:var(--brand);display:flex"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></span>
+      <span class="m" style="margin-left:auto">штрих не масштабируется · остаётся 1.7</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:6px">МОНОГРАММЫ · ЛЮДИ И КОМПАНИИ</div>
+    <p style="margin:0 0 14px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">У большинства компаний логотипа нет, поэтому монограмма — основной случай, а не запасной. Никаких чёрных кружков.</p>
+    <div class="lab" style="margin-bottom:8px">ЛЮДИ · КРУГ · 6 ТОНОВ, index = сумма кодов ФИО mod 6</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p0bg }};color:{{ p0ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">АК</div><div class="lab" style="margin-top:4px">0</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div><div class="lab" style="margin-top:4px">1</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p2bg }};color:{{ p2ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ИБ</div><div class="lab" style="margin-top:4px">2</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p3bg }};color:{{ p3ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">АЛ</div><div class="lab" style="margin-top:4px">3</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p4bg }};color:{{ p4ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">СП</div><div class="lab" style="margin-top:4px">4</div></div>
+      <div style="text-align:center"><div style="width:48px;height:48px;border-radius:24px;background:{{ p5bg }};color:{{ p5ink }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">МГ</div><div class="lab" style="margin-top:4px">5</div></div>
+    </div>
+    <div class="m" style="margin-bottom:16px">Тоны десатурированы и держат одну светлоту, поэтому не спорят с небом и не читаются как статус. Чернила каждого тона — от 4.5:1.</div>
+
+    <div class="lab" style="margin-bottom:8px">РАЗМЕРЫ · 20 · 34 · 42 · 56 · 84</div>
+    <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:16px">
+      <div style="width:20px;height:20px;border-radius:10px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 8px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div>
+      <div style="width:34px;height:34px;border-radius:17px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 12px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div>
+      <div style="width:42px;height:42px;border-radius:21px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div>
+      <div style="width:56px;height:56px;border-radius:28px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div>
+      <div style="width:84px;height:84px;border-radius:42px;background:{{ p1bg }};color:{{ p1ink }};display:flex;align-items:center;justify-content:center;font:800 30px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">ДН</div>
+      <div style="position:relative;width:56px;height:56px;flex:none">
+        <div style="width:56px;height:56px;border-radius:28px;background:{{ p4bg }};color:{{ p4ink }};display:flex;align-items:center;justify-content:center;font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">СП</div>
+        <span style="position:absolute;right:1px;bottom:1px;width:15px;height:15px;border-radius:8px;background:var(--suc);border:2.5px solid var(--bg)"></span>
+      </div>
+      <div class="m" style="padding-bottom:4px">«в сети»</div>
+    </div>
+
+    <div class="lab" style="margin-bottom:8px">КОМПАНИИ · SQUIRCLE</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+      <div style="text-align:center"><div style="width:52px;height:52px;border-radius:17px;background:var(--skyD);display:flex;align-items:center;justify-content:center;font:800 19px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi)">OZ</div><div class="m" style="margin-top:5px;max-width:74px">в контексте смены — небо этой смены</div></div>
+      <div style="text-align:center"><div style="width:52px;height:52px;border-radius:17px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div><div class="m" style="margin-top:5px;max-width:74px">вне контекста — пиктограмма категории</div></div>
+      <div style="text-align:center"><div style="width:52px;height:52px;border-radius:17px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink2)">СЛ</div><div class="m" style="margin-top:5px;max-width:74px">каталог и настройки — нейтрально</div></div>
+      <div style="flex:1;min-width:150px;font:400 12.5px/1.55 -apple-system,sans-serif;color:#3A342C">Буквы — первые литеры двух первых слов названия, без кавычек и правовых форм: «Кафе «Васильки»» → <b>ВА</b>, «Склад-Логистик» → <b>СЛ</b>, «Ozon ПВЗ Минск» → <b>OZ</b>. Если есть логотип — он подменяет монограмму в той же плитке, вписанный с полем 6 pt.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:22px;padding:20px 24px">
+  <div class="h" style="margin-bottom:6px">ОТСТУПЫ · РАДИУСЫ · ТЕНИ · МАТЕРИАЛ</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px;margin-top:14px">
+    <div>
+      <div class="lab" style="margin-bottom:8px">СЕТКА 4 pt</div>
+      <div style="font:400 11.5px/1.8 ui-monospace,Menlo,monospace;color:#3A342C">gutter 20 · compact 16 (SE)<br>card.padding 14 · card.gap 10<br>section.gap 18 · hero.gap 26<br>цель касания ≥ 44</div>
+    </div>
+    <div>
+      <div class="lab" style="margin-bottom:8px">РАДИУСЫ · CONTINUOUS</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:7px">
+        <div style="width:34px;height:34px;border-radius:4px;background:var(--surf2)"></div>
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--surf2)"></div>
+        <div style="width:34px;height:34px;border-radius:12px;background:var(--surf2)"></div>
+        <div style="width:40px;height:40px;border-radius:14px;background:var(--surf2)"></div>
+        <div style="width:48px;height:48px;border-radius:20px;background:var(--surf2)"></div>
+        <div style="width:52px;height:52px;border-radius:24px;background:var(--surf2)"></div>
+      </div>
+      <div style="font:400 11.5px/1.7 ui-monospace,Menlo,monospace;color:#3A342C">4 · 8 · 12 · 14 · 20 · 24 · 26 (лист)<br>внутренний = внешний − 8</div>
+    </div>
+    <div>
+      <div class="lab" style="margin-bottom:8px">ТЕНИ</div>
+      <div style="display:flex;gap:10px;margin-bottom:8px">
+        <div style="width:60px;height:44px;border-radius:12px;background:var(--surf);box-shadow:var(--e1)"></div>
+        <div style="width:60px;height:44px;border-radius:12px;background:var(--surf);box-shadow:var(--e2)"></div>
+      </div>
+      <div style="font:400 11px/1.65 ui-monospace,Menlo,monospace;color:#3A342C">elev.1 карточка<br>elev.2 герой<br>В тёмной теме тень слабее,<br>разделение держит line</div>
+    </div>
+    <div>
+      <div class="lab" style="margin-bottom:8px">МАТЕРИАЛ · BLUR 20</div>
+      <div style="position:relative;height:70px;border-radius:12px;overflow:hidden;background:var(--skyD);margin-bottom:8px">
+        <div style="position:absolute;left:0;right:0;bottom:0;height:34px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;align-items:center;padding:0 10px;font:600 11.5px/1 -apple-system,sans-serif;color:var(--ink)">таб-бар · навбар · лист</div>
+      </div>
+      <div style="font:400 11px/1.65 ui-monospace,Menlo,monospace;color:#3A342C">alpha .86 + blur 20<br>Никогда на карточках</div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:40px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+  <h2 style="margin:0;font:800 23px/1.2 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em;color:#1B1917">Библиотека компонентов</h2>
+  <span class="m">§8.8 · у каждого — анатомия, все состояния, токены, движение, haptic, подпись VoiceOver</span>
+</div>
+
+<div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:22px;align-items:start">
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">КНОПКА · ГЛАВНАЯ · ВТОРИЧНАЯ · ТЕКСТОВАЯ · ОПАСНАЯ</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:54px;padding:0 22px;border-radius:17px;background:var(--brand);box-shadow:var(--bsh);display:flex;align-items:center;gap:9px"><span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--on)">Откликнуться</span><span style="width:5px;height:5px;border-radius:3px;background:var(--on);opacity:.5"></span><span style="font:700 17.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--on);font-variant-numeric:tabular-nums">65 BYN</span></div>
+        <span class="lab">L · 54 · обычная</span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:54px;padding:0 22px;border-radius:17px;background:var(--brandP);display:flex;align-items:center;transform:scale(.97)"><span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--on)">Откликнуться</span></div>
+        <span class="lab">нажата · scale .97 · 120 мс</span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:54px;padding:0 22px;border-radius:17px;background:var(--surf2);display:flex;align-items:center"><span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--inkD)">Мест нет</span></div>
+        <span class="lab">недоступна</span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:54px;padding:0 22px;border-radius:17px;background:var(--brand);display:flex;align-items:center;gap:10px"><span style="width:19px;height:19px;border-radius:10px;border:2.4px solid var(--on);border-top-color:transparent;animation:om-spin .8s linear infinite"></span><span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--on)">Отправляем…</span></div>
+        <span class="lab">загрузка</span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:54px;padding:0 22px;border-radius:17px;background:var(--suct);display:flex;align-items:center;gap:9px;animation:om-pop .35s cubic-bezier(.23,1,.32,1)"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--suc)">Отклик отправлен</span></div>
+        <span class="lab">успех · морф · spring.snappy</span>
+      </div>
+      <div style="height:1px;background:#EDE7DD;margin:5px 0"></div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:46px;padding:0 18px;border-radius:14px;background:var(--bt);display:flex;align-items:center"><span style="font:600 16px/1 -apple-system,sans-serif;color:var(--brand)">Маршрут</span></div>
+        <div style="height:38px;padding:0 14px;border-radius:12px;background:var(--bt);display:flex;align-items:center"><span style="font:600 14px/1 -apple-system,sans-serif;color:var(--brand)">Позвать</span></div>
+        <span class="lab">вторичная · M 46 · S 38</span>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <span style="font:600 16px/1 -apple-system,sans-serif;color:var(--brand)">Все смены</span>
+        <span style="font:600 16px/1 -apple-system,sans-serif;color:var(--inkD)">Все смены</span>
+        <span class="lab">текстовая · обычная · недоступна</span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <div style="height:46px;padding:0 18px;border-radius:14px;background:var(--errt);display:flex;align-items:center"><span style="font:700 16px/1 -apple-system,sans-serif;color:var(--err)">Отменить смену</span></div>
+        <div style="height:46px;padding:0 18px;border-radius:14px;background:var(--err);display:flex;align-items:center"><span style="font:700 16px/1 -apple-system,sans-serif;color:#fff">Удалить аккаунт</span></div>
+        <span class="lab">опасная · тинт · залитая</span>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD"><b>VO:</b> «Откликнуться на смену Оператор ПВЗ, 65 белорусских рублей. Кнопка». В состоянии успеха — «Отклик отправлен. Ждёт ответа заказчика».</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">СТАТУС СМЕНЫ · ВСЕ СОСТОЯНИЯ §9.2</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;padding:6px 10px;border-radius:9px;background:var(--surf2);font:600 12.5px/1 -apple-system,sans-serif;color:var(--ink2);text-align:center">без подписи</span><span class="m">Доступна · лента, карта</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--surf2)"><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--ink3)">Мест нет</span></span><span class="m">Лента приглушена, детали · nosign.slash</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--urgt)"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8.5V12l2.5 1.5"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--urgi)">Ждёт ответа</span></span><span class="m">Мои смены, детали, лента · clock</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--suct)"><span style="position:relative;display:flex;width:9px;height:9px;align-items:center;justify-content:center"><span style="position:absolute;width:9px;height:9px;border-radius:5px;background:var(--suc);animation:om-breathe 2s ease-out infinite"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--suc)"></span></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждена</span></span><span class="m">Пропуск, детали, чат · пульс 2 с</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--suct)"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8.5V12l2.5 1.5"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--suc);font-variant-numeric:tabular-nums">Через 1 ч 45 мин</span></span><span class="m">Пропуск, Live Activity · timer</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--brand)"><span style="color:var(--on);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--on);font-variant-numeric:tabular-nums">Идёт · 3 ч 12 мин</span></span><span class="m">Пропуск · единственный залитый</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--suct)"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--suc)">Выполнена · оцени</span></span><span class="m">История · checkmark</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--surf2)"><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--ink3)">Не подошло</span></span><span class="m">Мои смены · нейтрально, не ошибка</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:150px;flex:none;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--errt)"><span style="color:var(--err);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--err)">Отменена</span></span><span class="m">История · xmark.circle</span></div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Одно состояние — один цвет, один символ, один текст, где бы ни встречалось. Символ обязателен: в повышенном контрасте и у дальтоников статус читается без цвета.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">КАРТОЧКА СМЕНЫ · 5 ВАРИАНТОВ</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="width:196px">
+        <div class="lab" style="margin-bottom:6px">ОБЫЧНАЯ</div>
+        <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="height:32px;background:var(--skyM);display:flex;align-items:center;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">08:00–16:00 · 8 ч</span></div>
+          <div style="padding:10px 12px 11px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Грузчик</div>
+            <div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Склад-Логистик · ★ 4.4</div>
+            <div style="margin-top:9px;display:flex;align-items:flex-end;justify-content:space-between"><span style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">75<span style="font-size:13px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span><span style="font:500 11px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">2 из 4</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="width:196px">
+        <div class="lab" style="margin-bottom:6px">СРОЧНАЯ</div>
+        <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="height:32px;background:var(--skyD);display:flex;align-items:center;justify-content:space-between;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00</span><span style="display:flex;align-items:center;gap:3px;padding:3px 7px 3px 5px;border-radius:7px;background:var(--urgt)"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:700 10px/1 -apple-system,sans-serif;color:var(--urgi)">Срочно</span></span></div>
+          <div style="padding:10px 12px 11px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+            <div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · ★ 4.6</div>
+            <div style="margin-top:9px;display:flex;align-items:flex-end;justify-content:space-between"><span style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:13px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span><span style="font:500 11px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">1 из 2</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="width:196px">
+        <div class="lab" style="margin-bottom:6px">МЕСТ НЕТ</div>
+        <div style="background:var(--surf);border-radius:18px;overflow:hidden;border:1px solid var(--line);opacity:.92">
+          <div style="height:32px;background:var(--skyX);display:flex;align-items:center;justify-content:space-between;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sxi);font-variant-numeric:tabular-nums">12:00–22:00</span><span style="display:flex;align-items:center;gap:3px"><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></svg></span><span style="font:700 10px/1 -apple-system,sans-serif;color:var(--ink3)">Мест нет</span></span></div>
+          <div style="padding:10px 12px 11px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink3)">Официант</div>
+            <div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Кафе «Васильки» · ★ 4.8</div>
+            <div style="margin-top:9px;display:flex;align-items:flex-end;justify-content:space-between"><span style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">90<span style="font-size:13px;font-weight:700">&nbsp;BYN</span></span><span style="font:500 11px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">3 из 3</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="width:196px">
+        <div class="lab" style="margin-bottom:6px">С МОИМ СТАТУСОМ</div>
+        <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e1);border:1.5px solid var(--urg)">
+          <div style="height:32px;background:var(--skyD);display:flex;align-items:center;justify-content:space-between;padding:0 12px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00</span><span style="display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:7px;background:var(--urgt)"><span style="font:700 10px/1 -apple-system,sans-serif;color:var(--urgi)">Ждёт ответа</span></span></div>
+          <div style="padding:10px 12px 11px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+            <div style="margin-top:2px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2)">Отклик отправлен в 9:41</div>
+            <div style="margin-top:9px;display:flex;align-items:flex-end;justify-content:space-between"><span style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:13px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span><span style="font:500 11px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">1 из 2</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="width:196px">
+        <div class="lab" style="margin-bottom:6px">КАК ВИДЯТ ИСПОЛНИТЕЛИ</div>
+        <div style="padding:7px;border-radius:22px;border:1.5px dashed var(--lineS)">
+          <div style="background:var(--surf);border-radius:15px;overflow:hidden;box-shadow:var(--e1)">
+            <div style="height:30px;background:var(--skyD);display:flex;align-items:center;padding:0 11px"><span style="font:700 12px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span></div>
+            <div style="padding:9px 11px 10px">
+              <div style="font:700 14px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+              <div style="margin-top:8px;font:800 20px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:12px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></div>
+            </div>
+          </div>
+          <div style="margin-top:6px;text-align:center;font:600 10.5px/1 -apple-system,sans-serif;color:var(--ink2)">Предпросмотр для заказчика</div>
+        </div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD"><b>VO:</b> «Оператор ПВЗ, Ozon ПВЗ Минск, рейтинг 4,6. Сегодня с 10 до 18, 8 часов. 65 белорусских рублей. Осталось 1 место из 2. Срочно. Кнопка».</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ПРОПУСК · КРУПНЫЙ И КОМПАКТНЫЙ · 3 СОСТОЯНИЯ</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:214px">
+        <div class="lab" style="margin-bottom:6px">КРУПНЫЙ · ДО НАЧАЛА</div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:var(--e2)">
+          <div style="background:var(--skyM);padding:13px 14px 15px">
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px 4px 7px;border-radius:8px;background:var(--surf);opacity:.92"><span style="position:relative;display:flex;width:8px;height:8px;align-items:center;justify-content:center"><span style="position:absolute;width:8px;height:8px;border-radius:5px;background:var(--suc);animation:om-breathe 2s ease-out infinite"></span><span style="width:6px;height:6px;border-radius:3px;background:var(--suc)"></span></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждена</span></span>
+            <div style="margin-top:10px;font:600 12px/1 -apple-system,sans-serif;color:var(--smi2)">Начнётся через</div>
+            <div style="margin-top:3px;font:800 32px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">23 ч 20 мин</div>
+          </div>
+          <div style="background:var(--surf);padding:10px 14px 12px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ Wildberries</div>
+            <div style="margin-top:3px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Завтра · 09:00–21:00 · 95 BYN</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:214px">
+        <div class="lab" style="margin-bottom:6px">КРУПНЫЙ · ИДЁТ</div>
+        <div style="border-radius:20px;overflow:hidden;box-shadow:var(--e2)">
+          <div style="background:var(--skyD);padding:13px 14px 15px">
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:8px;background:var(--brand)"><span style="color:var(--on);display:flex"><svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--on)">Идёт</span></span>
+            <div style="margin-top:10px;font:600 12px/1 -apple-system,sans-serif;color:var(--sdi2)">Осталось</div>
+            <div style="margin-top:3px;font:800 32px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">3 ч 12 мин</div>
+            <div style="margin-top:10px;height:6px;border-radius:3px;background:var(--surf);opacity:.55"><div style="width:62%;height:6px;border-radius:3px;background:var(--sdi)"></div></div>
+          </div>
+          <div style="background:var(--surf);padding:10px 14px 12px">
+            <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+            <div style="margin-top:3px;font:400 12px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Сегодня · 10:00–18:00 · 65 BYN</div>
+          </div>
+        </div>
+      </div>
+      <div style="width:214px">
+        <div class="lab" style="margin-bottom:6px">КРУПНЫЙ · ЗАКОНЧИЛАСЬ</div>
+        <div style="border-radius:20px;overflow:hidden;border:1px solid var(--line)">
+          <div style="background:var(--skyX);padding:13px 14px 15px">
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px 4px 7px;border-radius:8px;background:var(--suct)"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--suc)">Выполнена</span></span>
+            <div style="margin-top:10px;font:600 12px/1 -apple-system,sans-serif;color:var(--sxi)">Закончилась в 18:04</div>
+            <div style="margin-top:3px;font:800 26px/1.1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sxi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">Оцени смену</div>
+          </div>
+          <div style="background:var(--surf);padding:10px 14px 12px;display:flex;gap:5px">
+            <span style="color:var(--star);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>
+            <span style="color:var(--star);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>
+            <span style="color:var(--star);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>
+            <span style="color:var(--line);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>
+            <span style="color:var(--line);display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <span class="lab" style="width:88px;flex:none">КОМПАКТНЫЙ</span>
+      <div style="flex:1;min-width:250px;background:var(--surf);border-radius:14px;box-shadow:var(--e1);display:flex;align-items:center;gap:11px;padding:9px 12px">
+        <div style="width:36px;height:36px;border-radius:12px;background:var(--skyM);flex:none"></div>
+        <div style="flex:1;min-width:0"><div style="font:700 14px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ Wildberries</div><div style="margin-top:2px;font:400 11.5px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Завтра 09:00 · 95 BYN</div></div>
+        <span style="font:700 13px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--suc);font-variant-numeric:tabular-nums;flex:none">23 ч 20 мин</span>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Метафора пропуска — в структуре и движении: шапка-небо и отсчёт. Ни бумаги, ни перфорации, ни штрихкодов. <b>VO:</b> «Смена подтверждена. Начнётся через 23 часа 20 минут. Оператор ПВЗ Wildberries, завтра с 9 до 21».</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ДЕНЬГИ · HERO · CARD · INLINE</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span style="font:800 52px/50px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em">65<span style="font-size:26px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+        <span class="lab">money.hero · детали смены</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span style="font:800 28px/28px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em">65<span style="font-size:17px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+        <span class="lab">money.card · лента</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+        <span style="font:700 16px/16px ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65 BYN</span>
+        <span class="lab">money.inline · чат, списки, уведомления</span>
+      </div>
+      <div style="padding:12px 14px;border-radius:12px;background:var(--surf);border:1px solid var(--line);display:flex;gap:22px;flex-wrap:wrap;font-variant-numeric:tabular-nums">
+        <div><div class="lab">ЗА СМЕНУ</div><div style="margin-top:4px;font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">65<span style="font-size:15px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></div></div>
+        <div><div class="lab">В ЧАС</div><div style="margin-top:4px;font:700 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink2)">≈8<span style="font-size:15px">&nbsp;BYN</span></div></div>
+        <div><div class="lab">ЗА МЕСЯЦ</div><div style="margin-top:4px;font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">1 250<span style="font-size:15px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></div></div>
+        <div><div class="lab">ЗА МЕСТО · ВСЕГО</div><div style="margin-top:4px;font:700 18px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink2)">65 · <span style="color:var(--ink)">130 BYN</span></div></div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">«BYN» всегда подчинён: вдвое меньше и на ink.2. Разряды — тонкий пробел. Копейки не показываем. <b>VO:</b> «65 белорусских рублей» — не «BYN».</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ФИЛЬТРЫ · ВКЛАДКИ · ЧИПЫ · ПОЛЗУНОК · ПЕРЕКЛЮЧАТЕЛЬ</div>
+    <div class="lab" style="margin-bottom:7px">БЫСТРЫЕ ВКЛАДКИ</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="padding:7px 12px;border-radius:11px;background:var(--brand);font:600 13.5px/1 -apple-system,sans-serif;color:var(--on)">Все</div>
+      <div style="padding:7px 11px;border-radius:11px;background:var(--surf);border:1px solid var(--line);font:500 13.5px/1 -apple-system,sans-serif;color:var(--ink3)">Срочные</div>
+      <div style="padding:7px 11px;border-radius:11px;background:var(--surf);border:1px solid var(--line);font:500 13.5px/1 -apple-system,sans-serif;color:var(--ink3)">Без опыта</div>
+      <div style="padding:7px 11px;border-radius:11px;background:var(--surf2);font:500 13.5px/1 -apple-system,sans-serif;color:var(--inkD)">Ночные</div>
+      <span class="lab" style="align-self:center">выбран · обычный · недоступен</span>
+    </div>
+    <div class="lab" style="margin-bottom:7px">ЧИПЫ С УДАЛЕНИЕМ</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 9px 7px 12px;border-radius:11px;background:var(--bt)"><span style="font:600 13.5px/1 -apple-system,sans-serif;color:var(--brand)">ПВЗ</span><span style="color:var(--brand);display:flex;opacity:.65"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></div>
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 9px 7px 12px;border-radius:11px;background:var(--bt)"><span style="font:600 13.5px/1 -apple-system,sans-serif;color:var(--brand);font-variant-numeric:tabular-nums">от 60 BYN</span><span style="color:var(--brand);display:flex;opacity:.65"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></span></div>
+      <div style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:11px;background:var(--surf);border:1px solid var(--line)"><span style="font:600 13.5px/1 -apple-system,sans-serif;color:var(--ink3)">Сбросить всё</span></div>
+    </div>
+    <div class="lab" style="margin-bottom:9px">ПОЛЗУНОК · ОПЛАТА ЗА СМЕНУ</div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font:700 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;margin-bottom:9px"><span>60 BYN</span><span style="color:var(--ink2)">150 BYN</span></div>
+      <div style="position:relative;height:28px;display:flex;align-items:center">
+        <div style="position:absolute;left:0;right:0;height:5px;border-radius:3px;background:var(--surf3)"></div>
+        <div style="position:absolute;left:8%;right:38%;height:5px;border-radius:3px;background:var(--brand)"></div>
+        <div style="position:absolute;left:8%;width:26px;height:26px;margin-left:-13px;border-radius:14px;background:var(--surf);box-shadow:0 2px 6px rgba(40,30,18,.3);border:1px solid var(--line)"></div>
+        <div style="position:absolute;left:62%;width:26px;height:26px;margin-left:-13px;border-radius:14px;background:var(--surf);box-shadow:0 2px 6px rgba(40,30,18,.3);border:1px solid var(--line)"></div>
+      </div>
+    </div>
+    <div class="lab" style="margin-bottom:9px">ПЕРЕКЛЮЧАТЕЛЬ · СТЕППЕР МЕСТ</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:400 14.5px/1 -apple-system,sans-serif;color:var(--ink)">Только без опыта</span><div style="width:51px;height:31px;border-radius:16px;background:var(--suc);padding:2px;display:flex;justify-content:flex-end"><div style="width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div></div></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:400 14.5px/1 -apple-system,sans-serif;color:var(--ink2)">Ночные</span><div style="width:51px;height:31px;border-radius:16px;background:var(--surf3);padding:2px"><div style="width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>
+      <div style="display:flex;align-items:center;gap:2px;background:var(--surf2);border-radius:12px;padding:3px">
+        <div style="width:38px;height:34px;border-radius:9px;background:var(--surf);display:flex;align-items:center;justify-content:center;color:var(--ink);box-shadow:0 1px 2px rgba(40,30,18,.15)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 12h12"/></svg></div>
+        <div style="width:40px;text-align:center;font:700 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">2</div>
+        <div style="width:38px;height:34px;border-radius:9px;background:var(--surf);display:flex;align-items:center;justify-content:center;color:var(--ink);box-shadow:0 1px 2px rgba(40,30,18,.15)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+      </div>
+      <span class="lab">мест на смене</span>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Выбор выражен цветом бренда и формой — не чёрным. Каждое изменение фильтра — selection haptic; кнопка листа считает результат: «Показать 9 смен».</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ПОЛЯ</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div>
+        <div class="lab" style="margin-bottom:6px">ТЕЛЕФОН · МАСКА +375 (__) ___-__-__</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px;height:52px;border-radius:15px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;padding:0 15px;font:600 17px/1 -apple-system,sans-serif;color:var(--inkD);font-variant-numeric:tabular-nums">+375 (__) ___-__-__</div>
+          <div style="flex:1;min-width:180px;height:52px;border-radius:15px;background:var(--surf);border:2px solid var(--brand);display:flex;align-items:center;padding:0 14px;font:600 17px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">+375 (29) 123-45-6<span style="width:2px;height:22px;background:var(--brand);margin-left:2px"></span></div>
+        </div>
+        <div style="margin-top:7px;display:flex;gap:9px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px"><div style="height:52px;border-radius:15px;background:var(--surf);border:2px solid var(--err);display:flex;align-items:center;padding:0 14px;font:600 17px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">+375 (29) 123</div><div style="margin-top:5px;display:flex;align-items:center;gap:5px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--err)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.5M12 15.5h.01"/></svg>Номер неполный</div></div>
+          <div style="flex:1;min-width:180px;height:52px;border-radius:15px;background:var(--surf2);display:flex;align-items:center;padding:0 15px;font:600 17px/1 -apple-system,sans-serif;color:var(--inkD);font-variant-numeric:tabular-nums">+375 (29) 123-45-67</div>
+        </div>
+        <div class="lab" style="margin-top:5px">пусто · фокус · ошибка · недоступно</div>
+      </div>
+      <div>
+        <div class="lab" style="margin-bottom:6px">КОД ИЗ SMS · 6 ЯЧЕЕК · АВТОПОДСТАНОВКА</div>
+        <div style="display:flex;gap:7px">
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font:700 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">4</div>
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font:700 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">8</div>
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font:700 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">1</div>
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:2px solid var(--brand);display:flex;align-items:center;justify-content:center"><span style="width:2px;height:26px;background:var(--brand)"></span></div>
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:1px solid var(--line)"></div>
+          <div style="width:46px;height:56px;border-radius:13px;background:var(--surf);border:1px solid var(--line)"></div>
+        </div>
+        <div style="margin-top:7px;display:flex;align-items:center;gap:12px"><span style="font:400 13px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Новый код через 0:42</span><span style="font:600 13px/1 -apple-system,sans-serif;color:var(--inkD)">Отправить снова</span></div>
+      </div>
+      <div>
+        <div class="lab" style="margin-bottom:6px">ТЕКСТ · МНОГОСТРОЧНЫЙ · ПИКЕР</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="height:52px;border-radius:15px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;padding:0 15px;font:400 16px/1 -apple-system,sans-serif;color:var(--inkD)">Должность — например, Оператор ПВЗ</div>
+          <div style="min-height:82px;border-radius:15px;background:var(--surf);border:1px solid var(--line);padding:13px 15px;font:400 15px/1.45 -apple-system,sans-serif;color:var(--ink)">Выдача и приём заказов, работа с терминалом, порядок в зале.<div style="margin-top:7px;text-align:right;font:400 12px/1 ui-monospace,monospace;color:var(--ink2)">62 / 300</div></div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <div style="flex:1;min-width:130px;height:52px;border-radius:15px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 15px"><span style="font:600 16px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">пт, 11 сен</span><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/></svg></span></div>
+            <div style="flex:1;min-width:130px;height:52px;border-radius:15px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 15px"><span style="font:600 16px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">10:00 – 18:00</span><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.2l3 1.8"/></svg></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Плейсхолдеры только по-русски, на реальных примерах. Ошибка живёт под полем текстом и знаком, а не одной красной рамкой. Клавиатура телефона — numberPad с автозаполнением из SMS.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">НАВИГАЦИЯ</div>
+    <div class="lab" style="margin-bottom:7px">КРУПНЫЙ ЗАГОЛОВОК · ПОИСК · ПЕРЕКЛЮЧАТЕЛЬ</div>
+    <div style="background:var(--bg);border-radius:16px;padding:14px 16px 16px;border:1px solid var(--line);margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h4 style="margin:0;font:800 30px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">Смены</h4>
+        <div style="display:flex;padding:3px;background:var(--surf2);border-radius:13px;gap:2px">
+          <div style="padding:6px 11px;border-radius:10px;background:var(--surf);box-shadow:0 1px 3px rgba(40,30,18,.14);color:var(--brand);display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+          <div style="padding:6px 11px;border-radius:10px;color:var(--ink2);display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg></div>
+        </div>
+      </div>
+      <div style="margin-top:2px;font:400 14px/1.3 -apple-system,sans-serif;color:var(--ink2)">Минск · 6 смен</div>
+      <div style="margin-top:12px;height:44px;background:var(--surf);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;gap:8px;padding:0 14px"><span style="color:var(--ink2);display:flex;opacity:.75"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></span><span style="font:400 16px/1 -apple-system,sans-serif;color:var(--ink2);opacity:.85">Должность или компания</span></div>
+    </div>
+    <div class="lab" style="margin-bottom:7px">НАВБАР · СЖАТЫЙ ЗАГОЛОВОК НА СКРОЛЛЕ</div>
+    <div style="background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:14px;height:48px;display:flex;align-items:center;padding:0 12px;gap:10px;margin-bottom:12px">
+      <span style="color:var(--brand);display:flex"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg></span>
+      <span style="flex:1;text-align:center;font:700 16.5px/1 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</span>
+      <span style="color:var(--ink3);display:flex"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 5 8v5c0 4 3 6 7 7 4-1 7-3 7-7V8z"/></svg></span>
+      <span style="color:var(--ink3);display:flex"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg></span>
+    </div>
+    <div class="lab" style="margin-bottom:7px">ТАБ-БАР · ИСПОЛНИТЕЛЬ · ГОСТЬ · ЗАКАЗЧИК</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:14px;height:62px;display:flex;align-items:center;padding-top:4px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--brand)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:600 10px/1 -apple-system,sans-serif">Смены</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2);position:relative"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/><path d="m9 14.5 2 2 4-4"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Мои смены</span><span style="position:absolute;top:-3px;left:55%;min-width:17px;height:17px;border-radius:9px;background:var(--err);color:#fff;font:700 10.5px/17px -apple-system,sans-serif;text-align:center">2</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2);position:relative"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Чат</span><span style="position:absolute;top:0;left:60%;width:9px;height:9px;border-radius:5px;background:var(--err)"></span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+      <div style="background:var(--glass);border:1px solid var(--line);border-radius:14px;height:62px;display:flex;align-items:center;padding-top:4px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--brand)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:600 10px/1 -apple-system,sans-serif">Смены</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--inkD)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Мои смены</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--inkD)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Чат</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--brand)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M11 8l4 4-4 4M15 12H4"/></svg><span style="font:600 10px/1 -apple-system,sans-serif">Войти</span></div>
+      </div>
+      <div style="background:var(--glass);border:1px solid var(--line);border-radius:14px;height:62px;display:flex;align-items:center;padding-top:4px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--brand)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9M12 19V5M19 19v-7"/></svg><span style="font:600 10px/1 -apple-system,sans-serif">Сводка</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2);position:relative"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Смены</span><span style="position:absolute;top:-3px;left:57%;min-width:17px;height:17px;border-radius:9px;background:var(--err);color:#fff;font:700 10.5px/17px -apple-system,sans-serif;text-align:center">3</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Чат</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink2)"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 10px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">У гостя «Мои смены» и «Чат» приглушены, но нажимаются: ведут к листу «Нужен номер». Бейдж с числом — отклики и подтверждения; точка без числа — непрочитанные сообщения.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ЛИСТ · МЕНЮ · ТОСТ</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:200px">
+        <div class="lab" style="margin-bottom:6px">ЛИСТ · DETENTS 0.5 / 1.0</div>
+        <div style="border-radius:18px 18px 12px 12px;background:var(--bg);border:1px solid var(--line);padding:9px 14px 14px;box-shadow:var(--e2)">
+          <div style="width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px"></div>
+          <div style="font:800 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Фильтры</div>
+          <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap"><span style="padding:6px 10px;border-radius:9px;background:var(--bt);font:600 12.5px/1 -apple-system,sans-serif;color:var(--brand)">ПВЗ</span><span style="padding:6px 10px;border-radius:9px;background:var(--surf);border:1px solid var(--line);font:500 12.5px/1 -apple-system,sans-serif;color:var(--ink3)">Склад</span></div>
+          <div style="margin-top:12px;height:46px;border-radius:14px;background:var(--brand);display:flex;align-items:center;justify-content:center;font:700 15.5px/1 -apple-system,sans-serif;color:var(--on)">Показать 9 смен</div>
+        </div>
+      </div>
+      <div style="width:200px">
+        <div class="lab" style="margin-bottom:6px">КОНТЕКСТНОЕ МЕНЮ</div>
+        <div style="border-radius:14px;overflow:hidden;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);box-shadow:var(--e2)">
+          <div style="padding:11px 13px;display:flex;align-items:center;justify-content:space-between;font:400 15px/1 -apple-system,sans-serif;color:var(--ink)">Сохранить<span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h11v16l-5.5-4-5.5 4z"/></svg></span></div>
+          <div style="height:1px;background:var(--line)"></div>
+          <div style="padding:11px 13px;display:flex;align-items:center;justify-content:space-between;font:400 15px/1 -apple-system,sans-serif;color:var(--ink)">Поделиться<span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M8.5 7.5 12 4l3.5 3.5"/><path d="M6 13v6.5h12V13"/></svg></span></div>
+          <div style="height:1px;background:var(--line)"></div>
+          <div style="padding:11px 13px;display:flex;align-items:center;justify-content:space-between;font:400 15px/1 -apple-system,sans-serif;color:var(--err)">Пожаловаться<span style="display:flex"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 4v9M12 17h.01"/></svg></span></div>
+        </div>
+      </div>
+      <div style="width:200px">
+        <div class="lab" style="margin-bottom:6px">ACTION SHEET</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="border-radius:14px;overflow:hidden;background:var(--glass);border:1px solid var(--line)">
+            <div style="padding:10px 13px;text-align:center;font:400 12.5px/1.4 -apple-system,sans-serif;color:var(--ink2)">Фото смены</div>
+            <div style="height:1px;background:var(--line)"></div>
+            <div style="padding:12px 13px;text-align:center;font:400 16px/1 -apple-system,sans-serif;color:var(--brand)">Снять фото</div>
+            <div style="height:1px;background:var(--line)"></div>
+            <div style="padding:12px 13px;text-align:center;font:400 16px/1 -apple-system,sans-serif;color:var(--brand)">Выбрать из галереи</div>
+          </div>
+          <div style="border-radius:14px;background:var(--surf);border:1px solid var(--line);padding:12px 13px;text-align:center;font:700 16px/1 -apple-system,sans-serif;color:var(--ink)">Отмена</div>
+        </div>
+      </div>
+    </div>
+    <div class="lab" style="margin:14px 0 7px">ТОСТ · С «ОТМЕНИТЬ» · УСПЕХ · ОШИБКА</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="padding:12px 14px;border-radius:15px;background:var(--ink);display:flex;align-items:center;gap:11px">
+        <span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>
+        <span style="flex:1;font:600 14px/1.35 -apple-system,sans-serif;color:var(--bg)">Отклик отправлен · 65 BYN</span>
+        <span style="font:700 14px/1 -apple-system,sans-serif;color:var(--brandP);flex:none">Отменить</span>
+      </div>
+      <div style="padding:12px 14px;border-radius:15px;background:var(--ink);display:flex;align-items:center;gap:11px">
+        <span style="color:var(--err);display:flex"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg></span>
+        <span style="flex:1;font:600 14px/1.35 -apple-system,sans-serif;color:var(--bg)">Места только что закончились</span>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Тост живёт 3,2 с над таб-баром и не перекрывает главное действие. «Отменить» — 5 секунд, потом действие фиксируется. Лист закрывается свайпом; на detent — light haptic.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">СИСТЕМНЫЕ СОСТОЯНИЯ · ПУСТО · ЗАГРУЗКА · ОШИБКА · НЕТ СЕТИ</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+      <div style="width:200px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:22px 16px;text-align:center">
+        <div style="width:56px;height:56px;margin:0 auto;border-radius:18px;background:var(--skyD);display:flex;align-items:center;justify-content:center;color:var(--sdi)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg></div>
+        <div style="margin-top:13px;font:700 16px/1.3 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Сегодня смен нет</div>
+        <div style="margin-top:5px;font:400 13px/1.45 -apple-system,sans-serif;color:var(--ink2)">Новые появляются с утра. Включи уведомления — пришлём первыми.</div>
+        <div style="margin-top:12px;height:42px;border-radius:13px;background:var(--brand);display:flex;align-items:center;justify-content:center;font:700 14.5px/1 -apple-system,sans-serif;color:var(--on)">Включить</div>
+        <div class="lab" style="margin-top:9px">ПУСТО · СВОЁ НА КАЖДЫЙ СПИСОК</div>
+      </div>
+      <div style="width:200px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px">
+        <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)">
+          <div style="height:32px;background:var(--surf2);animation:om-skel 1.4s ease-in-out infinite"></div>
+          <div style="padding:11px 12px">
+            <div style="display:flex;gap:10px"><div style="width:38px;height:38px;border-radius:12px;background:var(--surf2);animation:om-skel 1.4s ease-in-out infinite;flex:none"></div><div style="flex:1"><div style="height:11px;border-radius:5px;background:var(--surf2);animation:om-skel 1.4s ease-in-out .1s infinite"></div><div style="margin-top:6px;height:9px;width:65%;border-radius:5px;background:var(--surf2);animation:om-skel 1.4s ease-in-out .2s infinite"></div></div></div>
+            <div style="margin-top:11px;height:22px;width:45%;border-radius:6px;background:var(--surf2);animation:om-skel 1.4s ease-in-out .3s infinite"></div>
+          </div>
+        </div>
+        <div style="margin-top:9px;background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1);opacity:.6"><div style="height:32px;background:var(--surf2);animation:om-skel 1.4s ease-in-out .15s infinite"></div><div style="padding:11px 12px"><div style="height:11px;border-radius:5px;background:var(--surf2);animation:om-skel 1.4s ease-in-out .25s infinite"></div></div></div>
+        <div class="lab" style="margin-top:9px">ЗАГРУЗКА · СКЕЛЕТОН ФОРМЫ КАРТОЧКИ</div>
+      </div>
+      <div style="width:200px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:22px 16px;text-align:center">
+        <div style="width:56px;height:56px;margin:0 auto;border-radius:18px;background:var(--errt);display:flex;align-items:center;justify-content:center;color:var(--err)"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5M12 16h.01"/></svg></div>
+        <div style="margin-top:13px;font:700 16px/1.3 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Не получилось загрузить</div>
+        <div style="margin-top:5px;font:400 13px/1.45 -apple-system,sans-serif;color:var(--ink2)">Смены не пришли с сервера. Попробуй ещё раз.</div>
+        <div style="margin-top:12px;height:42px;border-radius:13px;background:var(--bt);display:flex;align-items:center;justify-content:center;font:700 14.5px/1 -apple-system,sans-serif;color:var(--brand)">Повторить</div>
+        <div class="lab" style="margin-top:9px">ОШИБКА</div>
+      </div>
+      <div style="width:200px">
+        <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px">
+          <div style="padding:10px 12px;border-radius:12px;background:var(--surf2);display:flex;align-items:center;gap:9px">
+            <span style="color:var(--ink3);display:flex;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 8.5c5-4 13-4 18 0M6 12.5c3.5-2.8 8.5-2.8 12 0M9.5 16.5c1.5-1.2 3.5-1.2 5 0"/><path d="M4 20 20 4"/></svg></span>
+            <span style="font:600 12.5px/1.35 -apple-system,sans-serif;color:var(--ink3)">Нет сети. Показываем последние 6 смен</span>
+          </div>
+          <div style="margin-top:9px;background:var(--surf);border-radius:14px;padding:10px 12px;opacity:.75">
+            <div style="font:700 14px/1.2 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+            <div style="margin-top:3px;font:400 11.5px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">обновлено в 9:12</div>
+          </div>
+        </div>
+        <div class="lab" style="margin-top:9px">НЕТ СЕТИ · КЭШ, А НЕ ПУСТОТА</div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Пустое состояние никогда не обвиняет и всегда предлагает действие. Скелетон повторяет форму карточки, а не серые полосы «вообще». Нет сети — отдаём кэш с честной отметкой времени.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">КАРТА · БУЛАВКИ · КЛАСТЕР · ПРЕВЬЮ</div>
+    <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+      <div style="text-align:center"><div style="display:flex;flex-direction:column;align-items:center"><div style="padding:6px 11px;border-radius:12px;background:var(--surf);box-shadow:0 4px 10px -3px rgba(40,30,18,.35);font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">75 BYN</div><div style="width:10px;height:10px;border-radius:2px;background:var(--surf);transform:rotate(45deg);margin-top:-5px"></div></div><div class="lab" style="margin-top:5px">обычная</div></div>
+      <div style="text-align:center"><div style="display:flex;flex-direction:column;align-items:center"><div style="padding:6px 11px 6px 8px;border-radius:12px;background:var(--surf);box-shadow:0 4px 10px -3px rgba(40,30,18,.35);display:flex;align-items:center;gap:4px"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65 BYN</span></div><div style="width:10px;height:10px;border-radius:2px;background:var(--surf);transform:rotate(45deg);margin-top:-5px"></div></div><div class="lab" style="margin-top:5px">срочная</div></div>
+      <div style="text-align:center"><div style="display:flex;flex-direction:column;align-items:center;transform:scale(1.12)"><div style="padding:6px 11px;border-radius:12px;background:var(--brand);box-shadow:0 6px 14px -4px rgba(11,53,80,.5);font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--on);font-variant-numeric:tabular-nums">65 BYN</div><div style="width:10px;height:10px;border-radius:2px;background:var(--brand);transform:rotate(45deg);margin-top:-5px"></div></div><div class="lab" style="margin-top:8px">выбранная · scale 1.12</div></div>
+      <div style="text-align:center"><div style="display:flex;flex-direction:column;align-items:center"><div style="padding:6px 11px;border-radius:12px;background:var(--surf2);font:800 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--inkD);font-variant-numeric:tabular-nums;text-decoration:line-through">90 BYN</div><div style="width:10px;height:10px;border-radius:2px;background:var(--surf2);transform:rotate(45deg);margin-top:-5px"></div></div><div class="lab" style="margin-top:5px">мест нет</div></div>
+      <div style="text-align:center"><div style="width:46px;height:46px;border-radius:24px;background:var(--brand);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px -3px rgba(11,53,80,.45)"><span style="font:800 16px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--on);font-variant-numeric:tabular-nums">12</span><span style="font:600 8px/1 -apple-system,sans-serif;color:var(--on);opacity:.8">смен</span></div><div class="lab" style="margin-top:5px">кластер</div></div>
+    </div>
+    <div class="lab" style="margin-bottom:7px">КАРТОЧКА-ПРЕВЬЮ В ЛИСТЕ</div>
+    <div style="background:var(--surf);border-radius:18px;overflow:hidden;box-shadow:var(--e2);max-width:330px">
+      <div style="height:32px;background:var(--skyD);display:flex;align-items:center;justify-content:space-between;padding:0 13px"><span style="font:700 12.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--sdi2)">дневная смена</span></div>
+      <div style="padding:11px 13px 12px;display:flex;align-items:center;gap:11px">
+        <div style="flex:1;min-width:0"><div style="font:700 16px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div><div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · ★ 4.6 · 1,2 км</div><div style="margin-top:7px;font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65<span style="font-size:15px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></div></div>
+        <div style="width:44px;height:44px;border-radius:22px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:var(--on);flex:none"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Булавка показывает сумму, а не точку: это единственная причина смотреть на карту. Выбор булавки поднимает карточку в листе, листание карточек двигает карту — одно пространство.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">ЧАТ</div>
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+      <div style="padding:10px 13px;background:var(--glass);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px">
+        <div style="position:relative;flex:none"><div style="width:36px;height:36px;border-radius:18px;background:{{ p4bg }};color:{{ p4ink }};display:flex;align-items:center;justify-content:center;font:800 13px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif">АК</div><span style="position:absolute;right:0;bottom:0;width:11px;height:11px;border-radius:6px;background:var(--suc);border:2px solid var(--glass)"></span></div>
+        <div style="flex:1;min-width:0"><div style="font:700 15px/1.2 -apple-system,sans-serif;color:var(--ink)">Андрей Комаров</div><div style="margin-top:1px;font:400 11.5px/1.3 -apple-system,sans-serif;color:var(--suc)">в сети</div></div>
+      </div>
+      <div style="padding:9px 13px;background:var(--surf);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:9px;background:var(--skyM);flex:none"></div>
+        <div style="flex:1;min-width:0;font:600 12.5px/1.3 -apple-system,sans-serif;color:var(--ink3);font-variant-numeric:tabular-nums">Оператор ПВЗ · завтра 09:00 · 95 BYN</div>
+        <span style="color:var(--ink2);display:flex;flex:none"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></span>
+      </div>
+      <div style="padding:12px 13px;display:flex;flex-direction:column;gap:8px">
+        <div style="align-self:center;padding:5px 11px;border-radius:9px;background:var(--surf2);font:500 11.5px/1.3 -apple-system,sans-serif;color:var(--ink3);text-align:center">Смена подтверждена · 11 сен, 9:42</div>
+        <div style="align-self:flex-start;max-width:78%;padding:9px 12px;border-radius:16px 16px 16px 5px;background:var(--surf);border:1px solid var(--line)">
+          <div style="font:400 14.5px/1.4 -apple-system,sans-serif;color:var(--ink)">Добрый день! Приходите к 8:50, вход со двора.</div>
+          <div style="margin-top:3px;font:400 10.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">9:44</div>
+        </div>
+        <div style="align-self:flex-end;max-width:78%;padding:9px 12px;border-radius:16px 16px 5px 16px;background:var(--brand)">
+          <div style="font:400 14.5px/1.4 -apple-system,sans-serif;color:var(--on)">Понял, буду. Спецодежда нужна?</div>
+          <div style="margin-top:3px;display:flex;align-items:center;justify-content:flex-end;gap:4px"><span style="font:400 10.5px/1 -apple-system,sans-serif;color:var(--on);opacity:.7;font-variant-numeric:tabular-nums">9:45</span><span style="color:var(--on);opacity:.8;display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m3 13 3.5 3.5L13 9"/><path d="m11 13 3.5 3.5L21 9"/></svg></span></div>
+        </div>
+      </div>
+      <div style="padding:8px 13px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line)">
+        <span style="padding:6px 11px;border-radius:10px;background:var(--bt);font:600 12.5px/1 -apple-system,sans-serif;color:var(--brand)">Буду вовремя</span>
+        <span style="padding:6px 11px;border-radius:10px;background:var(--bt);font:600 12.5px/1 -apple-system,sans-serif;color:var(--brand)">Задержусь на 10 мин</span>
+      </div>
+      <div style="padding:9px 13px 11px;display:flex;align-items:center;gap:9px;background:var(--glass);border-top:1px solid var(--line)">
+        <span style="color:var(--ink2);display:flex;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 5-4.5 4 3.5 3-2.5 3.5 3"/></svg></span>
+        <div style="flex:1;height:38px;border-radius:19px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;padding:0 14px;font:400 15px/1 -apple-system,sans-serif;color:var(--ink2)">Сообщение</div>
+        <div style="width:38px;height:38px;border-radius:19px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:var(--on);flex:none"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12 6l6 6-6 6"/></svg></div>
+      </div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Закреплённая смена всегда в шапке: разговор без контекста бесполезен. Системные сообщения — по центру, нейтрально. Быстрые фразы меняются по состоянию смены.</div>
+  </div>
+
+  <div class="card" style="padding:20px 24px">
+    <div class="h" style="margin-bottom:14px">СВОДКА · ЗАПОЛНЕНИЕ · РЕЙТИНГ И МЕТКИ · НАСТРОЙКИ</div>
+    <div class="lab" style="margin-bottom:7px">ГЛАВНАЯ ПРОБЛЕМА ДНЯ · ДВА СОСТОЯНИЯ</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <div style="flex:1;min-width:190px;border-radius:18px;overflow:hidden;box-shadow:var(--e2)">
+        <div style="background:var(--skyD);padding:13px 15px 15px">
+          <div style="display:flex;align-items:center;gap:6px"><span style="color:var(--urgi);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--urgi);letter-spacing:.02em">ГЛАВНОЕ СЕЙЧАС</span></div>
+          <div style="margin-top:9px;font:800 19px/1.25 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);text-wrap:pretty">Сегодня в 10:00 не хватает человека</div>
+          <div style="margin-top:11px;height:42px;border-radius:13px;background:var(--brand);display:flex;align-items:center;justify-content:center;font:700 14.5px/1 -apple-system,sans-serif;color:var(--on)">Разобрать 3 отклика</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:190px;border-radius:18px;overflow:hidden;box-shadow:var(--e1)">
+        <div style="background:var(--skyD);padding:13px 15px 15px">
+          <div style="display:flex;align-items:center;gap:6px"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--suc);letter-spacing:.02em">ВСЁ ПОД КОНТРОЛЕМ</span></div>
+          <div style="margin-top:9px;font:800 19px/1.25 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sdi);text-wrap:pretty">Сегодня в 10:00 люди придут</div>
+          <div style="margin-top:11px;height:42px;border-radius:13px;background:var(--urgt);display:flex;align-items:center;justify-content:center;font:700 14.5px/1 -apple-system,sans-serif;color:var(--sdi)">Смена и состав</div>
+        </div>
+      </div>
+    </div>
+    <div class="lab" style="margin-bottom:7px">ЧИСЛА · ЗАПОЛНЕНИЕ МЕСТ</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:80px;background:var(--surf);border-radius:14px;padding:10px 12px;box-shadow:var(--e1)"><div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">3</div><div style="margin-top:3px;font:400 11.5px/1.25 -apple-system,sans-serif;color:var(--ink2)">ждут ответа</div></div>
+      <div style="flex:1;min-width:80px;background:var(--surf);border-radius:14px;padding:10px 12px;box-shadow:var(--e1)"><div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">2</div><div style="margin-top:3px;font:400 11.5px/1.25 -apple-system,sans-serif;color:var(--ink2)">активных смены</div></div>
+      <div style="flex:1.5;min-width:120px;background:var(--surf);border-radius:14px;padding:10px 12px;box-shadow:var(--e1)"><div style="font:800 22px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">43%</div><div style="margin-top:3px;font:400 11.5px/1.25 -apple-system,sans-serif;color:var(--ink2)">заполнено за месяц</div><div style="margin-top:6px;height:5px;border-radius:3px;background:var(--line)"><div style="width:43%;height:5px;border-radius:3px;background:var(--brand)"></div></div></div>
+      <div style="flex:1;min-width:110px;background:var(--surf);border-radius:14px;padding:10px 12px;box-shadow:var(--e1)"><div class="lab">МЕСТА</div><div style="margin-top:6px;display:flex;align-items:center;gap:7px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">2 из 2</span><span style="display:flex;gap:4px"><span style="width:9px;height:9px;border-radius:5px;background:var(--brand)"></span><span style="width:9px;height:9px;border-radius:5px;background:var(--suc);animation:om-pop .45s cubic-bezier(.23,1,.32,1)"></span></span></div></div>
+    </div>
+    <div class="lab" style="margin-bottom:7px">РЕЙТИНГ И МЕТКИ</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <span style="display:flex;align-items:center;gap:4px"><span style="color:var(--star);display:flex"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg></span><span style="font:700 15px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">4.9</span><span style="font:400 13px/1 -apple-system,sans-serif;color:var(--ink2)">· 87 смен</span></span>
+      <span style="padding:5px 10px;border-radius:8px;background:var(--suct);font:700 11.5px/1 -apple-system,sans-serif;color:var(--suc)">Без отмен</span>
+      <span style="padding:5px 10px;border-radius:8px;background:var(--bt);font:700 11.5px/1 -apple-system,sans-serif;color:var(--brand)">50+ смен</span>
+      <span style="padding:5px 10px;border-radius:8px;background:var(--surf2);font:700 11.5px/1 -apple-system,sans-serif;color:var(--ink3)">Новичок</span>
+      <span style="padding:5px 10px;border-radius:8px;background:var(--urgt);font:700 11.5px/1 -apple-system,sans-serif;color:var(--urgi)">Подходит лучше всех</span>
+    </div>
+    <div class="lab" style="margin-bottom:7px">НАСТРОЙКИ · СТРОКА · ПЕРЕКЛЮЧАТЕЛЬ · ОПАСНАЯ ЗОНА</div>
+    <div style="background:var(--surf);border-radius:16px;overflow:hidden;box-shadow:var(--e1)">
+      <div style="padding:12px 14px;display:flex;align-items:center;gap:11px"><span style="color:var(--brand);display:flex;flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a5 5 0 0 0-5 5v3.5L5.5 15h13L17 12.5V9a5 5 0 0 0-5-5z"/><path d="M10 18a2 2 0 0 0 4 0"/></svg></span><span style="flex:1;font:400 16px/1 -apple-system,sans-serif;color:var(--ink)">Уведомления</span><span style="font:400 14.5px/1 -apple-system,sans-serif;color:var(--ink2)">Включены</span><span style="color:var(--ink2);display:flex;opacity:.65;flex:none"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></span></div>
+      <div style="height:1px;background:var(--line);margin-left:45px"></div>
+      <div style="padding:12px 14px;display:flex;align-items:center;gap:11px"><span style="color:var(--brand);display:flex;flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg></span><span style="flex:1;font:400 16px/1 -apple-system,sans-serif;color:var(--ink)">Тёмная тема</span><div style="width:51px;height:31px;border-radius:16px;background:var(--surf3);padding:2px;flex:none"><div style="width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div></div>
+      <div style="height:1px;background:var(--line);margin-left:45px"></div>
+      <div style="padding:12px 14px;display:flex;align-items:center;gap:11px"><span style="color:var(--err);display:flex;flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7.5h12l-1 12.5H7z"/><path d="M9.5 7.5V5.5h5v2"/></svg></span><span style="flex:1;font:400 16px/1 -apple-system,sans-serif;color:var(--err)">Удалить аккаунт</span></div>
+    </div>
+    <div class="m" style="margin-top:12px;padding-top:11px;border-top:1px solid #EDE7DD">Сводка — не отчёт: одна проблема дня крупно, числа в поддержке. Заполнение мест — точки, а не проценты: «2 из 2» человек понимает мгновенно. Опасная зона отделена цветом и стоит последней.</div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:22px;padding:20px 24px">
+  <div class="h" style="margin-bottom:6px">SF SYMBOLS · СТАТУСЫ И ДЕЙСТВИЯ</div>
+  <p style="margin:0 0 14px;max-width:940px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Элементы управления — только SF Symbols через <code style="font:400 12px ui-monospace,monospace;background:#F1EDE5;padding:1px 5px;border-radius:4px">expo-symbols</code>, вес совпадает с соседним текстом. Категории — свои пиктограммы (§8.4). В контенте разрешены три символа со смыслом: «срочно», звезда рейтинга, таймер отсчёта — часов рядом с «10:00–18:00» быть не должно.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 26px;font:400 11.5px/1.5 ui-monospace,Menlo,monospace;color:#3A342C">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;padding-bottom:7px;border-bottom:1px solid #EDE7DD;color:rgba(0,0,0,.55)"><span>роль</span><span>symbol · вес</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;padding-bottom:7px;border-bottom:1px solid #EDE7DD;color:rgba(0,0,0,.55)"><span>роль</span><span>symbol · вес</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 10px"><span>таб · смены</span><span>briefcase / .fill</span><span>таб · мои смены</span><span>calendar.badge.checkmark</span><span>таб · чат</span><span>bubble.left / .fill</span><span>таб · профиль</span><span>person.crop.circle</span><span>таб · сводка</span><span>chart.bar / .fill</span><span>таб · войти</span><span>rectangle.portrait.and.arrow.right</span><span>назад</span><span>chevron.left · semibold</span><span>вперёд · строка</span><span>chevron.right · semibold</span><span>ещё</span><span>ellipsis · semibold</span><span>поиск</span><span>magnifyingglass · semibold</span><span>фильтры</span><span>line.3.horizontal.decrease</span><span>список ⇄ карта</span><span>list.bullet · map</span><span>создать смену</span><span>plus · bold</span><span>уведомления</span><span>bell / .badge</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 10px"><span>срочно</span><span>bolt.fill</span><span>рейтинг</span><span>star.fill</span><span>отсчёт</span><span>timer</span><span>подтверждена</span><span>checkmark.circle.fill</span><span>ждёт ответа</span><span>clock</span><span>мест нет</span><span>nosign</span><span>выполнена</span><span>checkmark</span><span>отменена</span><span>xmark.circle</span><span>идёт</span><span>circle.fill</span><span>маршрут</span><span>arrow.triangle.turn.up.right.diamond</span><span>сохранить</span><span>bookmark / .fill</span><span>поделиться</span><span>square.and.arrow.up</span><span>жалоба</span><span>exclamationmark.bubble</span><span>нет сети</span><span>wifi.slash</span><span>ошибка</span><span>exclamationmark.circle</span><span>удалить</span><span>trash</span></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:22px;padding:20px 24px">
+  <div class="h" style="margin-bottom:14px">ЧЕК-ЛИСТ §17 · ПУНКТЫ ФАЗЫ 3</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:9px 26px;font:400 13.5px/1.5 -apple-system,sans-serif;color:#332E28">
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>tokens.json</b> — цвет в трёх темах, небо, типографика, отступы, радиусы, тени, материалы, движение, haptics, монограммы. Один файл, ничего в коде руками.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Повышенная контрастность</b> — отдельная ветка, а не «чуть темнее»: линии видимы, тени → рамка 1 pt, небо → плоский тинт, у каждого статуса символ.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>AX3</b> — правило роста в токенах, money.hero и countdown растут медленнее, карточка показана в двух кеглях рядом.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>8 пиктограмм в SVG</b> — отдельные файлы, сетка 24, штрих 1.7 не масштабируется, проверены на 20 / 30 / 44 pt.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Монограммы</b> — 6 тонов, детерминированный выбор по ФИО, один человек — один тон везде. Ни одного чёрного кружка.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Библиотека §8.8</b> — все 18 групп со состояниями, включая загрузку, недоступность, ошибку и подписи VoiceOver.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Один язык статусов</b> — девять состояний §9.2, у каждого цвет, символ и текст; в сером и в контрасте читаются без цвета.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>У каждого списка есть пусто, загрузка и ошибка</b> — плюс «нет сети» с кэшем и честной отметкой времени.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>SF Symbols</b> — таблица статусов и действий; в контенте только три символа со смыслом.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Расхождений с Фазой 2 нет</b> — те же значения; добавлены только состояния, которых в ключевых экранах не было.</span></div>
+  </div>
+  <p style="margin:16px 0 0;max-width:1000px;font:400 13.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty"><b>Что дальше.</b> По ТЗ следующий шаг — К2 · Система в коде: библиотека компонентов заменяется целиком, пиктограммы и монограммы идут в код, восемь ключевых экранов приводятся к финальной системе. Файлы для передачи: <a href="handoff/tokens.json">handoff/tokens.json</a> и <a href="handoff/icons/category-pvz.svg">handoff/icons/</a>. Скажи «утверждаю» — и я сразу начну Фазу 4: остальные 25 экранов и листы §10.2 в обеих темах, состояния §10.3 и проверка на iPhone SE для экранов 1, 4 и 25.</p>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1400}}">
+const PEOPLE = {
+  light:[['#D7E7F3','#0E4361'],['#F3E0CE','#5C3A18'],['#E6E8D6','#43491F'],['#F0DCDF','#6B2B33'],['#DCE3ED','#2C3D5C'],['#DEE9E2','#1E4E3B']],
+  dark:[['#1D3441','#BFE0F2'],['#3A2E22','#EBD6BE'],['#2F3326','#D9DDBF'],['#3A2A2D','#F0CBD0'],['#262E3C','#C6D2E6'],['#22332B','#BFE0CE']],
+  contrast:[['#D7E7F3','#052E45'],['#F3E0CE','#40270E'],['#E6E8D6','#2C3013'],['#F0DCDF','#4A1B23'],['#DCE3ED','#1C293F'],['#DEE9E2','#12352A']]
+};
+const NOTE = {
+  light:'--bg FBF8F4 · surface FFFFFF · ink 1B1917 · brand 0F5673',
+  dark:'--bg 11161C · surface 1A2129 · ink F7F3EC · brand 6FB4D8',
+  contrast:'ink 000000 · линии видимы · тени → рамка 1 pt · небо → плоский тинт'
+};
+
+class Component extends DCLogic {
+  state = { theme:'light' };
+  renderVals(){
+    const t = this.state.theme;
+    const seg = (on)=>({bg:on?'#FFFFFF':'transparent', ink:on?'#0F5673':'#6E6559', sh:on?'0 1px 3px rgba(40,30,18,.18)':'none'});
+    const l=seg(t==='light'), d=seg(t==='dark'), c=seg(t==='contrast');
+    const p = PEOPLE[t];
+    const out = {
+      theme:t, themeNote:NOTE[t],
+      lBg:l.bg, lInk:l.ink, lSh:l.sh, dBg:d.bg, dInk:d.ink, dSh:d.sh, cBg:c.bg, cInk:c.ink, cSh:c.sh,
+      onLight:()=>this.setState({theme:'light'}),
+      onDark:()=>this.setState({theme:'dark'}),
+      onContrast:()=>this.setState({theme:'contrast'})
+    };
+    p.forEach((v,i)=>{ out['p'+i+'bg']=v[0]; out['p'+i+'ink']=v[1]; });
+    return out;
+  }
+}
+</script>
+</body>
+</html>

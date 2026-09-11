@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#E9E6E0;color:#1B1917;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0F5673;text-decoration:none}
+a:hover{color:#0B4459}
+[data-theme="dark"]{--bg:#11161C!important;--surf:#1A2129!important;--surf2:#222B35!important;--line:#232C36!important;--ink:#F7F3EC!important;--ink2:#93A0AD!important;--ink3:#B6C1CB!important;--brand:#6FB4D8!important;--bt:#17303D!important;--on:#08131A!important;--urg:#F0A65A!important;--urgi:#F5C68F!important;--urgt:rgba(8,14,20,.5)!important;--suc:#4FBE95!important;--suci:#0E2A22!important;--err:#FF7A68!important;--sky-d:linear-gradient(100deg,#2E6089,#17415F)!important;--sky-m:linear-gradient(100deg,#5A4433,#264257)!important;--sky-e:linear-gradient(100deg,#6A4433,#5A2F45)!important;--sky-n:linear-gradient(100deg,#243459,#131C34)!important;--sky-x:linear-gradient(100deg,#2A3138,#22282E)!important;--skyi:#DCEEF9!important;--skyi2:#AFC9DA!important;--skyx:#98A3AD!important;--smi:#F2E3D3!important;--smi2:#CDB6A0!important;--sei:#F7DCD9!important;--glass:rgba(17,22,28,.82)!important;--sh:0 10px 24px -12px rgba(0,0,0,.6)!important;--dock:rgba(17,22,28,.86)!important}
+@keyframes om-shake{0%,100%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(6px)}54%{transform:translateX(-4px)}72%{transform:translateX(2px)}}
+@keyframes om-pop{0%{transform:scale(.86);opacity:0}62%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes om-rise{0%{transform:translateY(10px) scale(.97);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes om-sheen{0%{transform:translateX(-130%)}100%{transform:translateX(240%)}}
+@keyframes om-breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.35);opacity:0}}
+[data-motion="reduced"] *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+</style></helmet>
+
+<div style="padding:36px 40px 48px;max-width:1500px">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px">
+  <span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:4px 8px;background:#1B1917;color:#fff;border-radius:5px">ФАЗА 2</span>
+  <h1 style="margin:0;font:800 29px/1.1 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em">Небо смены — ключевые экраны</h1>
+  <span style="font:400 13px/1.4 -apple-system,sans-serif;color:rgba(0,0,0,.55)">СменаБел · 11 сентября 2026</span>
+</div>
+<p style="margin:0 0 26px;max-width:900px;font:400 14.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Направление A утверждено. Здесь оно живое: восемь ключевых экранов работают как приложение — переключай тему, роль и движение слева, нажимай карточки, откликайся, подтверждай кандидатов. Данные §11, время 09:40. Ниже — черновик токенов, восемь пиктограмм категорий и иконка v2.</p>
+
+<div style="display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap">
+
+  <div style="width:246px;flex:none;display:flex;flex-direction:column;gap:18px">
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:16px 16px 18px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:10px">РОЛЬ</div>
+      <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+        <div onClick="{{ onWorker }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ roleWorkerBg }};color:{{ roleWorkerInk }};box-shadow:{{ roleWorkerSh }}">Исполнитель</div>
+        <div onClick="{{ onEmployer }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ roleEmpBg }};color:{{ roleEmpInk }};box-shadow:{{ roleEmpSh }}">Заказчик</div>
+      </div>
+
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin:16px 0 10px">ТЕМА</div>
+      <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+        <div onClick="{{ onLight }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ lightBg }};color:{{ lightInk }};box-shadow:{{ lightSh }}">Светлая</div>
+        <div onClick="{{ onDark }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ darkBg }};color:{{ darkInk }};box-shadow:{{ darkSh }}">Тёмная</div>
+      </div>
+
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin:16px 0 10px">ДВИЖЕНИЕ</div>
+      <div style="display:flex;padding:3px;background:#F0EBE3;border-radius:11px;gap:3px">
+        <div onClick="{{ onMotionFull }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ mFullBg }};color:{{ mFullInk }};box-shadow:{{ mFullSh }}">Обычное</div>
+        <div onClick="{{ onMotionReduced }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:600 13px/1 -apple-system,sans-serif;cursor:pointer;background:{{ mRedBg }};color:{{ mRedInk }};box-shadow:{{ mRedSh }}">Reduce Motion</div>
+      </div>
+    </div>
+
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:16px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:10px">ВОСЕМЬ КЛЮЧЕВЫХ ЭКРАНОВ</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div onClick="{{ goFeed }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav1 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">01</span>Смены — список</div>
+        <div onClick="{{ goMap }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav2 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">02</span>Смены — карта</div>
+        <div onClick="{{ goDetailOzon }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav3 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">03</span>Детали — открыта</div>
+        <div onClick="{{ goPhoneSheet }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav4 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">04</span>Лист «Нужен номер»</div>
+        <div onClick="{{ goPass }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav5 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">05</span>Детали — пропуск</div>
+        <div onClick="{{ goMy }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav6 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">06</span>Мои смены</div>
+        <div onClick="{{ goSummary }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav7 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">07</span>Сводка заказчика</div>
+        <div onClick="{{ goResponses }}" style="display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;cursor:pointer;background:{{ nav8 }};font:500 13px/1.3 -apple-system,sans-serif;color:#332E28"><span style="font:600 10px ui-monospace,monospace;color:rgba(0,0,0,.45);width:14px">08</span>Отклики на смену</div>
+      </div>
+      <div onClick="{{ onReset }}" style="margin-top:12px;padding:9px 10px;border-radius:9px;border:1px solid rgba(0,0,0,.1);text-align:center;font:600 12.5px/1 -apple-system,sans-serif;color:#6E6559;cursor:pointer">Сбросить прототип</div>
+    </div>
+
+    <div style="background:#1B1917;border-radius:14px;padding:14px 16px 16px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.5);margin-bottom:8px">ПОСЛЕДНЕЕ СОБЫТИЕ</div>
+      <div style="font:700 14px/1.35 -apple-system,sans-serif;color:#FBF8F4">{{ logTitle }}</div>
+      <div style="margin-top:5px;font:400 11.5px/1.5 ui-monospace,Menlo,monospace;color:#A9A095">{{ logSpec }}</div>
+    </div>
+  </div>
+
+  <div style="flex:none">
+    <div data-theme="{{ theme }}" data-motion="{{ motion }}" style="--bg:#FBF8F4;--surf:#FFFFFF;--surf2:#F0EAE1;--line:#EAE3D8;--ink:#1B1917;--ink2:#6E6559;--ink3:#5C544A;--brand:#0F5673;--bt:#E4F0F5;--on:#FFFFFF;--urg:#E07A1F;--urgi:#8A4408;--urgt:rgba(255,253,249,.85);--suc:#1C7A5A;--suci:#E8F2E9;--err:#C0392B;--sky-d:linear-gradient(100deg,#C6E4F7,#87C4EA);--sky-m:linear-gradient(100deg,#FFD9B8,#CFE6F4);--sky-e:linear-gradient(100deg,#FFC68C,#F0A2AC);--sky-n:linear-gradient(100deg,#33477F,#151F3C);--sky-x:linear-gradient(100deg,#F3E4D6,#E8DCD8);--skyi:#0B3550;--skyi2:#16405A;--skyx:#6A5B4E;--smi:#3D2410;--smi2:#6A4425;--sei:#6B2B2F;--glass:rgba(251,248,244,.9);--dock:rgba(251,248,244,.86);--sh:0 8px 20px -10px rgba(40,30,18,.22);width:393px;height:852px;border-radius:44px;overflow:hidden;position:relative;background:var(--bg);box-shadow:0 30px 60px -18px rgba(40,30,18,.42),0 2px 6px rgba(40,30,18,.14)">
+
+      <div style="position:absolute;left:0;right:0;top:0;height:54px;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 32px;color:{{ barInk }}">
+        <span style="font:600 15px/1 -apple-system,sans-serif;font-variant-numeric:tabular-nums">9:40</span>
+        <div style="position:absolute;left:50%;top:11px;transform:translateX(-50%);width:106px;height:31px;border-radius:16px;background:#05080C"></div>
+        <div style="display:flex;align-items:flex-end;gap:6px">
+          <div style="display:flex;align-items:flex-end;gap:2px"><div style="width:3px;height:5px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:8px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:11px;border-radius:1px;background:currentColor"></div><div style="width:3px;height:13px;border-radius:1px;background:currentColor"></div></div>
+          <div style="width:26px;height:13px;border-radius:4px;border:1.5px solid currentColor;padding:1.5px"><div style="width:70%;height:100%;border-radius:2px;background:currentColor"></div></div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dFeed }};transform:{{ feedT }};transition:transform .34s cubic-bezier(.32,.72,0,1);overflow:hidden">
+        <div style="padding:56px 20px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <h3 style="margin:0;font:800 34px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">Смены</h3>
+            <div style="display:flex;padding:3px;background:var(--surf2);border-radius:13px;gap:2px">
+              <div onClick="{{ onList }}" style="padding:6px 11px;border-radius:10px;cursor:pointer;background:{{ listBg }};box-shadow:{{ listSh }};color:{{ listInk }};display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+              <div onClick="{{ onMap }}" style="padding:6px 11px;border-radius:10px;cursor:pointer;background:{{ mapBg }};box-shadow:{{ mapSh }};color:{{ mapInk }};display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg></div>
+            </div>
+          </div>
+          <div style="margin-top:2px;font:400 14px/1.3 -apple-system,sans-serif;color:var(--ink2)">Минск · 6 смен</div>
+          <div style="margin-top:14px;height:44px;background:var(--surf);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;gap:8px;padding:0 14px">
+            <span style="color:var(--ink2);display:flex;opacity:.75"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></span>
+            <span style="font:400 16px/1 -apple-system,sans-serif;color:var(--ink2);opacity:.85">Должность или компания</span>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:6px">
+            <div style="padding:7px 12px;border-radius:11px;background:var(--brand);font:600 13.5px/1 -apple-system,sans-serif;color:var(--on);white-space:nowrap;flex:none">Все</div>
+            <div style="padding:7px 11px;border-radius:11px;background:var(--surf);border:1px solid var(--line);font:500 13.5px/1 -apple-system,sans-serif;color:var(--ink3);white-space:nowrap;flex:none">Срочные</div>
+            <div style="padding:7px 11px;border-radius:11px;background:var(--surf);border:1px solid var(--line);font:500 13.5px/1 -apple-system,sans-serif;color:var(--ink3);white-space:nowrap;flex:none">Без опыта</div>
+            <div onClick="{{ onFilters }}" style="margin-left:auto;display:flex;align-items:center;gap:4px;color:var(--brand);cursor:pointer;flex:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg><span style="font:600 13.5px/1 -apple-system,sans-serif;white-space:nowrap">Фильтры</span></div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;align-items:baseline;justify-content:space-between">
+            <span style="font:700 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Сегодня</span>
+            <span style="font:400 13px/1.2 -apple-system,sans-serif;color:var(--ink2)">3 смены</span>
+          </div>
+
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+            <div onClick="{{ openOzon }}" style="background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06);cursor:pointer;transition:transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.975)">
+              <div style="height:38px;background:var(--sky-d);display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+                <span style="font:700 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi);font-variant-numeric:tabular-nums">10:00–18:00 · 8 ч</span>
+                <span style="display:flex;align-items:center;gap:3px;padding:4px 8px 4px 6px;border-radius:8px;background:var(--urgt)"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--urgi)">Срочно</span></span>
+              </div>
+              <div style="padding:12px 14px 13px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:700 17px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+                    <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 13.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><span>Ozon ПВЗ Минск</span><span style="display:flex;align-items:center;gap:2px;color:var(--ink3)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;font-variant-numeric:tabular-nums">4.6</span></span></div>
+                  </div>
+                </div>
+                <div style="margin-top:11px;display:flex;align-items:flex-end;justify-content:space-between">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font:800 28px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em">65<span style="font-size:17px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+                    <span style="font:400 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">≈8 BYN/ч</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:500 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">{{ ozonPlaces }}</span>
+                    <span style="display:flex;gap:3px"><span style="width:7px;height:7px;border-radius:4px;background:var(--brand)"></span><span style="width:7px;height:7px;border-radius:4px;background:{{ ozonDot2 }}"></span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div onClick="{{ openSklad }}" style="background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06);cursor:pointer;transition:transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.975)">
+              <div style="height:38px;background:var(--sky-m);display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+                <span style="font:700 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyx);font-variant-numeric:tabular-nums">08:00–16:00 · 8 ч</span>
+                <span style="display:flex;align-items:center;gap:3px;padding:4px 8px 4px 6px;border-radius:8px;background:var(--urgt)"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--urgi)">Срочно</span></span>
+              </div>
+              <div style="padding:12px 14px 13px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14.5" rx="1.5"/><path d="M3.5 10.2h17M3.5 15h17M8 5v5.2M14.8 15v4.5"/></svg></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:700 17px/1.25 -apple-system,sans-serif;color:var(--ink)">Грузчик</div>
+                    <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 13.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><span>Склад-Логистик</span><span style="display:flex;align-items:center;gap:2px;color:var(--ink3)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;font-variant-numeric:tabular-nums">4.4</span></span></div>
+                  </div>
+                </div>
+                <div style="margin-top:11px;display:flex;align-items:flex-end;justify-content:space-between">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font:800 28px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em">75<span style="font-size:17px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+                    <span style="font:400 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">≈9 BYN/ч</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font:500 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">2 из 4 мест</span>
+                    <span style="display:flex;gap:3px"><span style="width:7px;height:7px;border-radius:4px;background:var(--brand)"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--brand)"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--line)"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--line)"></span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div onClick="{{ openCafe }}" style="background:var(--surf);border-radius:20px;overflow:hidden;border:1px solid var(--line);cursor:pointer;opacity:.92">
+              <div style="height:38px;background:var(--sky-x);display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+                <span style="font:700 14px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyx);font-variant-numeric:tabular-nums">12:00–22:00 · 10 ч</span>
+                <span style="display:flex;align-items:center;gap:4px;padding:4px 8px 4px 6px;border-radius:8px;background:var(--urgt)"><span style="color:var(--ink2);display:flex"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><path d="m6.5 17.5 11-11"/></svg></span><span style="font:700 11px/1 -apple-system,sans-serif;color:var(--ink3)">Мест нет</span></span>
+              </div>
+              <div style="padding:12px 14px 13px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);color:var(--ink2);display:flex;align-items:center;justify-content:center;flex:none;opacity:.8"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v5a5.5 5.5 0 0 1-11 0z"/><path d="M16 9.6h1.6a2.2 2.2 0 0 1 0 4.4H16"/><path d="M4 20h13"/></svg></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font:700 17px/1.25 -apple-system,sans-serif;color:var(--ink3)">Официант</div>
+                    <div style="margin-top:2px;font:400 13.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Кафе «Васильки» · ★ 4.8</div>
+                  </div>
+                </div>
+                <div style="margin-top:11px;display:flex;align-items:flex-end;justify-content:space-between">
+                  <span style="font:800 28px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">90<span style="font-size:17px;font-weight:700">&nbsp;BYN</span></span>
+                  <span style="font:500 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">3 из 3 мест</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:26px;display:flex;align-items:baseline;justify-content:space-between">
+              <span style="font:700 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Завтра</span>
+              <span style="font:400 13px/1.2 -apple-system,sans-serif;color:var(--ink2)">3 смены</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dMap }};overflow:hidden">
+        <div style="position:absolute;inset:0;background:#E7EDE4">
+          <div style="position:absolute;left:-40px;top:150px;width:520px;height:16px;background:#FAF8F3;transform:rotate(-7deg)"></div>
+          <div style="position:absolute;left:-40px;top:400px;width:520px;height:10px;background:#FAF8F3;transform:rotate(-7deg)"></div>
+          <div style="position:absolute;left:-40px;top:620px;width:520px;height:7px;background:#FAF8F3;transform:rotate(-7deg)"></div>
+          <div style="position:absolute;left:120px;top:-40px;width:14px;height:1000px;background:#FAF8F3;transform:rotate(6deg)"></div>
+          <div style="position:absolute;left:290px;top:-40px;width:8px;height:1000px;background:#FAF8F3;transform:rotate(6deg)"></div>
+          <div style="position:absolute;left:40px;top:210px;width:70px;height:44px;border-radius:4px;background:#DDE4D8"></div>
+          <div style="position:absolute;left:200px;top:300px;width:110px;height:60px;border-radius:4px;background:#DDE4D8"></div>
+          <div style="position:absolute;left:60px;top:470px;width:90px;height:50px;border-radius:4px;background:#DDE4D8"></div>
+          <div style="position:absolute;left:230px;top:520px;width:80px;height:70px;border-radius:4px;background:#DDE4D8"></div>
+        </div>
+
+        <div onClick="{{ pinOzon }}" style="position:absolute;left:150px;top:250px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:{{ pinOzonScale }};transition:transform .25s cubic-bezier(.23,1,.32,1);z-index:12">
+          <div style="padding:7px 12px;border-radius:13px;background:{{ pinOzonBg }};box-shadow:0 6px 14px -4px rgba(11,53,80,.45);font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ pinOzonInk }};font-variant-numeric:tabular-nums">65 BYN</div>
+          <div style="width:11px;height:11px;border-radius:2px;background:{{ pinOzonBg }};transform:rotate(45deg);margin-top:-5px"></div>
+        </div>
+        <div onClick="{{ pinSklad }}" style="position:absolute;left:62px;top:430px;display:flex;flex-direction:column;align-items:center;cursor:pointer;transform:{{ pinSkladScale }};transition:transform .25s cubic-bezier(.23,1,.32,1);z-index:11">
+          <div style="padding:7px 12px;border-radius:13px;background:{{ pinSkladBg }};box-shadow:0 6px 14px -4px rgba(11,53,80,.4);font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ pinSkladInk }};font-variant-numeric:tabular-nums">75 BYN</div>
+          <div style="width:11px;height:11px;border-radius:2px;background:{{ pinSkladBg }};transform:rotate(45deg);margin-top:-5px"></div>
+        </div>
+        <div style="position:absolute;left:246px;top:520px;display:flex;flex-direction:column;align-items:center;z-index:10;opacity:.75">
+          <div style="padding:7px 12px;border-radius:13px;background:#EFEAE1;box-shadow:0 3px 8px -3px rgba(40,30,18,.3);font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#8A8075;font-variant-numeric:tabular-nums;text-decoration:line-through">90 BYN</div>
+          <div style="width:11px;height:11px;border-radius:2px;background:#EFEAE1;transform:rotate(45deg);margin-top:-5px"></div>
+        </div>
+
+        <div style="position:absolute;left:0;right:0;top:54px;padding:6px 20px 0;display:flex;align-items:center;justify-content:space-between;z-index:20">
+          <div style="padding:9px 14px;border-radius:15px;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 4px 12px -6px rgba(40,30,18,.3);font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Минск · 6 смен</div>
+          <div style="display:flex;padding:3px;background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:13px;gap:2px;box-shadow:0 4px 12px -6px rgba(40,30,18,.3)">
+            <div onClick="{{ onList }}" style="padding:6px 11px;border-radius:10px;cursor:pointer;color:var(--ink2);display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+            <div style="padding:6px 11px;border-radius:10px;background:var(--surf);box-shadow:0 1px 3px rgba(40,30,18,.14);color:var(--brand);display:flex;align-items:center"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg></div>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:0;right:0;bottom:84px;padding:0 14px 12px;z-index:22">
+          <div onClick="{{ openSelected }}" style="background:var(--surf);border-radius:22px;overflow:hidden;box-shadow:0 14px 30px -12px rgba(40,30,18,.35),0 2px 4px rgba(40,30,18,.1);cursor:pointer;animation:om-rise .3s cubic-bezier(.23,1,.32,1)">
+            <div style="height:34px;background:{{ selSky }};display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+              <span style="font:700 13.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ selSkyInk }};font-variant-numeric:tabular-nums">{{ selWhen }}</span>
+              <span style="font:700 11.5px/1 -apple-system,sans-serif;color:{{ selSkyInk }};opacity:.85">{{ selSkyLabel }}</span>
+            </div>
+            <div style="padding:11px 14px 12px;display:flex;align-items:center;gap:12px">
+              <div style="flex:1;min-width:0">
+                <div style="font:700 17px/1.25 -apple-system,sans-serif;color:var(--ink)">{{ selTitle }}</div>
+                <div style="margin-top:2px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2)">{{ selCoLine }}</div>
+                <div style="margin-top:7px;display:flex;align-items:baseline;gap:7px">
+                  <span style="font:800 26px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ selMoney }}<span style="font-size:16px;font-weight:700;color:var(--ink2)">&nbsp;BYN</span></span>
+                  <span style="font:400 12.5px/1 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">{{ selHour }}</span>
+                </div>
+              </div>
+              <div style="width:46px;height:46px;border-radius:23px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:var(--on);flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dOther }};padding:56px 20px 0">
+        <h3 style="margin:0;font:800 30px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">{{ otherTitle }}</h3>
+        <div style="margin-top:200px;text-align:center">
+          <div style="width:72px;height:72px;margin:0 auto;border-radius:24px;background:var(--surf2);color:var(--ink2);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><path d="M7 9h10M7 13h6"/></svg></div>
+          <div style="margin-top:16px;font:700 18px/1.3 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Этот экран — в Фазе 4</div>
+          <div style="margin-top:6px;font:400 14px/1.5 -apple-system,sans-serif;color:var(--ink2)">В Фазе 2 сделаны восемь ключевых экранов.<br>Чат, профиль и остальные 25 — следующий шаг.</div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;z-index:25;display:{{ dDetail }};transform:{{ detailT }};transition:transform .34s cubic-bezier(.32,.72,0,1);background:var(--bg);overflow:hidden">
+        <div style="background:{{ detSkyFull }};padding:0 0 20px">
+          <div style="height:54px"></div>
+          <div style="padding:4px 20px 0;display:flex;align-items:center;justify-content:space-between">
+            <div onClick="{{ onBack }}" style="width:40px;height:40px;border-radius:20px;background:var(--urgt);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:{{ detSkyInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg></div>
+            <div style="display:flex;gap:9px">
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--urgt);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:{{ detSkyInk }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 5 8v5c0 4 3 6 7 7 4-1 7-3 7-7V8z"/></svg></div>
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--urgt);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:{{ detSkyInk }}"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg></div>
+            </div>
+          </div>
+          <div style="padding:22px 20px 0">
+            <div style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px 5px 8px;border-radius:9px;background:var(--urgt)"><span style="color:var(--urg);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z"/></svg></span><span style="font:700 12px/1 -apple-system,sans-serif;color:var(--urgi)">{{ detBadge }}</span></div>
+            <h4 style="margin:12px 0 0;font:800 27px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ detSkyInk }};letter-spacing:-.02em">{{ detTitle }}</h4>
+            <div style="margin-top:12px;display:flex;align-items:baseline;gap:10px">
+              <span style="font:800 52px/.95 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ detSkyInk }};font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ detMoney }}<span style="font-size:26px;font-weight:700;opacity:.75">&nbsp;BYN</span></span>
+              <span style="font:600 15px/1 -apple-system,sans-serif;color:{{ detSkyInk2 }};font-variant-numeric:tabular-nums">{{ detHour }}</span>
+            </div>
+            <div style="margin-top:7px;font:400 13px/1.4 -apple-system,sans-serif;color:{{ detSkyInk2 }}">Оплата после смены, напрямую от заказчика</div>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:14px;background:var(--urgt)">
+              <span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ detSkyInk }};font-variant-numeric:tabular-nums">{{ detWhen }}</span>
+              <span style="width:1px;height:14px;background:currentColor;opacity:.25"></span>
+              <span style="font:600 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ detSkyInk2 }}">{{ detDur }}</span>
+              <span style="margin-left:auto;font:600 13px/1 -apple-system,sans-serif;color:{{ detSkyInk2 }}">{{ detSkyLabel }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:14px 20px 0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:var(--surf);border-radius:20px;padding:12px 14px;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06);display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:14px;background:{{ detSkyFull }};display:flex;align-items:center;justify-content:center;font:800 17px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ detSkyInk }};flex:none">{{ detMono }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 16px/1.25 -apple-system,sans-serif;color:var(--ink)">{{ detCo }}</div>
+              <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2)"><svg viewBox="0 0 24 24" width="12" height="12" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums">{{ detRate }}</span><span>{{ detRev }}</span></div>
+            </div>
+            <span style="color:var(--ink2);display:flex;opacity:.7"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></span>
+          </div>
+
+          <div style="background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06)">
+            <div style="height:104px;background:#E7EDE4;position:relative;overflow:hidden">
+              <div style="position:absolute;left:-10px;top:34px;width:420px;height:9px;background:#FAF8F3;transform:rotate(-4deg)"></div>
+              <div style="position:absolute;left:-10px;top:74px;width:420px;height:5px;background:#FAF8F3;transform:rotate(-4deg)"></div>
+              <div style="position:absolute;left:96px;top:-20px;width:6px;height:170px;background:#FAF8F3;transform:rotate(9deg)"></div>
+              <div style="position:absolute;left:250px;top:-20px;width:4px;height:170px;background:#FAF8F3;transform:rotate(9deg)"></div>
+              <div style="position:absolute;left:40px;top:56px;width:44px;height:26px;border-radius:3px;background:#DDE4D8"></div>
+              <div style="position:absolute;left:190px;top:12px;width:60px;height:20px;border-radius:3px;background:#DDE4D8"></div>
+              <div style="position:absolute;left:166px;top:40px;display:flex;flex-direction:column;align-items:center">
+                <div style="padding:5px 9px;border-radius:11px;background:var(--brand);box-shadow:0 3px 8px rgba(11,53,80,.3);font:700 13px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:#fff;font-variant-numeric:tabular-nums">{{ detMoney }} BYN</div>
+                <div style="width:9px;height:9px;border-radius:2px;background:var(--brand);transform:rotate(45deg);margin-top:-4px"></div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;display:flex;align-items:center;gap:12px">
+              <div style="flex:1;min-width:0">
+                <div style="font:700 15.5px/1.3 -apple-system,sans-serif;color:var(--ink)">{{ detAddr }}</div>
+                <div style="margin-top:2px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2)">{{ detHint }}</div>
+              </div>
+              <div style="padding:9px 14px;border-radius:12px;background:var(--bt);font:600 14px/1 -apple-system,sans-serif;color:var(--brand);flex:none">Маршрут</div>
+            </div>
+          </div>
+
+          <div style="background:var(--surf);border-radius:20px;padding:13px 14px;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font:600 15px/1 -apple-system,sans-serif;color:var(--ink3)">Мест осталось</span>
+              <span style="display:flex;align-items:center;gap:7px"><span style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ detPlaces }}</span><span style="display:flex;gap:4px"><span style="width:9px;height:9px;border-radius:5px;background:var(--brand)"></span><span style="width:9px;height:9px;border-radius:5px;background:{{ detDot2 }}"></span></span></span>
+            </div>
+            <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line)">
+              <div style="font:600 13px/1 -apple-system,sans-serif;color:var(--ink2)">Что подходит</div>
+              <div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:6px">
+                <span style="padding:6px 10px;border-radius:9px;background:var(--suci);font:600 13px/1 -apple-system,sans-serif;color:var(--suc)">Без опыта</span>
+                <span style="padding:6px 10px;border-radius:9px;background:var(--surf2);font:600 13px/1 -apple-system,sans-serif;color:var(--ink3)">Смартфон</span>
+                <span style="padding:6px 10px;border-radius:9px;background:var(--surf2);font:600 13px/1 -apple-system,sans-serif;color:var(--ink3)">18+</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 20px 30px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line)">
+          <div onClick="{{ onApply }}" style="height:54px;border-radius:17px;background:{{ applyBg }};box-shadow:{{ applySh }};display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;transition:background .25s cubic-bezier(.23,1,.32,1),transform .12s cubic-bezier(.23,1,.32,1);animation:{{ applyAnim }}" style-active="transform:scale(.97)">
+            <span style="display:{{ applyIconD }};color:{{ applyInk }};animation:om-pop .25s cubic-bezier(.23,1,.32,1)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>
+            <span style="font:700 17.5px/1 -apple-system,sans-serif;color:{{ applyInk }}">{{ applyLabel }}</span>
+            <span style="display:{{ applySumD }};width:5px;height:5px;border-radius:3px;background:currentColor;opacity:.5;color:{{ applyInk }}"></span>
+            <span style="display:{{ applySumD }};font:700 17.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ applyInk }};font-variant-numeric:tabular-nums">{{ detMoney }} BYN</span>
+          </div>
+          <div style="margin-top:{{ applyNoteMt }};font:400 12.5px/1.4 -apple-system,sans-serif;color:var(--ink2);text-align:center;height:{{ applyNoteH }};overflow:hidden;transition:height .25s cubic-bezier(.23,1,.32,1)">{{ applyNote }}</div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;z-index:30;display:{{ dPass }};transform:{{ passT }};transition:transform .34s cubic-bezier(.32,.72,0,1);background:var(--bg);overflow:hidden">
+        <div style="background:var(--sky-m);padding:0 0 22px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:-30%;top:0;width:60%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.45),rgba(255,255,255,0));animation:om-sheen 2.4s cubic-bezier(.23,1,.32,1) .3s 1"></div>
+          <div style="height:54px"></div>
+          <div style="padding:4px 20px 0;display:flex;align-items:center;justify-content:space-between;position:relative">
+            <div onClick="{{ onBackPass }}" style="width:40px;height:40px;border-radius:20px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--smi);cursor:pointer"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg></div>
+            <div style="width:40px;height:40px;border-radius:20px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--smi)"><svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg></div>
+          </div>
+          <div style="padding:20px 20px 0;position:relative">
+            <div style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px 5px 8px;border-radius:9px;background:var(--urgt)">
+              <span style="position:relative;display:flex;width:9px;height:9px;align-items:center;justify-content:center"><span style="position:absolute;width:9px;height:9px;border-radius:5px;background:var(--suc);animation:om-breathe 2s ease-out infinite"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--suc)"></span></span>
+              <span style="font:700 12px/1 -apple-system,sans-serif;color:var(--suc)">Смена подтверждена</span>
+            </div>
+            <div style="margin-top:14px;font:600 14px/1 -apple-system,sans-serif;color:var(--smi2)">Начнётся через</div>
+            <div style="margin-top:4px;font:800 46px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ countdown }}</div>
+            <div style="margin-top:14px;padding:13px 15px;border-radius:16px;background:var(--urgt)">
+              <div style="font:700 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi)">Оператор ПВЗ Wildberries</div>
+              <div style="margin-top:5px;font:600 15px/1.3 -apple-system,sans-serif;color:var(--smi2);font-variant-numeric:tabular-nums">Завтра · 09:00–21:00 · 12 ч</div>
+              <div style="margin-top:9px;display:flex;align-items:baseline;gap:8px">
+                <span style="font:800 30px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">95<span style="font-size:18px;font-weight:700;color:var(--smi2)">&nbsp;BYN</span></span>
+                <span style="font:400 12.5px/1 -apple-system,sans-serif;color:var(--smi2);font-variant-numeric:tabular-nums">≈8 BYN/ч</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:14px 20px 0;display:flex;flex-direction:column;gap:10px">
+          <div style="background:var(--surf);border-radius:20px;padding:13px 14px;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06)">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="flex:1;min-width:0">
+                <div style="font:600 12.5px/1 -apple-system,sans-serif;color:var(--ink2)">Куда идти</div>
+                <div style="margin-top:5px;font:700 16px/1.3 -apple-system,sans-serif;color:var(--ink)">ул. Притыцкого, 83</div>
+                <div style="margin-top:3px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2)">Вход со двора, вывеска ПВЗ</div>
+              </div>
+              <div style="padding:10px 14px;border-radius:13px;background:var(--brand);font:700 14px/1 -apple-system,sans-serif;color:var(--on);flex:none">Маршрут</div>
+            </div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px">
+              <div style="width:42px;height:42px;border-radius:21px;background:var(--sky-e);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sei);flex:none">АК</div>
+              <div style="flex:1;min-width:0">
+                <div style="font:600 12.5px/1 -apple-system,sans-serif;color:var(--ink2)">На входе спросить</div>
+                <div style="margin-top:4px;font:700 15.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Андрея Комарова</div>
+              </div>
+              <div style="padding:10px 14px;border-radius:13px;background:var(--bt);font:600 14px/1 -apple-system,sans-serif;color:var(--brand);flex:none">Написать</div>
+            </div>
+          </div>
+
+          <div style="background:var(--surf);border-radius:20px;padding:13px 14px;box-shadow:0 1px 2px rgba(40,30,18,.06);display:flex;align-items:center;gap:11px">
+            <div style="width:34px;height:34px;border-radius:11px;background:var(--suci);color:var(--suc);display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M8 8h6.5a2.5 2.5 0 0 1 0 5H9.5a2.5 2.5 0 0 0 0 5H16"/></svg></div>
+            <div style="font:500 13.5px/1.4 -apple-system,sans-serif;color:var(--ink3)">Оплата — 95 BYN после смены,<br>напрямую от заказчика</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dMy }};padding:56px 20px 0;overflow:hidden">
+        <h3 style="margin:0;font:800 34px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">Мои смены</h3>
+        <div style="margin-top:2px;font:400 14px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Сентябрь · 3 смены · 205 BYN</div>
+
+        <div onClick="{{ goPass }}" style="margin-top:16px;border-radius:24px;overflow:hidden;box-shadow:0 12px 28px -12px rgba(40,30,18,.3),0 1px 2px rgba(40,30,18,.08);cursor:pointer;transition:transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.985)">
+          <div style="background:var(--sky-m);padding:14px 16px 16px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 8px;border-radius:9px;background:var(--urgt)">
+                <span style="position:relative;display:flex;width:9px;height:9px;align-items:center;justify-content:center"><span style="position:absolute;width:9px;height:9px;border-radius:5px;background:var(--suc);animation:om-breathe 2s ease-out infinite"></span><span style="width:7px;height:7px;border-radius:4px;background:var(--suc)"></span></span>
+                <span style="font:700 12px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждена</span>
+              </span>
+              <span style="font:700 13px/1 -apple-system,sans-serif;color:var(--smi2)">Пропуск</span>
+            </div>
+            <div style="margin-top:12px;display:flex;align-items:flex-end;justify-content:space-between">
+              <div style="min-width:0">
+                <div style="font:600 13px/1 -apple-system,sans-serif;color:var(--smi2)">Начнётся через</div>
+                <div style="margin-top:3px;font:800 34px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ countdown }}</div>
+              </div>
+              <div style="text-align:right;flex:none">
+                <div style="font:800 26px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);font-variant-numeric:tabular-nums">95<span style="font-size:16px;font-weight:700;color:var(--smi2)">&nbsp;BYN</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--surf);padding:12px 16px 13px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="font:700 16.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ Wildberries</div>
+              <div style="margin-top:3px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Завтра · 09:00–21:00 · ул. Притыцкого, 83</div>
+            </div>
+            <span style="color:var(--ink2);display:flex;opacity:.7;flex:none"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></svg></span>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font:700 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Ждут ответа</span>
+          <span style="font:400 13px/1.2 -apple-system,sans-serif;color:var(--ink2)">{{ waitingCount }}</span>
+        </div>
+        <div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:{{ waitingOzonD }};background:var(--surf);border-radius:18px;padding:12px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);align-items:center;gap:12px;animation:om-rise .3s cubic-bezier(.23,1,.32,1)">
+            <div style="width:38px;height:38px;border-radius:12px;background:var(--sky-d);flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 15.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+              <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · сегодня 10:00–18:00</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font:700 16px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65 BYN</div>
+              <div style="margin-top:4px;font:600 11.5px/1 -apple-system,sans-serif;color:var(--urgi)">Ждёт ответа</div>
+            </div>
+          </div>
+          <div style="background:var(--surf);border-radius:18px;padding:12px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:12px;background:var(--sky-e);flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font:700 15.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Помощник повара</div>
+              <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ресторан «Литвины» · завтра 11:00–23:00</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font:700 16px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">110 BYN</div>
+              <div style="margin-top:4px;font:600 11.5px/1 -apple-system,sans-serif;color:var(--ink2)">Ждёт 10 минут</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font:700 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">История</span>
+          <span style="font:600 13px/1.2 -apple-system,sans-serif;color:var(--brand)">Вся история</span>
+        </div>
+        <div style="margin-top:9px;background:var(--surf);border-radius:18px;box-shadow:0 1px 2px rgba(40,30,18,.07);overflow:hidden">
+          <div style="padding:12px 14px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Сборщик заказов</div>
+              <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Склад-Логистик · сб, 6 сен</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">70 BYN</div>
+              <div style="margin-top:4px;font:600 11.5px/1 -apple-system,sans-serif;color:var(--suc)">Выполнена · оцени</div>
+            </div>
+          </div>
+          <div style="height:1px;background:var(--line);margin:0 14px"></div>
+          <div style="padding:12px 14px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="font:700 15px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+              <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · чт, 4 сен</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">65 BYN</div>
+              <div style="margin-top:4px;font:600 11.5px/1 -apple-system,sans-serif;color:var(--ink2)">Выполнена</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dSummary }};padding:56px 20px 0;overflow:hidden">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div style="flex:1;min-width:0">
+            <h3 style="margin:0;font:800 27px/1.15 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">Сводка</h3>
+            <div style="margin-top:3px;font:400 13.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">Ozon ПВЗ Минск · «Премиум» · 180 смен</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;flex:none">
+            <div style="width:40px;height:40px;border-radius:20px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink3);position:relative"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a5 5 0 0 0-5 5v3.5L5.5 15h13L17 12.5V9a5 5 0 0 0-5-5z"/><path d="M10 18a2 2 0 0 0 4 0"/></svg><span style="position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--err);color:#fff;font:700 11px/18px -apple-system,sans-serif;text-align:center">2</span></div>
+            <div style="width:44px;height:44px;border-radius:22px;background:var(--brand);box-shadow:0 6px 14px -6px rgba(15,86,115,.6);display:flex;align-items:center;justify-content:center;color:var(--on)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;border-radius:24px;overflow:hidden;box-shadow:0 12px 28px -12px rgba(40,30,18,.3),0 1px 2px rgba(40,30,18,.08)">
+          <div style="background:{{ heroSky }};padding:16px 18px 18px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:{{ heroBadgeInk }};display:flex">{{ heroBadgeIcon }}</span>
+              <span style="font:700 12px/1 -apple-system,sans-serif;color:{{ heroBadgeInk }};letter-spacing:.02em">{{ heroKicker }}</span>
+            </div>
+            <div style="margin-top:10px;font:800 23px/1.25 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:{{ heroInk }};letter-spacing:-.01em;text-wrap:pretty">{{ heroTitle }}</div>
+            <div style="margin-top:8px;font:500 14px/1.4 -apple-system,sans-serif;color:{{ heroInk2 }}">{{ heroLine1 }}<br>пр. Независимости, 58</div>
+            <div style="margin-top:14px;display:flex;gap:9px">
+              <div onClick="{{ goResponses }}" style="flex:1;height:48px;border-radius:15px;background:{{ heroBtnBg }};display:flex;align-items:center;justify-content:center;font:700 16px/1 -apple-system,sans-serif;color:{{ heroBtnInk }};cursor:pointer;transition:transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.97)">{{ heroBtnLabel }}</div>
+              <div style="width:48px;height:48px;border-radius:15px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--brand);flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <div style="flex:1;background:var(--surf);border-radius:16px;padding:11px 12px;box-shadow:0 1px 2px rgba(40,30,18,.07)"><div style="font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ waitN }}</div><div style="margin-top:4px;font:400 12px/1.25 -apple-system,sans-serif;color:var(--ink2)">ждут<br>ответа</div></div>
+          <div style="flex:1;background:var(--surf);border-radius:16px;padding:11px 12px;box-shadow:0 1px 2px rgba(40,30,18,.07)"><div style="font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">2</div><div style="margin-top:4px;font:400 12px/1.25 -apple-system,sans-serif;color:var(--ink2)">активных<br>смены</div></div>
+          <div style="flex:1.4;background:var(--surf);border-radius:16px;padding:11px 12px;box-shadow:0 1px 2px rgba(40,30,18,.07)"><div style="font:800 24px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ fillPct }}</div><div style="margin-top:4px;font:400 12px/1.25 -apple-system,sans-serif;color:var(--ink2)">заполнено за месяц</div><div style="margin-top:6px;height:5px;border-radius:3px;background:var(--line)"><div style="width:{{ fillPct }};height:5px;border-radius:3px;background:var(--brand);transition:width .4s cubic-bezier(.23,1,.32,1)"></div></div></div>
+        </div>
+
+        <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font:700 18px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Смены на точке</span>
+          <span style="font:600 13px/1.2 -apple-system,sans-serif;color:var(--brand)">Все смены</span>
+        </div>
+        <div style="margin-top:9px;display:flex;gap:6px">
+          <span style="padding:6px 11px;border-radius:10px;background:var(--brand);font:600 13px/1 -apple-system,sans-serif;color:var(--on);white-space:nowrap">Независимости, 58</span>
+          <span style="padding:6px 11px;border-radius:10px;background:var(--surf);border:1px solid var(--line);font:500 13px/1 -apple-system,sans-serif;color:var(--ink3);white-space:nowrap">Сурганова, 27</span>
+        </div>
+
+        <div onClick="{{ goResponses }}" style="margin-top:10px;background:var(--surf);border-radius:20px;overflow:hidden;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.06);cursor:pointer">
+          <div style="height:34px;background:var(--sky-d);display:flex;align-items:center;padding:0 14px"><span style="font:700 13.5px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi);font-variant-numeric:tabular-nums">Сегодня · 10:00–18:00 · 8 ч</span></div>
+          <div style="padding:11px 14px 12px;display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="font:700 16px/1.25 -apple-system,sans-serif;color:var(--ink)">Оператор ПВЗ</div>
+              <div style="margin-top:3px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">65 BYN за место · 130 BYN всего</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font:700 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">{{ fillLabel }}</div>
+              <div style="margin-top:5px;display:flex;gap:4px;justify-content:flex-end"><span style="width:9px;height:9px;border-radius:5px;background:var(--brand)"></span><span style="width:9px;height:9px;border-radius:5px;background:{{ fillDot2 }};animation:{{ fillDotAnim }}"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;font:700 18px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Кто чаще всех выходит</div>
+        <div style="margin-top:9px;background:var(--surf);border-radius:20px;padding:11px 12px 11px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:21px;background:var(--sky-e);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sei);flex:none">АК</div>
+          <div style="flex:1;min-width:0">
+            <div style="font:700 15.5px/1.25 -apple-system,sans-serif;color:var(--ink)">Алексей Ковалёв</div>
+            <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums">4.9</span><span>· 87 смен · без отмен</span></div>
+          </div>
+          <div style="padding:9px 14px;border-radius:12px;background:var(--bt);font:600 14px/1 -apple-system,sans-serif;color:var(--brand);flex:none">Позвать</div>
+        </div>
+      </div>
+
+      <div style="position:absolute;inset:0;display:{{ dResponses }};overflow:hidden">
+        <div style="padding:56px 20px 0">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div onClick="{{ goSummary }}" style="width:40px;height:40px;border-radius:20px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;flex:none"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/></svg></div>
+            <div style="flex:1;min-width:0">
+              <h3 style="margin:0;font:800 22px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em;color:var(--ink)">Отклики</h3>
+              <div style="margin-top:2px;font:400 13px/1.3 -apple-system,sans-serif;color:var(--ink2);font-variant-numeric:tabular-nums">Оператор ПВЗ · сегодня 10:00–18:00</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;border-radius:22px;overflow:hidden;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.07)">
+            <div style="background:var(--sky-d);padding:14px 16px 15px">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between">
+                <div>
+                  <div style="font:600 13px/1 -apple-system,sans-serif;color:var(--skyi2)">Закрыто мест</div>
+                  <div style="margin-top:5px;font:800 32px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi);font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{ fillLabel }}</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <span style="width:16px;height:16px;border-radius:9px;background:var(--skyi);opacity:.9"></span>
+                  <span style="width:16px;height:16px;border-radius:9px;background:{{ fillBigDot2 }};opacity:.9;animation:{{ fillDotAnim }}"></span>
+                </div>
+              </div>
+              <div style="margin-top:12px;font:600 13.5px/1 -apple-system,sans-serif;color:var(--skyi2);font-variant-numeric:tabular-nums">До начала 20 мин · 65 BYN за место</div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;align-items:baseline;gap:8px">
+            <span style="font:700 18px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Кандидаты</span>
+            <span style="font:400 13px/1.2 -apple-system,sans-serif;color:var(--ink2)">{{ waitN }} ждут ответа</span>
+          </div>
+
+          <div style="margin-top:10px;background:var(--surf);border-radius:20px;padding:13px 14px;box-shadow:var(--sh),0 1px 2px rgba(40,30,18,.07);border:1px solid {{ dariaBorder }};opacity:{{ candOpacity1 }}">
+            <div style="display:flex;align-items:center;gap:11px">
+              <div style="width:44px;height:44px;border-radius:22px;background:var(--sky-d);display:flex;align-items:center;justify-content:center;font:800 16px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi);flex:none">ДН</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font:700 16px/1.2 -apple-system,sans-serif;color:var(--ink)">Дарья Новикова</span>
+                  <span style="display:{{ dariaRecD }};padding:3px 7px;border-radius:6px;background:var(--bt);font:700 10.5px/1 -apple-system,sans-serif;color:var(--brand)">Подходит лучше всех</span>
+                </div>
+                <div style="margin-top:3px;display:flex;align-items:center;gap:5px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums">4.7</span><span>· 42 смены · без отмен</span></div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+              <div onClick="{{ confirmDaria }}" style="flex:1;height:44px;border-radius:14px;background:{{ dariaBtnBg }};display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:background .25s cubic-bezier(.23,1,.32,1),transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.97)">
+                <span style="display:{{ dariaChkD }};color:{{ dariaBtnInk }}"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>
+                <span style="font:700 15.5px/1 -apple-system,sans-serif;color:{{ dariaBtnInk }}">{{ dariaBtnLabel }}</span>
+              </div>
+              <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink3);flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg></div>
+              <div style="width:44px;height:44px;border-radius:14px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink2);flex:none"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px;opacity:{{ candOpacity2 }};transition:opacity .3s cubic-bezier(.23,1,.32,1)">
+            <div style="background:var(--surf);border-radius:18px;padding:11px 12px 11px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);display:flex;align-items:center;gap:11px">
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--sky-m);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--smi);flex:none">ИБ</div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 15.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Иван Белый</div>
+                <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums">4.5</span><span>· 120 смен</span></div>
+              </div>
+              <div onClick="{{ otherCand }}" style="padding:10px 14px;border-radius:13px;background:var(--bt);font:600 14px/1 -apple-system,sans-serif;color:var(--brand);flex:none;cursor:pointer">{{ otherBtnLabel }}</div>
+            </div>
+            <div style="background:var(--surf);border-radius:18px;padding:11px 12px 11px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);display:flex;align-items:center;gap:11px">
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--sky-e);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sei);flex:none">АЛ</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font:700 15.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Артём Лукашевич</span>
+                  <span style="padding:3px 6px;border-radius:6px;background:var(--surf2);font:700 10.5px/1 -apple-system,sans-serif;color:var(--ink3)">Новичок</span>
+                </div>
+                <div style="margin-top:2px;display:flex;align-items:center;gap:5px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)"><svg viewBox="0 0 24 24" width="11" height="11" fill="#E0A32B"><path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z"/></svg><span style="font-weight:600;color:var(--ink3);font-variant-numeric:tabular-nums">3.5</span><span>· 3 смены</span></div>
+              </div>
+              <div onClick="{{ otherCand }}" style="padding:10px 14px;border-radius:13px;background:var(--bt);font:600 14px/1 -apple-system,sans-serif;color:var(--brand);flex:none;cursor:pointer">{{ otherBtnLabel }}</div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;font:700 16px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink)">Уже подтверждены</div>
+          <div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--surf);border-radius:18px;padding:11px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);display:flex;align-items:center;gap:11px">
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--sky-e);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--sei);flex:none">АК</div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 15.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Алексей Ковалёв</div>
+                <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">★ 4.9 · 87 смен · без отмен</div>
+              </div>
+              <span style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--suci);flex:none"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 11.5px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждён</span></span>
+            </div>
+            <div style="display:{{ dariaConfirmedD }};background:var(--surf);border-radius:18px;padding:11px 14px;box-shadow:0 1px 2px rgba(40,30,18,.07);align-items:center;gap:11px;animation:om-rise .3s cubic-bezier(.23,1,.32,1)">
+              <div style="width:40px;height:40px;border-radius:20px;background:var(--sky-d);display:flex;align-items:center;justify-content:center;font:800 15px/1 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi);flex:none">ДН</div>
+              <div style="flex:1;min-width:0">
+                <div style="font:700 15.5px/1.2 -apple-system,sans-serif;color:var(--ink)">Дарья Новикова</div>
+                <div style="margin-top:2px;font:400 12.5px/1.3 -apple-system,sans-serif;color:var(--ink2)">★ 4.7 · 42 смены · без отмен</div>
+              </div>
+              <span style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:9px;background:var(--suci);flex:none"><span style="color:var(--suc);display:flex"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span><span style="font:700 11.5px/1 -apple-system,sans-serif;color:var(--suc)">Подтверждён</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="position:absolute;left:14px;right:14px;bottom:96px;z-index:45;display:{{ dCelebrate }};border-radius:22px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(20,14,8,.45);animation:om-pop .5s cubic-bezier(.23,1,.32,1)">
+          <div style="background:var(--sky-d);padding:16px 18px;position:relative;overflow:hidden">
+            <div style="position:absolute;left:-30%;top:0;width:60%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.5),rgba(255,255,255,0));animation:om-sheen .8s cubic-bezier(.23,1,.32,1) 1"></div>
+            <div style="position:relative;display:flex;align-items:center;gap:12px">
+              <div style="width:44px;height:44px;border-radius:22px;background:var(--urgt);display:flex;align-items:center;justify-content:center;color:var(--suc);flex:none"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></div>
+              <div style="flex:1;min-width:0">
+                <div style="font:800 19px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--skyi)">Все места закрыты</div>
+                <div style="margin-top:3px;font:500 13.5px/1.35 -apple-system,sans-serif;color:var(--skyi2)">Оператор ПВЗ · 2 из 2 · смена в 10:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;height:84px;z-index:35;display:{{ dEmpTabs }};background:var(--dock);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);align-items:flex-start;padding-top:9px">
+        <div onClick="{{ goSummary }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ empTabSumInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9M12 19V5M19 19v-7"/></svg><span style="font:600 10.5px/1 -apple-system,sans-serif">Сводка</span></div>
+        <div onClick="{{ goResponses }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ empTabShiftsInk }};position:relative;cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Смены</span><span style="position:absolute;top:-2px;left:56%;min-width:17px;height:17px;border-radius:9px;background:var(--err);color:#fff;font:700 10.5px/17px -apple-system,sans-serif;text-align:center;display:{{ empBadgeD }}">{{ waitN }}</span></div>
+        <div onClick="{{ goChat }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabChatInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Чат</span></div>
+        <div onClick="{{ goProfile }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabProfInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+
+      <div style="position:absolute;inset:0;z-index:50;display:{{ dSheet }};pointer-events:none">
+        <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(20,14,8,.42);opacity:{{ backdropO }};transition:opacity .3s cubic-bezier(.23,1,.32,1);pointer-events:auto"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:26px 26px 0 0;padding:10px 20px 30px;transform:{{ sheetT }};transition:transform .3s cubic-bezier(.23,1,.32,1);pointer-events:auto;box-shadow:0 -10px 40px -10px rgba(20,14,8,.3)">
+          <div style="width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px"></div>
+          <h4 style="margin:0;font:800 23px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;color:var(--ink);letter-spacing:-.01em">Нужен номер</h4>
+          <p style="margin:7px 0 0;font:400 14.5px/1.5 -apple-system,sans-serif;color:var(--ink2);text-wrap:pretty">Чтобы откликнуться на смену, подтверди номер. Заказчик увидит его только после подтверждения смены.</p>
+          <div style="margin-top:16px;height:54px;border-radius:16px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:2px">
+            <span style="font:600 18px/1 -apple-system,sans-serif;color:var(--ink);font-variant-numeric:tabular-nums">+375 29 123-45-67</span>
+          </div>
+          <div onClick="{{ onGetCode }}" style="margin-top:10px;height:54px;border-radius:17px;background:var(--brand);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s cubic-bezier(.23,1,.32,1)" style-active="transform:scale(.97)">
+            <span style="font:700 17.5px/1 -apple-system,sans-serif;color:var(--on)">Получить код</span>
+          </div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+            <span style="flex:1;height:1px;background:var(--line)"></span>
+            <span style="font:400 12.5px/1 -apple-system,sans-serif;color:var(--ink2)">или</span>
+            <span style="flex:1;height:1px;background:var(--line)"></span>
+          </div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px">
+            <div onClick="{{ onGetCode }}" style="height:50px;border-radius:15px;background:var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
+              <span style="color:var(--bg);display:flex"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16.4 12.7c0-2 1.6-3 1.7-3.1-.9-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.5-.4 6.1 1 8.1.7 1 1.5 2.1 2.5 2 1-.1 1.3-.6 2.5-.6s1.5.6 2.5.6 1.7-1 2.4-2c.5-.7.7-1.1 1.1-1.9-2-.8-2.4-3.4-2.4-3.5zM14.3 6.4c.5-.7.9-1.6.8-2.6-.9 0-1.9.6-2.5 1.3-.5.6-1 1.6-.8 2.5 1 .1 1.9-.5 2.5-1.2z"/></svg></span>
+              <span style="font:600 16px/1 -apple-system,sans-serif;color:var(--bg)">Войти с Apple</span>
+            </div>
+            <div onClick="{{ onGetCode }}" style="height:50px;border-radius:15px;background:var(--surf);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">
+              <span style="width:20px;height:20px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font:700 12px/1 -apple-system,sans-serif;color:var(--ink2)">G</span>
+              <span style="font:600 16px/1 -apple-system,sans-serif;color:var(--ink)">Войти с Google</span>
+            </div>
+          </div>
+          <p style="margin:14px 0 0;font:400 12px/1.5 -apple-system,sans-serif;color:var(--ink2);text-align:center">Продолжая, ты принимаешь <a href="#terms" style="color:var(--brand)">условия</a> и <a href="#privacy" style="color:var(--brand)">политику конфиденциальности</a>.</p>
+        </div>
+      </div>
+
+      <div style="position:absolute;left:0;right:0;bottom:0;height:84px;z-index:35;display:{{ dTabs }};background:var(--dock);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);align-items:flex-start;padding-top:9px">
+        <div onClick="{{ goFeed }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabFeedInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/></svg><span style="font:600 10.5px/1 -apple-system,sans-serif">Смены</span></div>
+        <div onClick="{{ goMy }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabMyInk }};position:relative;cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/><path d="m9 14.5 2 2 4-4"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Мои смены</span><span style="position:absolute;top:-2px;left:54%;min-width:17px;height:17px;border-radius:9px;background:var(--err);color:#fff;font:700 10.5px/17px -apple-system,sans-serif;text-align:center;display:{{ badgeD }};animation:om-pop .25s cubic-bezier(.23,1,.32,1)">{{ badgeN }}</span></div>
+        <div onClick="{{ goChat }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabChatInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4z"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Чат</span></div>
+        <div onClick="{{ goProfile }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ tabProfInk }};cursor:pointer"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.3-3.4 3.8-5 7-5s5.7 1.6 7 5"/></svg><span style="font:500 10.5px/1 -apple-system,sans-serif">Профиль</span></div>
+      </div>
+
+      <div style="position:absolute;left:16px;right:16px;bottom:96px;z-index:60;display:{{ dToast }};padding:13px 16px;border-radius:16px;background:var(--ink);box-shadow:0 12px 28px -10px rgba(20,14,8,.5);animation:om-rise .3s cubic-bezier(.23,1,.32,1);align-items:center;gap:11px">
+        <span style="color:{{ toastIconInk }};display:flex">{{ toastIcon }}</span>
+        <span style="flex:1;font:600 14px/1.35 -apple-system,sans-serif;color:var(--bg)">{{ toastText }}</span>
+      </div>
+
+      <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:9px;z-index:70;width:139px;height:5px;border-radius:3px;background:{{ homeInk }};opacity:.35"></div>
+    </div>
+
+    <div style="margin-top:14px;width:393px;font:400 12px/1.5 -apple-system,sans-serif;color:#4A443C">{{ hint }}</div>
+  </div>
+
+  <div style="flex:1;min-width:300px;display:flex;flex-direction:column;gap:18px">
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:18px 20px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:12px">ЧТО ПОПРОБОВАТЬ</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font:400 13.5px/1.5 -apple-system,sans-serif;color:#332E28">
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">01</span><span><b>Отклик в одно касание.</b> Открой «Оператор ПВЗ» → «Откликнуться · 65 BYN». Гость сначала увидит лист «Нужен номер», потом кнопка морфится в статус, а на вкладке «Мои смены» появится бейдж.</span></div>
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">02</span><span><b>Мест нет — честно.</b> Открой «Официант» и нажми кнопку: она качает головой и говорит, что места закончились. Ничего не обещает.</span></div>
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">03</span><span><b>Лента ⇄ карта.</b> Переключи на карту: булавка показывает сумму, выбранная смена сохраняется при переключении.</span></div>
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">04</span><span><b>Пропуск.</b> «Мои смены» → пропуск ближайшей смены: отсчёт живой, тикает каждую секунду.</span></div>
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">05</span><span><b>Все места закрыты.</b> Роль «Заказчик» → «Разобрать 3 отклика» → «Подтвердить» Дарью: заполнение наливается пружиной, и это единственное место, где разрешён праздник.</span></div>
+        <div style="display:flex;gap:9px"><span style="font:600 11px ui-monospace,monospace;color:#0F5673;flex:none;padding-top:2px">06</span><span><b>Reduce Motion.</b> Включи слева — движение заменяется кросс-фейдом, ничего не пропадает.</span></div>
+      </div>
+    </div>
+
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:18px 20px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:12px">ИКОНКА ПРИЛОЖЕНИЯ · ВЕРСИЯ 2</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="width:76px;height:76px;border-radius:20px;background:linear-gradient(165deg,#FFD9B8,#87C4EA);position:relative;overflow:hidden;box-shadow:0 8px 18px -6px rgba(40,30,18,.35)">
+            <div style="position:absolute;left:50%;top:36px;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;background:#FFFDF9"></div>
+            <div style="position:absolute;left:12px;right:12px;top:54px;height:4px;border-radius:2px;background:#0F5673"></div>
+          </div>
+          <div style="margin-top:6px;font:400 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.6)">светлая</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:76px;height:76px;border-radius:20px;background:linear-gradient(165deg,#33477F,#151F3C);position:relative;overflow:hidden;box-shadow:0 8px 18px -6px rgba(40,30,18,.35)">
+            <div style="position:absolute;left:50%;top:40px;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;background:#DCEEF9"></div>
+            <div style="position:absolute;left:12px;right:12px;top:54px;height:4px;border-radius:2px;background:#6FB4D8"></div>
+          </div>
+          <div style="margin-top:6px;font:400 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.6)">тёмная</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:76px;height:76px;border-radius:20px;background:#2B2B2B;position:relative;overflow:hidden;box-shadow:0 8px 18px -6px rgba(40,30,18,.35)">
+            <div style="position:absolute;left:50%;top:36px;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;background:#DADADA"></div>
+            <div style="position:absolute;left:12px;right:12px;top:54px;height:4px;border-radius:2px;background:#8F8F8F"></div>
+          </div>
+          <div style="margin-top:6px;font:400 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.6)">tinted</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:76px;height:76px;border-radius:20px;background:repeating-conic-gradient(#EFEBE4 0% 25%,#E2DDD4 0% 50%) 0 0/16px 16px;position:relative;overflow:hidden;box-shadow:0 8px 18px -6px rgba(40,30,18,.25)">
+            <div style="position:absolute;left:50%;top:36px;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.86)"></div>
+            <div style="position:absolute;left:12px;right:12px;top:54px;height:4px;border-radius:2px;background:rgba(255,255,255,.92)"></div>
+          </div>
+          <div style="margin-top:6px;font:400 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.6)">clear</div>
+        </div>
+      </div>
+      <p style="margin:12px 0 0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Солнце над линией горизонта — начало смены. Без буквы и без надписи, поэтому одинаково работает в четырёх режимах iOS 26 и читается на 29 pt.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px">
+
+  <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:20px 24px">
+    <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:14px">ЧЕРНОВИК ТОКЕНОВ · ЦВЕТ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px;font:400 11px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.62);padding-bottom:8px;border-bottom:1px solid #EDE7DD">
+      <span>роль</span><span>светлая</span><span>тёмная</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px 12px;margin-top:10px;font:400 11.5px/1.4 ui-monospace,Menlo,monospace;color:#3A342C;align-items:center">
+      <span>bg</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#FBF8F4;border:1px solid rgba(0,0,0,.12)"></span>FBF8F4</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#11161C"></span>11161C</span>
+      <span>surface</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#fff;border:1px solid rgba(0,0,0,.12)"></span>FFFFFF</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#1A2129"></span>1A2129</span>
+      <span>surface.2</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#F0EAE1"></span>F0EAE1</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#222B35"></span>222B35</span>
+      <span>line</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#EAE3D8"></span>EAE3D8</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#232C36"></span>232C36</span>
+      <span>ink</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#1B1917"></span>1B1917</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#F7F3EC"></span>F7F3EC</span>
+      <span>ink.2</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#6E6559"></span>6E6559</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#93A0AD"></span>93A0AD</span>
+      <span>brand</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#0F5673"></span>0F5673</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#6FB4D8"></span>6FB4D8</span>
+      <span>brand.tint</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#E4F0F5"></span>E4F0F5</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#17303D"></span>17303D</span>
+      <span>urgent</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#E07A1F"></span>E07A1F</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#F0A65A"></span>F0A65A</span>
+      <span>urgent.ink</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#8A4408"></span>8A4408</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#F5C68F"></span>F5C68F</span>
+      <span>success</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:var(--suc)"></span>1C7A5A</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#4FBE95"></span>4FBE95</span>
+      <span>error</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#C0392B"></span>C0392B</span><span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:4px;background:#FF7A68"></span>FF7A68</span>
+    </div>
+
+    <div style="margin-top:18px;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:10px">ШКАЛА НЕБА · ОДНО НЕБО НА ОБЪЕКТ</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div><div style="height:34px;border-radius:8px;background:linear-gradient(100deg,#FFD9B8,#CFE6F4)"></div><div style="margin-top:4px;font:400 10px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.62)">sky.morning<br>06–11 · ink 5A3316</div></div>
+      <div><div style="height:34px;border-radius:8px;background:linear-gradient(100deg,#C6E4F7,#87C4EA)"></div><div style="margin-top:4px;font:400 10px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.62)">sky.day<br>11–17 · ink 0B3550</div></div>
+      <div><div style="height:34px;border-radius:8px;background:linear-gradient(100deg,#FFC68C,#F0A2AC)"></div><div style="margin-top:4px;font:400 10px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.62)">sky.evening<br>17–22 · ink 5A2430</div></div>
+      <div><div style="height:34px;border-radius:8px;background:linear-gradient(100deg,#33477F,#151F3C)"></div><div style="margin-top:4px;font:400 10px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.62)">sky.night<br>22–06 · ink DCEEF9</div></div>
+    </div>
+
+    <div style="margin-top:18px;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:10px">ТИПОГРАФИКА · SF PRO ROUNDED + SF PRO</div>
+    <div style="display:flex;flex-direction:column;gap:7px;font:400 11.5px/1.4 ui-monospace,Menlo,monospace;color:#3A342C">
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>title.large</span><span style="color:rgba(0,0,0,.62)">Rounded 800 · 34/39 · −2%</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>title.section</span><span style="color:rgba(0,0,0,.62)">Rounded 700 · 19/23</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>money.hero</span><span style="color:rgba(0,0,0,.62)">Rounded 800 · 52/50 · tnum · BYN 26/700</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>money.card</span><span style="color:rgba(0,0,0,.62)">Rounded 800 · 28/28 · tnum · BYN 17/700</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>money.inline</span><span style="color:rgba(0,0,0,.62)">Rounded 700 · 16/16 · tnum</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>body</span><span style="color:rgba(0,0,0,.62)">SF Pro 400 · 17/24 · AX3 → 30/36</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>row.title</span><span style="color:rgba(0,0,0,.62)">SF Pro 700 · 17/21</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>caption</span><span style="color:rgba(0,0,0,.62)">SF Pro 400 · 13/17</span></div>
+      <div style="display:flex;justify-content:space-between;gap:12px"><span>label.badge</span><span style="color:rgba(0,0,0,.62)">SF Pro 700 · 11/11</span></div>
+    </div>
+
+    <div style="margin-top:18px;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:10px">ФОРМА</div>
+    <div style="font:400 11.5px/1.7 ui-monospace,Menlo,monospace;color:#3A342C">radius: 8 · 12 · 14 · 20 · 28 (continuous) · концентрично: внутр. = внешн. − 8<br>elev.1 карточка: 0 8 20 −10 rgba(40,30,18,.22) + 0 1 2 rgba(40,30,18,.06)<br>elev.2 герой: 0 12 28 −12 rgba(40,30,18,.3) + 0 1 2 rgba(40,30,18,.08)<br>материал: blur 20 + bg alpha .86 — только таб-бар, навбар, листы<br>сетка 4 pt · поля 20 pt · цель касания ≥ 44 pt</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:26px">
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:20px 24px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:6px">ВОСЕМЬ ПИКТОГРАММ КАТЕГОРИЙ · ЭСКИЗЫ</div>
+      <p style="margin:0 0 14px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Один стиль, вектор, штрих 1.7 pt, читаются от 20 до 64 pt. Цвет категориям не присвоен: в этом направлении цвет занят временем суток, поэтому пиктограмма живёт на нейтральной плитке — и в светлой, и в тёмной теме.</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">ПВЗ</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14.5" rx="1.5"/><path d="M3.5 10.2h17M3.5 15h17M8 5v5.2M14.8 15v4.5"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Склад</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="4.5" width="10.5" height="8" rx="1"/><path d="M4 4h2l3 13.5"/><circle cx="10.5" cy="19.5" r="1.7"/><circle cx="17" cy="19.5" r="1.7"/><path d="M9.6 17.5h8"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Грузчик</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v5a5.5 5.5 0 0 1-11 0z"/><path d="M16 9.6h1.6a2.2 2.2 0 0 1 0 4.4H16"/><path d="M4 20h13"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Общепит</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8h13l-1.1 11.5H6.6z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Ритейл</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v9"/><path d="M7 12.5h10l-1.3 7H8.3z"/><path d="M10 15.5v4M14 15.5v4"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Клининг</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10.5l5 3v-3l5 3v-3l5 3V20z"/><path d="M17 7.5V4h2v3.5"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Производство</div></div>
+        <div style="text-align:center"><div style="height:58px;border-radius:16px;background:#F0EAE1;color:#0F5673;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="11" height="9" rx="1"/><path d="M14.5 10.5h3l2.5 3.5v2h-5.5z"/><circle cx="8" cy="18" r="1.7"/><circle cx="17.5" cy="18" r="1.7"/></svg></div><div style="margin-top:5px;font:500 11px/1.3 -apple-system,sans-serif;color:#3A342C">Курьер</div></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;padding:10px 12px;background:#11161C;border-radius:12px">
+        <span style="font:400 10px/1.3 ui-monospace,Menlo,monospace;color:#93A0AD;flex:none">тёмная тема</span>
+        <div style="display:flex;gap:8px">
+          <span style="width:34px;height:34px;border-radius:11px;background:#222B35;color:#7EC0E0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.8 12 4l8.5 3.8v8.4L12 20l-8.5-3.8z"/><path d="M3.5 7.8 12 11.6l8.5-3.8M12 11.6V20"/></svg></span>
+          <span style="width:34px;height:34px;border-radius:11px;background:#222B35;color:#7EC0E0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v5a5.5 5.5 0 0 1-11 0z"/><path d="M16 9.6h1.6a2.2 2.2 0 0 1 0 4.4H16"/><path d="M4 20h13"/></svg></span>
+          <span style="width:34px;height:34px;border-radius:11px;background:#222B35;color:#7EC0E0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14.5" rx="1.5"/><path d="M3.5 10.2h17M3.5 15h17M8 5v5.2M14.8 15v4.5"/></svg></span>
+          <span style="width:34px;height:34px;border-radius:11px;background:#222B35;color:#7EC0E0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8h13l-1.1 11.5H6.6z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg></span>
+        </div>
+        <span style="margin-left:auto;font:400 10px/1.3 ui-monospace,Menlo,monospace;color:#93A0AD">штрих 1.7 · плитка 222B35</span>
+      </div>
+    </div>
+
+    <div style="background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:20px 24px">
+      <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:12px">ДВИЖЕНИЕ И ТАКТИЛЬНОСТЬ · ЧТО РЕАЛИЗОВАНО</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font:400 11.5px/1.45 ui-monospace,Menlo,monospace;color:#3A342C">
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px;padding-bottom:7px;border-bottom:1px solid #EDE7DD;color:rgba(0,0,0,.62)"><span>токен</span><span>цель одним словом · параметры · haptic</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>timing.press</span><span>нажатие · scale .97 · 120 мс bezier(.23,1,.32,1) · —</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>spring.snappy</span><span>морф · кнопка → «Отклик отправлен» · 250 / 1.0 · success</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>spring.snappy</span><span>выбор · булавка карты, чип · 250 / 1.0 · selection</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>spring.default</span><span>переход · push деталей · 400 / 1.0 · —</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>spring.sheet</span><span>лист · «Нужен номер» · 300 / 0.8 + скорость жеста · light на detent</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>timing.fade</span><span>смена режима · лента ⇄ карта · 200 мс · —</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>timing.number</span><span>отсчёт · пропуск, 1 с шаг · 400–600 мс ease-out · —</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>shake ×2</span><span>отказ · «Места закончились» · 450 мс, 2 цикла · error</span></div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:10px"><span>celebrate</span><span>праздник · «Все места закрыты» · 800 мс, один раз · success</span></div>
+      </div>
+      <p style="margin:12px 0 0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C">Анимируются только transform и opacity. Reduce Motion заменяет каждое движение кросс-фейдом 200 мс — переключатель слева работает по-настоящему. Полная таблица с параметрами Reanimated — Фаза 5.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:26px;background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:20px 24px">
+  <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:14px">ЧЕК-ЛИСТ §17 · ПУНКТЫ ФАЗЫ 2</div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px 26px;font:400 13.5px/1.5 -apple-system,sans-serif;color:#332E28">
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Восемь ключевых экранов</b> в светлой и тёмной теме — переключателем «Тема», а не отдельными макетами.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Прототип «Смены → Детали → Откликнуться → Мои смены»</b> работает, включая морф кнопки и бейдж вкладки.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Один язык статусов §9.2:</b> «Ждёт ответа», «Подтверждена», «Мест нет» — одинаковый цвет, знак и текст на всех экранах.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Честность §12:</b> гостевой режим, Apple наравне с Google и выше него, ссылки на условия, «оплата напрямую от заказчика», никаких обещаний выплат.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Деньги — герой:</b> money.hero 52 pt в деталях, money.card 28 pt в ленте, «BYN» подчинён, цифры табличные.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Цели касания</b> — от 44 pt; главное действие в нижней трети, на стекле.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Reduce Motion</b> — у каждого движения есть вариант; проверяется переключателем.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#1C7A5A;flex:none;font-weight:700">✓</span><span><b>Черновик токенов</b> — цвет (две темы), небо, типографика, форма, движение, haptics.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#6E6559;flex:none;font-weight:700">—</span><span><b>Пусто, загрузка, ошибка, AX3, iPhone SE</b> — Фаза 4 по §10.3.</span></div>
+    <div style="display:flex;gap:9px"><span style="color:#6E6559;flex:none;font-weight:700">—</span><span><b>Фильтры, чат, профиль и остальные экраны</b> — Фаза 4; в прототипе честно помечены.</span></div>
+  </div>
+  <p style="margin:16px 0 0;font:400 13.5px/1.6 -apple-system,sans-serif;color:#332E28;max-width:1000px;text-wrap:pretty"><b>Что дальше.</b> По ТЗ после Фазы 2 подключается разработка (К1 · Фундамент): токены, шрифты, базовые компоненты и эти восемь экранов. Скажи «утверждаю» — и я соберу handoff по §16: точные значения из таблиц выше, SVG восьми пиктограмм отдельными файлами и параметры Reanimated для каждого движения. Если что-то в прототипе не так — правки в этой фазе я делаю двумя кругами, как договорились.</p>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1480,&quot;height&quot;:1180}}">
+const SHIFTS = {
+  ozon:{title:'Оператор ПВЗ',co:'Ozon ПВЗ Минск',rate:'4.6',rev:'· 45 отзывов · 0 отмен',money:'65',hour:'≈8 BYN/ч',when:'Сегодня · 10:00–18:00',dur:'8 ч',addr:'пр. Независимости, 58',hint:'Минск · ПВЗ у входа со двора',sky:'--sky-d',skyLabel:'дневная смена',skyInk:'var(--skyi)',skyInk2:'var(--skyi2)',badge:'Срочно · нужен сегодня',mono:'OZ',full:false},
+  sklad:{title:'Грузчик',co:'Склад-Логистик',rate:'4.4',rev:'· 67 отзывов',money:'75',hour:'≈9 BYN/ч',when:'Сегодня · 08:00–16:00',dur:'8 ч',addr:'ул. Тимирязева, 121А',hint:'Минск · склад, ворота 3',sky:'--sky-m',skyLabel:'утренняя смена',skyInk:'var(--smi)',skyInk2:'var(--smi2)',badge:'Срочно · нужен сегодня',mono:'СЛ',full:false},
+  cafe:{title:'Официант',co:'Кафе «Васильки»',rate:'4.8',rev:'· 52 отзыва',money:'90',hour:'≈9 BYN/ч',when:'Сегодня · 12:00–22:00',dur:'10 ч',addr:'ул. Якуба Коласа, 37',hint:'Минск · вход с улицы',sky:'--sky-x',skyLabel:'вечерняя смена',skyInk:'var(--ink3)',skyInk2:'var(--ink2)',badge:'Мест нет',mono:'ВА',full:true}
+};
+const PILL = 'rgba(255,255,255,1)';
+
+class Component extends DCLogic {
+  state = {
+    theme:'light', motion:'full', role:'worker',
+    tab:'feed', mode:'list', sel:'ozon',
+    layer:'feed', apply:'idle', authed:false,
+    sheet:false, badge:0, toast:null,
+    filled:1, daria:false, celebrate:false,
+    secs:84000,
+    log:{t:'Прототип готов', s:'нажми карточку смены'}
+  };
+  componentDidMount(){ this.tid = setInterval(()=>this.setState(s=>({secs:s.secs>0?s.secs-1:0})),1000); }
+  componentWillUnmount(){ clearInterval(this.tid); if(this.z) clearTimeout(this.z); }
+  say(t,s){ this.setState({log:{t,s}}); }
+  toast(text,kind){ if(this.z) clearTimeout(this.z); this.setState({toast:{text,kind}}); this.z=setTimeout(()=>this.setState({toast:null}),3200); }
+
+  renderVals(){
+    const s = this.state, d = SHIFTS[s.sel] || SHIFTS.ozon;
+    const seg = (on)=>({bg:on?'#FFFFFF':'transparent', ink:on?'#0F5673':'#6E6559', sh:on?'0 1px 3px rgba(40,30,18,.18)':'none'});
+    const rw=seg(s.role==='worker'), re=seg(s.role==='employer');
+    const tl=seg(s.theme==='light'), td=seg(s.theme==='dark');
+    const mf=seg(s.motion==='full'), mr=seg(s.motion==='reduced');
+    const navBg=(k)=> (s.layer===k ? '#EDF1F3' : 'transparent');
+    const h=Math.floor(s.secs/3600), m=Math.floor((s.secs%3600)/60), sec=s.secs%60;
+    const countdown = h>0 ? (h+' ч '+m+' мин') : (m+' мин '+sec+' с');
+    const onFeed = s.layer==='feed' && s.mode==='list';
+    const onMapL = s.layer==='feed' && s.mode==='map';
+    const applied = s.apply==='sent';
+    const chk = React.createElement('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2.6,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'m5 12.5 4.5 4.5L19 7'}));
+    const bang = React.createElement('svg',{viewBox:'0 0 24 24',width:20,height:20,fill:'none',stroke:'currentColor',strokeWidth:2.4,strokeLinecap:'round'},React.createElement('path',{d:'M12 6v8M12 18h.01'}));
+
+    return {
+      theme:s.theme, motion:s.motion,
+      barInk: s.layer==='detail' ? d.skyInk : (s.layer==='pass' ? 'var(--smi)' : 'var(--ink)'),
+      homeInk: 'var(--ink)',
+      roleWorkerBg:rw.bg, roleWorkerInk:rw.ink, roleWorkerSh:rw.sh,
+      roleEmpBg:re.bg, roleEmpInk:re.ink, roleEmpSh:re.sh,
+      lightBg:tl.bg, lightInk:tl.ink, lightSh:tl.sh, darkBg:td.bg, darkInk:td.ink, darkSh:td.sh,
+      mFullBg:mf.bg, mFullInk:mf.ink, mFullSh:mf.sh, mRedBg:mr.bg, mRedInk:mr.ink, mRedSh:mr.sh,
+      nav1:navBg('feed'), nav2: onMapL?'#EDF1F3':'transparent', nav3:navBg('detail'), nav4: s.sheet?'#EDF1F3':'transparent',
+      nav5:navBg('pass'), nav6:navBg('my'), nav7:navBg('summary'), nav8:navBg('responses'),
+
+      dFeed: onFeed?'block':'none',
+      dMap: onMapL?'block':'none',
+      dOther: (s.layer==='other')?'block':'none',
+      dDetail: (s.layer==='detail')?'block':'none',
+      dPass: (s.layer==='pass')?'block':'none',
+      dTabs: (s.role==='worker' && (s.layer==='feed'||s.layer==='my'||s.layer==='other'))?'flex':'none',
+      dSheet: s.sheet?'block':'none',
+      dToast: s.toast?'flex':'none',
+      dMy: (s.layer==='my')?'block':'none',
+      dSummary: (s.layer==='summary')?'block':'none',
+      dResponses: (s.layer==='responses')?'block':'none',
+      dCelebrate: s.celebrate?'block':'none',
+      dEmpTabs: (s.role==='employer' && (s.layer==='summary'||s.layer==='responses'||s.layer==='other'))?'flex':'none',
+      empBadgeD: (s.filled===1)?'block':'none',
+      empTabSumInk: (s.layer==='summary')?'var(--brand)':'var(--ink2)',
+      empTabShiftsInk: (s.layer==='responses')?'var(--brand)':'var(--ink2)',
+      waitingCount: applied?'2 отклика':'1 отклик',
+      waitingOzonD: applied?'flex':'none',
+      waitN: (s.filled===1)?'3':'2',
+      fillPct:'43%',
+      fillLabel: s.filled+' из 2',
+      fillDot2: (s.filled===2)?'var(--suc)':'var(--line)',
+      fillBigDot2: (s.filled===2)?'var(--skyi)':'rgba(255,253,249,.5)',
+      fillDotAnim: (s.filled===2)?'om-pop .45s cubic-bezier(.23,1,.32,1)':'none',
+      heroSky:'var(--sky-d)', heroInk:'var(--skyi)', heroInk2:'var(--skyi2)',
+      heroBadgeIcon: (s.filled===2)?chk:React.createElement('svg',{viewBox:'0 0 24 24',width:14,height:14,fill:'currentColor'},React.createElement('path',{d:'M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z'})),
+      heroBadgeInk: (s.filled===2)?'var(--suc)':'var(--urgi)',
+      heroKicker: (s.filled===2)?'ВСЁ ПОД КОНТРОЛЕМ':'ГЛАВНОЕ СЕЙЧАС',
+      heroTitle: (s.filled===2)?'Сегодня в 10:00 люди придут':'Сегодня в 10:00 не хватает человека',
+      heroLine1: (s.filled===2)?'Оператор ПВЗ · 65 BYN · 2 из 2 мест':'Оператор ПВЗ · 65 BYN · 1 из 2 мест',
+      heroBtnBg: (s.filled===2)?'var(--urgt)':'var(--brand)',
+      heroBtnInk: (s.filled===2)?'var(--skyi)':'var(--on)',
+      heroBtnLabel: (s.filled===2)?'Смена и состав':'Разобрать 3 отклика',
+      dariaBorder: (s.filled===1)?'var(--brand)':'var(--line)',
+      candOpacity1:'1',
+      candOpacity2: (s.filled===2)?'.55':'1',
+      dariaRecD: (s.daria)?'none':'inline-block',
+      dariaBtnBg: (s.daria)?'var(--suci)':'var(--brand)',
+      dariaBtnInk: (s.daria)?'var(--suc)':'var(--on)',
+      dariaBtnLabel: (s.daria)?'Подтверждена':'Подтвердить',
+      dariaChkD: (s.daria)?'flex':'none',
+      dariaConfirmedD:'none',
+      otherBtnLabel: (s.filled===2)?'Мест нет':'Подтвердить',
+      confirmDaria: ()=>{
+        if(this.state.daria) return;
+        this.setState({filled:2,daria:true,celebrate:true});
+        this.say('Все места закрыты','success haptic · заполнение spring.snappy · праздник 800 мс');
+        if(this.c) clearTimeout(this.c);
+        this.c=setTimeout(()=>this.setState({celebrate:false}),2800);
+      },
+      otherCand: ()=>{
+        if(this.state.filled===2){ this.toast('Мест больше нет','error'); this.say('Мест больше нет','error haptic · честно, без обещаний'); return; }
+        this.setState({filled:2,celebrate:true});
+        this.say('Кандидат подтверждён','success haptic · заполнение 1 из 2 → 2 из 2');
+        if(this.c) clearTimeout(this.c);
+        this.c=setTimeout(()=>this.setState({celebrate:false}),2800);
+      },
+      feedT: (s.layer==='detail'||s.layer==='pass')?'translateX(-26%)':'translateX(0)',
+      detailT: (s.layer==='detail')?'translateX(0)':'translateX(100%)',
+      passT: (s.layer==='pass')?'translateX(0)':'translateX(100%)',
+      sheetT: s.sheet?'translateY(0)':'translateY(100%)',
+      backdropO: s.sheet?'1':'0',
+      otherTitle: s.tab==='chat'?'Чат':'Профиль',
+
+      listBg: s.mode==='list'?'var(--surf)':'transparent', listSh: s.mode==='list'?'0 1px 3px rgba(40,30,18,.14)':'none', listInk: s.mode==='list'?'var(--brand)':'var(--ink2)',
+      mapBg: s.mode==='map'?'var(--surf)':'transparent', mapSh: s.mode==='map'?'0 1px 3px rgba(40,30,18,.14)':'none', mapInk: s.mode==='map'?'var(--brand)':'var(--ink2)',
+
+      ozonPlaces: applied?'1 из 2 мест':'1 из 2 мест',
+      ozonDot2: applied?'var(--suc)':'var(--line)',
+
+      pinOzonScale: s.sel==='ozon'?'scale(1.12)':'scale(1)',
+      pinOzonBg: s.sel==='ozon'?'var(--brand)':'var(--surf)',
+      pinOzonInk: s.sel==='ozon'?'var(--on)':'var(--ink)',
+      pinSkladScale: s.sel==='sklad'?'scale(1.12)':'scale(1)',
+      pinSkladBg: s.sel==='sklad'?'var(--brand)':'var(--surf)',
+      pinSkladInk: s.sel==='sklad'?'var(--on)':'var(--ink)',
+      selSky:'var('+d.sky+')', selSkyInk:d.skyInk, selWhen:d.when.replace('Сегодня · ','')+' · '+d.dur, selSkyLabel:d.skyLabel,
+      selTitle:d.title, selCoLine:d.co+' · ★ '+d.rate, selMoney:d.money, selHour:d.hour,
+
+      detSkyFull:'var('+d.sky+')', detSkyInk:d.skyInk, detSkyInk2: d.skyInk2||'var(--skyi2)',
+      detBadge:d.badge, detTitle:d.title, detMoney:d.money, detHour:d.hour, detWhen:d.when, detDur:d.dur, detSkyLabel:d.skyLabel,
+      detMono:d.mono, detCo:d.co, detRate:d.rate, detRev:d.rev, detAddr:d.addr, detHint:d.hint,
+      detPlaces: d.full?'3 из 3':'1 из 2', detDot2: d.full?'var(--brand)':'var(--line)',
+
+      applyBg: d.full?'var(--surf2)': (applied?'var(--suci)':'var(--brand)'),
+      applyInk: d.full?'var(--ink2)': (applied?'var(--suc)':'var(--on)'),
+      applySh: (d.full||applied)?'none':'0 8px 18px -8px rgba(15,86,115,.6)',
+      applyLabel: d.full?'Мест нет': (applied?'Отклик отправлен':'Откликнуться'),
+      applyIconD: applied?'flex':'none',
+      applySumD: (d.full||applied)?'none':'flex',
+      applyAnim: s.apply==='error'?'om-shake .45s cubic-bezier(.23,1,.32,1) 2':'none',
+      applyNote: applied?'Ждёт ответа заказчика · 10 минут':(d.full?'Места закончились. Похожие смены — в ленте':''),
+      applyNoteH: (applied||d.full)?'18px':'0px',
+      applyNoteMt: (applied||d.full)?'8px':'0px',
+
+      badgeD: s.badge>0?'block':'none', badgeN: String(s.badge),
+      tabFeedInk: (s.layer==='feed')?'var(--brand)':'var(--ink2)',
+      tabMyInk: (s.layer==='my'||s.layer==='pass')?'var(--brand)':'var(--ink2)',
+      tabChatInk: (s.layer==='other'&&s.tab==='chat')?'var(--brand)':'var(--ink2)',
+      tabProfInk: (s.layer==='other'&&s.tab==='profile')?'var(--brand)':'var(--ink2)',
+
+      countdown,
+      toastText: s.toast?s.toast.text:'', toastIcon: (s.toast&&s.toast.kind==='error')?bang:chk,
+      toastIconInk: (s.toast&&s.toast.kind==='error')?'var(--err)':'var(--suc)',
+      logTitle:s.log.t, logSpec:s.log.s,
+      hint: s.layer==='detail' ? 'Экран 4 · Детали смены — открыта. Кнопка отклика живёт на стекле, в зоне большого пальца.' : (s.layer==='pass' ? 'Экран 10 · Подтверждённая смена — пропуск. Отсчёт живой, небо соответствует часу начала.' : (onMapL ? 'Экран 2 · Смены — карта. Булавка показывает сумму; выбор сохраняется при переключении.' : 'Экран 1 · Смены — список. Небо на карточке кодирует час начала смены.')),
+
+      onWorker: ()=>this.setState({role:'worker',layer:'feed',tab:'feed'}),
+      onEmployer: ()=>this.setState({role:'employer',layer:'summary'}),
+      onLight: ()=>{ this.setState({theme:'light'}); this.say('Светлая тема','токены --bg/--surf/--ink — светлая ветка'); },
+      onDark: ()=>{ this.setState({theme:'dark'}); this.say('Тёмная тема','отдельная палитра, небо приглушено, бренд светлее'); },
+      onMotionFull: ()=>{ this.setState({motion:'full'}); this.say('Движение включено','spring/timing по §8.6'); },
+      onMotionReduced: ()=>{ this.setState({motion:'reduced'}); this.say('Reduce Motion','переходы заменены кросс-фейдом 200 мс'); },
+      goFeed: ()=>this.setState({layer:'feed',tab:'feed',mode:'list',apply:'idle'}),
+      goMap: ()=>this.setState({layer:'feed',tab:'feed',mode:'map'}),
+      goDetailOzon: ()=>this.setState({layer:'detail',sel:'ozon',apply:'idle'}),
+      goPhoneSheet: ()=>this.setState({layer:'detail',sel:'ozon',sheet:true}),
+      goPass: ()=>this.setState({layer:'pass',tab:'my'}),
+      goMy: ()=>this.setState({layer:'my',tab:'my'}),
+      goSummary: ()=>this.setState({role:'employer',layer:'summary'}),
+      goResponses: ()=>this.setState({role:'employer',layer:'responses'}),
+      goChat: ()=>this.setState({layer:'other',tab:'chat'}),
+      goProfile: ()=>this.setState({layer:'other',tab:'profile'}),
+      onReset: ()=>this.setState({role:'worker',tab:'feed',mode:'list',sel:'ozon',layer:'feed',apply:'idle',authed:false,sheet:false,badge:0,toast:null,secs:84000,log:{t:'Прототип сброшен',s:'гость, тема светлая'}}),
+      onList: ()=>this.setState({mode:'list'}),
+      onMap: ()=>{ this.setState({mode:'map'}); this.say('Лента ⇄ карта','timing.fade 200 мс · выбор сохраняется'); },
+      openOzon: ()=>{ this.setState({layer:'detail',sel:'ozon',apply:'idle'}); this.say('Открыты детали','нативный push · spring.default 400/1.0'); },
+      openSklad: ()=>{ this.setState({layer:'detail',sel:'sklad',apply:'idle'}); this.say('Открыты детали','нативный push · spring.default 400/1.0'); },
+      openCafe: ()=>{ this.setState({layer:'detail',sel:'cafe',apply:'idle'}); this.say('Открыты детали','смена без мест — кнопка недоступна'); },
+      openSelected: ()=>this.setState({layer:'detail',apply:'idle'}),
+      pinOzon: ()=>{ this.setState({sel:'ozon'}); this.say('Булавка выбрана','selection haptic · spring.snappy 250/1.0'); },
+      pinSklad: ()=>{ this.setState({sel:'sklad'}); this.say('Булавка выбрана','selection haptic · spring.snappy 250/1.0'); },
+      onFilters: ()=>this.say('Фильтры — в Фазе 4','лист с detents, кнопка «Показать 9 смен»'),
+      onBack: ()=>this.setState({layer:'feed'}),
+      onBackPass: ()=>this.setState({layer:'my'}),
+      closeSheet: ()=>this.setState({sheet:false}),
+      onGetCode: ()=>{ this.setState({sheet:false,authed:true}); this.say('Номер подтверждён','код из SMS — 6 ячеек, автоподстановка'); setTimeout(()=>this.doApply(),260); },
+      onApply: ()=>this.doApply()
+    };
+  }
+
+  doApply(){
+    const s=this.state, d=SHIFTS[s.sel]||SHIFTS.ozon;
+    if(d.full){
+      this.setState({apply:'error'});
+      this.say('Места закончились','error haptic · кнопка качает головой 2×');
+      this.toast('Места только что закончились','error');
+      setTimeout(()=>{ if(this.state.apply==='error') this.setState({apply:'idle'}); },1000);
+      return;
+    }
+    if(!s.authed){ this.setState({sheet:true}); this.say('Нужен номер','лист · spring.sheet 300/0.8'); return; }
+    if(s.apply==='sent') return;
+    this.setState({apply:'sent',badge:1});
+    this.say('Отклик отправлен','success haptic в кадре морфа · spring.snappy 250/1.0');
+    this.toast('Отклик отправлен · '+d.money+' BYN','success');
+  }
+}
+</script>
+</body>
+</html>

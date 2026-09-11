@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#E9E6E0;color:#1B1917;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#0F5673;text-decoration:none}
+a:hover{color:#0B4459}
+.card{background:#FFFDF9;border:1px solid rgba(0,0,0,.08);border-radius:16px}
+.lab{font:600 10px/1.3 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45)}
+.m{font:400 11.5px/1.55 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55)}
+.id{font:700 11px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);border-radius:5px;color:#1a1a1a}
+.row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.big{width:132px;height:132px;border-radius:30px;position:relative;overflow:hidden;flex:none;box-shadow:0 10px 22px -8px rgba(40,30,18,.4)}
+.grid{width:58px;height:58px;border-radius:13px;position:relative;overflow:hidden;flex:none}
+.chk{background:repeating-conic-gradient(#6E737A 0% 25%,#565C63 0% 50%) 0 0/14px 14px}
+.gl{position:absolute;font-family:Nunito,ui-rounded,'SF Pro Rounded',sans-serif;font-weight:900;line-height:1}
+</style></helmet>
+
+<div style="padding:36px 40px 56px;max-width:1500px">
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+  <span style="font:600 10.5px ui-monospace,Menlo,monospace;padding:4px 8px;background:#1B1917;color:#fff;border-radius:5px">ИКОНКА · V3</span>
+  <h1 style="margin:0;font:800 29px/1.1 ui-rounded,'SF Pro Rounded',Nunito,-apple-system,sans-serif;letter-spacing:-.02em">Буква С</h1>
+</div>
+<p style="margin:0 0 8px;max-width:900px;font:400 14.5px/1.6 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Шесть способов сделать знак из «С». Три из них — просто буква в разных характерах, три — буква, которая одновременно означает что-то из продукта: отрезок смены, занятое и свободное место, сутки. Вторые сильнее: голая «С» в сторе уже занята десятками приложений.</p>
+<p style="margin:0 0 16px;max-width:900px;font:400 13px/1.55 -apple-system,sans-serif;color:#6E6559">Эскизы набраны системной гарнитурой — иллюстратор будет рисовать букву как форму, а не набирать шрифтом. Задача сейчас: выбрать характер.</p>
+
+<div class="card" style="padding:14px 18px;margin-bottom:26px;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap;max-width:900px">
+  <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#DCD6CC"></div><div class="lab" style="margin-top:6px">132 pt<br>СВЕТЛАЯ</div></div>
+  <div style="text-align:center"><div style="width:52px;height:52px;border-radius:12px;background:#2B3541"></div><div class="lab" style="margin-top:6px">132 pt<br>ТЁМНАЯ</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px;background:#DCD6CC"></div><div class="lab" style="margin-top:6px">58 pt<br>НАСТРОЙКИ</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px;background:#2B2B2B"></div><div class="lab" style="margin-top:6px">58 pt<br>TINTED</div></div>
+  <div style="text-align:center"><div style="width:38px;height:38px;border-radius:9px" class="chk"></div><div class="lab" style="margin-top:6px">58 pt<br>CLEAR</div></div>
+  <div style="flex:1;min-width:230px;font:400 12.5px/1.5 -apple-system,sans-serif;color:#4A443C;padding-bottom:4px">Порядок плиток одинаковый во всех шести карточках. Плитка clear показана на тёмной шахматке — прозрачную иконку оценивают на обоях, а не на белом листе.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:22px;align-items:start">
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">G</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">С как дуга смены</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Буква нарисована как отрезок времени: от начала смены до конца.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:#0F5673">
+        <svg viewBox="0 0 132 132" width="132" height="132" style="position:absolute;left:0;top:0"><path d="M96 38a38 38 0 1 0 0 56" fill="none" stroke="#FFD9B8" stroke-width="21" stroke-linecap="round"/></svg>
+      </div>
+      <div class="big" style="background:#11161C">
+        <svg viewBox="0 0 132 132" width="132" height="132" style="position:absolute;left:0;top:0"><path d="M96 38a38 38 0 1 0 0 56" fill="none" stroke="#6FB4D8" stroke-width="21" stroke-linecap="round"/></svg>
+      </div>
+      <div class="grid" style="background:#0F5673"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 1 0 0 24" fill="none" stroke="#FFD9B8" stroke-width="10" stroke-linecap="round"/></svg></div>
+      <div class="grid" style="background:#2B2B2B"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 1 0 0 24" fill="none" stroke="#DADADA" stroke-width="10" stroke-linecap="round"/></svg></div>
+      <div class="grid chk"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 1 0 0 24" fill="none" stroke="rgba(255,255,255,.94)" stroke-width="10" stroke-linecap="round"/></svg></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Не набранная буква, а одна толстая дуга с круглыми торцами. Торцы — начало и конец смены; сама дуга — её длительность. Читается как «С» мгновенно, но живёт в языке расписаний, а не типографики. Самый чистый вариант для мелких размеров: одна линия, нечему слипаться.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> при слишком большом раскрытии превращается в «(» или в индикатор загрузки. Раскрытие фиксируем в ТЗ градусами.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">H</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">С из двух мест</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Буква собрана из двух дуг: одна занята, вторая свободна.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:#0F5673">
+        <svg viewBox="0 0 132 132" width="132" height="132" style="position:absolute;left:0;top:0"><path d="M96 38a38 38 0 0 0-30 -13 38 38 0 0 0-27 12" fill="none" stroke="#FFD9B8" stroke-width="21" stroke-linecap="round"/><path d="M32 52a38 38 0 0 0 6 34 38 38 0 0 0 58 8" fill="none" stroke="rgba(255,217,184,.4)" stroke-width="21" stroke-linecap="round"/></svg>
+      </div>
+      <div class="big" style="background:#11161C">
+        <svg viewBox="0 0 132 132" width="132" height="132" style="position:absolute;left:0;top:0"><path d="M96 38a38 38 0 0 0-30 -13 38 38 0 0 0-27 12" fill="none" stroke="#6FB4D8" stroke-width="21" stroke-linecap="round"/><path d="M32 52a38 38 0 0 0 6 34 38 38 0 0 0 58 8" fill="none" stroke="rgba(111,180,216,.32)" stroke-width="21" stroke-linecap="round"/></svg>
+      </div>
+      <div class="grid" style="background:#0F5673"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 0 0-13 -6 17 17 0 0 0-12 5" fill="none" stroke="#FFD9B8" stroke-width="10" stroke-linecap="round"/><path d="M14 23a17 17 0 0 0 3 15 17 17 0 0 0 25 3" fill="none" stroke="rgba(255,217,184,.45)" stroke-width="10" stroke-linecap="round"/></svg></div>
+      <div class="grid" style="background:#2B2B2B"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 0 0-13 -6 17 17 0 0 0-12 5" fill="none" stroke="#DADADA" stroke-width="10" stroke-linecap="round"/><path d="M14 23a17 17 0 0 0 3 15 17 17 0 0 0 25 3" fill="none" stroke="#8F8F8F" stroke-width="10" stroke-linecap="round"/></svg></div>
+      <div class="grid chk"><svg viewBox="0 0 58 58" width="58" height="58" style="position:absolute;left:0;top:0"><path d="M42 17a17 17 0 0 0-13 -6 17 17 0 0 0-12 5" fill="none" stroke="rgba(255,255,255,.94)" stroke-width="10" stroke-linecap="round"/><path d="M14 23a17 17 0 0 0 3 15 17 17 0 0 0 25 3" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="10" stroke-linecap="round"/></svg></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Та же логика, что во всём приложении: «1 из 2 мест». Верхняя часть буквы плотная — место занято, нижняя приглушённая — свободно. Единственный вариант, где буква несёт главную цифру продукта, и единственный, который сможет анимироваться: когда место закрывается, вторая дуга наливается цветом.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> на 29 pt разница в плотности почти теряется, остаётся просто «С». Это приемлемо — смысл работает на крупных размерах, форма на мелких.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">I</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Трафарет</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#D14705;margin-bottom:12px">Буква как маркировка на ящике: прорез поперёк, никакой мягкости.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:#1F2226">
+        <span class="gl" style="left:0;right:0;top:20px;text-align:center;font-size:104px;color:#FF5C00">С</span>
+        <div style="position:absolute;left:0;right:0;top:62px;height:12px;background:#1F2226"></div>
+      </div>
+      <div class="big" style="background:#0E1012">
+        <span class="gl" style="left:0;right:0;top:20px;text-align:center;font-size:104px;color:#FF7A2E">С</span>
+        <div style="position:absolute;left:0;right:0;top:62px;height:12px;background:#0E1012"></div>
+      </div>
+      <div class="grid" style="background:#1F2226"><span class="gl" style="left:0;right:0;top:8px;text-align:center;font-size:46px;color:#FF5C00">С</span><div style="position:absolute;left:0;right:0;top:27px;height:6px;background:#1F2226"></div></div>
+      <div class="grid" style="background:#2B2B2B"><span class="gl" style="left:0;right:0;top:8px;text-align:center;font-size:46px;color:#DADADA">С</span><div style="position:absolute;left:0;right:0;top:27px;height:6px;background:#2B2B2B"></div></div>
+      <div class="grid chk"><span class="gl" style="left:0;right:0;top:8px;text-align:center;font-size:46px;color:rgba(255,255,255,.95)">С</span><div style="position:absolute;left:0;right:0;top:27px;height:6px;background:repeating-conic-gradient(#6E737A 0% 25%,#565C63 0% 50%) 0 -27px/14px 14px"></div></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Буква, разрезанная горизонтальной полосой, — язык складской маркировки и трафаретной краски. Самый мужской и самый узнаваемый из шести: такую иконку невозможно перепутать даже среди кучи букв. Держит монохром без потерь.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#FDEFE0;font:400 12.5px/1.5 -apple-system,sans-serif;color:#7A4308"><b>Риск:</b> графит с оранжевым — палитра отклонённой территории B. Если берём, оранжевый придётся пустить в акценты интерфейса, иначе иконка обещает не то приложение.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">J</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">Обрезанная</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Буква больше плашки и уходит за край. Уверенно и современно.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:linear-gradient(160deg,#C6E4F7,#87C4EA)"><span class="gl" style="left:-14px;top:-22px;font-size:184px;color:#0B3550">С</span></div>
+      <div class="big" style="background:linear-gradient(160deg,#2E6089,#17415F)"><span class="gl" style="left:-14px;top:-22px;font-size:184px;color:#DCEEF9">С</span></div>
+      <div class="grid" style="background:linear-gradient(160deg,#C6E4F7,#87C4EA)"><span class="gl" style="left:-6px;top:-10px;font-size:81px;color:#0B3550">С</span></div>
+      <div class="grid" style="background:#2B2B2B"><span class="gl" style="left:-6px;top:-10px;font-size:81px;color:#DADADA">С</span></div>
+      <div class="grid chk"><span class="gl" style="left:-6px;top:-10px;font-size:81px;color:rgba(255,255,255,.95)">С</span></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Буква набрана огромной и обрезана рамкой иконки — видно только её тело, без полей. Даёт ощущение крупного бренда и хорошо работает в мелких размерах: чем меньше, тем плотнее пятно. Небо остаётся фоном и продолжает кодировать время.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#E4F0F5;font:400 12.5px/1.5 -apple-system,sans-serif;color:#0C3A52"><b>Риск:</b> приём «обрезанной буквы» очень популярен, так делают банки и соцсети. Характер даст только сама буква — её придётся рисовать с узнаваемой деталью, а не брать готовый шрифт.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">K</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">С и Б</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Монограмма из двух букв названия, сцепленных в один знак.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:#FBF8F4">
+        <span class="gl" style="left:14px;top:26px;font-size:92px;color:#0F5673">С</span>
+        <span class="gl" style="left:58px;top:26px;font-size:92px;color:#E07A1F">Б</span>
+      </div>
+      <div class="big" style="background:#11161C">
+        <span class="gl" style="left:14px;top:26px;font-size:92px;color:#6FB4D8">С</span>
+        <span class="gl" style="left:58px;top:26px;font-size:92px;color:#F0A65A">Б</span>
+      </div>
+      <div class="grid" style="background:#FBF8F4"><span class="gl" style="left:5px;top:11px;font-size:41px;color:#0F5673">С</span><span class="gl" style="left:25px;top:11px;font-size:41px;color:#E07A1F">Б</span></div>
+      <div class="grid" style="background:#2B2B2B"><span class="gl" style="left:5px;top:11px;font-size:41px;color:#DADADA">С</span><span class="gl" style="left:25px;top:11px;font-size:41px;color:#8F8F8F">Б</span></div>
+      <div class="grid chk"><span class="gl" style="left:5px;top:11px;font-size:41px;color:rgba(255,255,255,.95)">С</span><span class="gl" style="left:25px;top:11px;font-size:41px;color:rgba(255,255,255,.6)">Б</span></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Прямое прочтение названия: СменаБел. Самый понятный вариант для тех, кто увидит иконку в поиске по стору, и единственный, который проговаривает страну без флагов и символики.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#FAEAE7;font:400 12.5px/1.5 -apple-system,sans-serif;color:#8A2A20"><b>Риск, который я обязан назвать:</b> две буквы на 29 pt слипаются в серое пятно — это главная причина, почему монограммы почти не встречаются среди иконок. Проверять надо на устройстве до того, как рисовать финал.</div>
+  </div>
+
+  <div class="card" style="padding:22px 24px">
+    <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px"><span class="id">L</span><h2 style="margin:0;font:800 21px/1.2 ui-rounded,'SF Pro Rounded',Nunito,sans-serif;letter-spacing:-.02em">С в сутках</h2></div>
+    <div style="font:600 13px/1.45 -apple-system,sans-serif;color:#0F5673;margin-bottom:12px">Буква внутри кольца из четырёх небес системы.</div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="big" style="background:#FBF8F4">
+        <div style="position:absolute;left:16px;top:16px;width:100px;height:100px;border-radius:50%;background:conic-gradient(from 180deg,#FFD9B8 0deg 90deg,#87C4EA 90deg 180deg,#FFC68C 180deg 270deg,#243459 270deg 360deg)"></div>
+        <div style="position:absolute;left:33px;top:33px;width:66px;height:66px;border-radius:50%;background:#FBF8F4"></div>
+        <span class="gl" style="left:0;right:0;top:38px;text-align:center;font-size:60px;color:#0F5673">С</span>
+      </div>
+      <div class="big" style="background:#11161C">
+        <div style="position:absolute;left:16px;top:16px;width:100px;height:100px;border-radius:50%;background:conic-gradient(from 180deg,#8C6A4E 0deg 90deg,#3E7EA8 90deg 180deg,#A86A52 180deg 270deg,#2A3A63 270deg 360deg)"></div>
+        <div style="position:absolute;left:33px;top:33px;width:66px;height:66px;border-radius:50%;background:#11161C"></div>
+        <span class="gl" style="left:0;right:0;top:38px;text-align:center;font-size:60px;color:#6FB4D8">С</span>
+      </div>
+      <div class="grid" style="background:#FBF8F4"><div style="position:absolute;left:7px;top:7px;width:44px;height:44px;border-radius:50%;background:conic-gradient(from 180deg,#FFD9B8 0deg 90deg,#87C4EA 90deg 180deg,#FFC68C 180deg 270deg,#243459 270deg 360deg)"></div><div style="position:absolute;left:15px;top:15px;width:28px;height:28px;border-radius:50%;background:#FBF8F4"></div><span class="gl" style="left:0;right:0;top:17px;text-align:center;font-size:26px;color:#0F5673">С</span></div>
+      <div class="grid" style="background:#2B2B2B"><div style="position:absolute;left:7px;top:7px;width:44px;height:44px;border-radius:50%;background:#DADADA"></div><div style="position:absolute;left:15px;top:15px;width:28px;height:28px;border-radius:50%;background:#2B2B2B"></div><span class="gl" style="left:0;right:0;top:17px;text-align:center;font-size:26px;color:#DADADA">С</span></div>
+      <div class="grid chk"><div style="position:absolute;left:7px;top:7px;width:44px;height:44px;border-radius:50%;border:8px solid rgba(255,255,255,.88);box-sizing:border-box"></div><span class="gl" style="left:0;right:0;top:17px;text-align:center;font-size:26px;color:rgba(255,255,255,.95)">С</span></div>
+    </div>
+    <div style="font:400 13px/1.55 -apple-system,sans-serif;color:#332E28;text-wrap:pretty">Кольцо из четырёх секторов — это палитра приложения: утро, день, вечер, ночь. Буква сидит внутри. Связь с системой самая прямая из шести: тот, кто пользовался приложением, узнаёт свои небеса.</div>
+    <div style="margin-top:12px;padding:11px 13px;border-radius:11px;background:#FAEAE7;font:400 12.5px/1.5 -apple-system,sans-serif;color:#8A2A20"><b>Риск:</b> два объекта вместо одного — кольцо и буква. На 29 pt кольцо схлопывается в серый ободок, а в монохроме четыре сектора вообще исчезают (в плитке tinted выше это видно). Самый слабый вариант по технике.</div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:26px;padding:20px 24px;max-width:1100px">
+  <div style="font:600 10.5px/1.4 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.58);margin-bottom:12px">ЕСЛИ ХОЧЕШЬ МОЮ ОЦЕНКУ</div>
+  <div style="display:flex;flex-direction:column;gap:10px;font:400 13.5px/1.55 -apple-system,sans-serif;color:#332E28">
+    <div><b>Брал бы <span style="color:#0F5673">G «Дуга смены»</span>.</b> Это «С», но нарисованная как отрезок времени — одна толстая линия с круглыми торцами. Читается на 29 pt, выживает в монохроме и стекле, не похожа на буквенные иконки банков и при этом остаётся буквой.</div>
+    <div><b>Вторым — <span style="color:#0F5673">H «С из двух мест»</span>.</b> Та же дуга, но разрезанная на занятое и свободное место: буква начинает говорить «1 из 2». Плюс она умеет анимироваться, когда смена закрывается.</div>
+    <div><b>Если нужен максимальный характер — <span style="color:#D14705">I «Трафарет»</span>,</b> но придётся тянуть оранжевый в интерфейс.</div>
+    <div style="color:#6E6559"><b>Не советую:</b> K «С и Б» слипается на мелком размере, L «С в сутках» разваливается в монохроме, J «Обрезанная» — приём, который уже у всех.</div>
+  </div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:1100}}"></script>
+</body>
+</html>

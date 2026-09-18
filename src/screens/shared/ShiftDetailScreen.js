@@ -32,6 +32,7 @@ import PhoneSheet from '../../components/PhoneSheet';
 import CancelShiftSheet from '../../components/CancelShiftSheet';
 import MiniMap from '../../components/MiniMap';
 import { openRoute } from '../../components/openRoute';
+import { EVENTS } from '../../services/telemetry';
 import useStore from '../../store/useStore';
 
 function requirementTags(req = {}) {
@@ -80,6 +81,8 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const [sending, setSending] = useState(false);
   const [openingChat, setOpeningChat] = useState(false);
   const [shownState, setShownState] = useState(null);
+
+  useEffect(() => { if (shift) EVENTS.shiftOpened(shift); }, [shiftId]);
 
   const isOwner = currentUser?.role === 'employer' && shift?.companyId === currentUser.id;
   useEffect(() => { if (isOwner) navigation.replace('ShiftManage', { shiftId }); }, [isOwner]);

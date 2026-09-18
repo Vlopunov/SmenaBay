@@ -6,6 +6,7 @@ import { startSync, pullOnce, pullAll } from '../services/sync';
 import { ApiError, isOffline } from '../services/api';
 import { signOut as authSignOut, deleteAccount as authDeleteAccount } from '../services/auth';
 import { toast } from '../design/Toast';
+import { EVENTS, identify, reportError } from '../services/telemetry';
 import { shortDate } from '../design/format';
 
 /**
@@ -84,6 +85,8 @@ const useStore = create(
     const profile = await backend.createProfile(firebaseUser, extraData);
     if (!profile) throw new ApiError('no_profile', 'Сервер не вернул профиль. Попробуй ещё раз.', 500);
     set({ currentUser: profile, isAuthenticated: true });
+    identify(profile);
+    EVENTS.signInDone(profile.role);
     // Non-blocking: a slow pull must not hold up the screen behind it.
     pullAll(set, get).catch(() => {});
     return profile;
@@ -164,6 +167,7 @@ const useStore = create(
       blockedUsers: [],
       lastSyncAt: null,
     }));
+    identify(null);
     // Best-effort sign out from Firebase + Google so the next login is clean.
     authSignOut().catch(() => {});
     pullOnce(set, get);
@@ -415,6 +419,7 @@ const useStore = create(
         totalShiftsPublished: (s.currentUser.totalShiftsPublished || 0) + created.length,
       },
     }));
+    EVENTS.shiftPublished(created.length);
     return { success: true, shifts: created };
   },
 
@@ -514,9 +519,12 @@ const useStore = create(
     if (existing) return { error: 'already_applied' };
 
     let app;
+    EVENTS.applyStarted(shiftId);
     try {
       app = await backend.createApplication(shiftId);
     } catch (e) {
+      EVENTS.applyFailed(shiftId, e?.code || 'error');
+      reportError(e, `applyToShift ${shiftId}`);
       // These codes are what the UI already knows how to say.
       if (e?.code === 'shift_full' || e?.code === 'already_applied' || e?.code === 'shift_not_active') {
         pullOnce(set, get);
@@ -527,6 +535,7 @@ const useStore = create(
     if (!app?.id) return { error: 'Не удалось отправить отклик.' };
 
     set(s => ({ applications: [...s.applications, app] }));
+    EVENTS.applySent(shiftId);
 
     const shift = get().getShiftById(shiftId);
     if (shift) {
@@ -657,6 +666,7 @@ const useStore = create(
           'Отклик отклонён', `Смена «${shift.title}» уже заполнена`, app.shiftId);
       });
     }
+    EVENTS.applicationAnswered('approved');
     return { success: true, filled: !!result?.filled };
   },
 
@@ -670,6 +680,7 @@ const useStore = create(
         a.id === appId ? { ...a, status: 'rejected', respondedAt } : a
       ),
     }));
+    EVENTS.applicationAnswered('rejected');
     push(backend.updateApplication(appId, { status: 'rejected', respondedAt }), {
       rollback: () => set({ applications: before }),
     }).then((ok) => {

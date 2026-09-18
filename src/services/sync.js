@@ -13,6 +13,7 @@
 import { AppState } from 'react-native';
 import * as backend from './backend';
 import { isOffline } from './api';
+import { reportError } from './telemetry';
 
 const POLL_SIGNED_IN = 30000;
 const POLL_GUEST = 120000;
@@ -80,7 +81,10 @@ export async function pullOnce(set, get) {
     // Offline is a state, not an incident: the store keeps its cached copy
     // and the banner says when it was last fresh.
     set({ syncError: isOffline(e) ? 'offline' : e?.code || 'error' });
-    if (!isOffline(e)) console.warn('[sync]', e?.code, e?.message);
+    if (!isOffline(e)) {
+      console.warn('[sync]', e?.code, e?.message);
+      reportError(e, 'sync pull');
+    }
     return false;
   }
 }

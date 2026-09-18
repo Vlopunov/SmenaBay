@@ -40,8 +40,30 @@ const MESSAGES = {
   timeout: 'Сервер не ответил. Попробуй ещё раз.',
 };
 
+/**
+ * On a cold start Firebase restores the session asynchronously, so for the
+ * first moments `currentUser` is null even though the person is signed in.
+ * Asking the server right then would answer «войди заново» to someone who
+ * never left, so we wait for the SDK to make up its mind.
+ */
+function waitForUser(ms = 6000) {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (user) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      unsubscribe?.();
+      resolve(user);
+    };
+    const timer = setTimeout(() => finish(null), ms);
+    const unsubscribe = auth.onAuthStateChanged((user) => { if (user) finish(user); });
+  });
+}
+
 async function idToken(force = false) {
-  const user = auth.currentUser;
+  const user = auth.currentUser || (await waitForUser());
   if (!user) throw new ApiError('unauthorized', 'Нужно войти заново.', 401);
   try {
     return await user.getIdToken(force);

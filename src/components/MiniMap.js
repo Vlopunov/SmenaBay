@@ -1,9 +1,10 @@
-// The small map on a shift: a real Yandex static map with our money pin
-// on top. The «Маршрут» button next to it opens a maps app.
+// The small map on a shift: a real static map, drawn by our server, with
+// our money pin on top. The «Маршрут» button next to it opens a maps app.
 import React, { useState } from 'react';
 import { View, Image, useWindowDimensions } from 'react-native';
 import T from '../design/Text';
 import { useTheme } from '../design/theme';
+import { staticMapUrl } from '../services/backend';
 
 export default function MiniMap({ lat, lng, pay, height = 104, radiusTop = 20 }) {
   const t = useTheme();
@@ -13,9 +14,8 @@ export default function MiniMap({ lat, lng, pay, height = 104, radiusTop = 20 })
   // attribution comes out a third smaller than at scale 2.
   const w = Math.min(650, Math.round((width - 40) * 1.5));
   const h = Math.min(450, Math.round(height * 1.5));
-  const uri = lat && lng
-    ? `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=15&size=${w},${h}&l=map&lang=ru_RU`
-    : null;
+  // Null without coordinates: the card then shows the plain map colour.
+  const uri = staticMapUrl({ lat, lng, width: w, height: h, z: 15 });
   return (
     <View style={{ height, backgroundColor: t.c.map, borderTopLeftRadius: radiusTop, borderTopRightRadius: radiusTop, overflow: 'hidden' }}>
       {uri && !failed ? (

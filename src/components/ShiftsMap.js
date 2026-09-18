@@ -3,21 +3,38 @@
 // map. Normal: surface capsule; urgent: with a bolt; selected: brand,
 // scale 1.12 (spring.snappy feel via CSS); no seats: surface.2, struck
 // through. Picking a pin moves the map so the pin sits above the card.
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Platform } from 'react-native';
 import T from '../design/Text';
 import { useTheme } from '../design/theme';
+import { geoConfig } from '../services/backend';
 
 let WebView = null;
 if (Platform.OS !== 'web') WebView = require('react-native-webview').WebView;
 
 const BOLT = '<svg viewBox="0 0 24 24" width="12" height="12"><path d="M13 3 5.5 13.5H11l-1 7.5L18 10.5h-5.5z" fill="currentColor"/></svg>';
 
-function buildHtml(markers, theme, lift) {
+/**
+ * The JS API key belongs to the server, so the map asks for it once per app
+ * run — this component mounts again every time someone switches back to the
+ * map. `key: null` is a real answer: the map loads unkeyed, as it always has.
+ */
+let apiKey = null;
+let apiKeyRequest = null;
+function loadApiKey() {
+  if (!apiKeyRequest) {
+    apiKeyRequest = geoConfig()
+      .then((r) => { apiKey = { key: r?.jsApiKey || null }; })
+      .catch(() => { apiKey = { key: null }; });
+  }
+  return apiKeyRequest;
+}
+
+function buildHtml(markers, theme, lift, key) {
   const { c, dark } = theme;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU${key ? `&apikey=${encodeURIComponent(key)}` : ''}"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#map{width:100%;height:100%;background:${c.map}}
@@ -65,9 +82,19 @@ export default function ShiftsMap({ shifts, selectedId, onSelect, onViewChange, 
     .filter((s) => s.location?.lat && s.location?.lng)
     .map((s) => ({ id: s.id, lat: s.location.lat, lng: s.location.lng, pay: s.pay, urgent: !!s.urgent, full: s.full })), [shifts]);
 
+  // Wait for the key before drawing: rebuilding the HTML afterwards would
+  // reload the map and throw away where the person had scrolled it.
+  const [key, setKey] = useState(apiKey);
+  useEffect(() => {
+    if (apiKey) return undefined;
+    let alive = true;
+    loadApiKey().then(() => { if (alive) setKey(apiKey); });
+    return () => { alive = false; };
+  }, []);
+
   // Built once per theme; later changes are pushed in, so the map keeps its
   // position while filters change.
-  const html = useMemo(() => buildHtml(markers, theme, lift), [theme.dark]);
+  const html = useMemo(() => buildHtml(markers, theme, lift, key?.key), [theme.dark, key]);
 
   useEffect(() => {
     web.current?.injectJavaScript(`window.setMarkers && window.setMarkers(${JSON.stringify(markers)}, ${JSON.stringify(selectedId || null)}); true;`);
@@ -83,6 +110,10 @@ export default function ShiftsMap({ shifts, selectedId, onSelect, onViewChange, 
       </View>
     );
   }
+
+  // The same colour the WebView shows while it loads, so the wait for the
+  // key looks like the map loading, which is what it is.
+  if (!key) return <View style={{ flex: 1, backgroundColor: theme.c.map }} />;
 
   return (
     <WebView

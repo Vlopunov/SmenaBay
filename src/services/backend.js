@@ -8,7 +8,7 @@
  * There is no realtime: `bootstrap()` returns the whole slice the store
  * needs in one round-trip, and services/sync.js polls it.
  */
-import { api } from './api';
+import { api, API_BASE } from './api';
 
 // ── Bootstrap ──────────────────────────────────────────────────
 /** Every collection the store needs, scoped to the caller, in one call. */
@@ -73,6 +73,71 @@ export async function uploadImage(uri, kind = 'chat') {
   form.append('kind', kind);
   const res = await api('/api/upload', { method: 'POST', body: form, timeout: 60000 });
   return res?.url || null;
+}
+
+// ── Geo ────────────────────────────────────────────────────────
+/**
+ * Addresses and maps go through our server as well. It holds the map keys
+ * — and falls back to OpenStreetMap when it has none — so the phone never
+ * calls a map provider itself and nothing on it breaks when a key changes.
+ * These routes are open, like the public feed: an address is not private.
+ *
+ * The lookups answer softly, with [] or null instead of an error: a point
+ * with a hand-typed address is better than no point at all.
+ */
+
+/** Hints for an address someone is typing. `lat`/`lng` may be null. */
+export async function geoSuggest(q, city) {
+  try {
+    const res = await api(
+      `/api/geo/suggest?q=${encodeURIComponent(q)}${city ? `&city=${encodeURIComponent(city)}` : ''}`,
+      { auth: false },
+    );
+    return Array.isArray(res?.items) ? res.items : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+/** An address → { address, city, lat, lng }, or null when nothing matches. */
+export async function geoGeocode(address) {
+  try {
+    return await api(`/api/geo/geocode?q=${encodeURIComponent(address)}`, { auth: false });
+  } catch (e) {
+    return null;
+  }
+}
+
+/** The other direction: what stands at these coordinates. Same shape, or null. */
+export async function geoReverse(lat, lng) {
+  try {
+    // The route takes longitude first, the way map providers write a point.
+    return await api(`/api/geo/geocode?ll=${lng},${lat}`, { auth: false });
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * The key for the Yandex JS API used inside WebViews; null while the
+ * server has none, and the maps then load exactly as they do today.
+ * Short timeout: a map waits for this answer before it draws itself.
+ */
+export const geoConfig = () => api('/api/geo/config', { auth: false, timeout: 5000 });
+
+/**
+ * A picture of the map. Not a fetch — the URL goes straight into <Image>.
+ * `width`/`height` are map pixels, `points` is [{ lat, lng, style }].
+ * Everything is clamped to what the route accepts, so a wide phone or a
+ * long list of points can never turn into a 400.
+ */
+export function staticMapUrl({ lat, lng, width, height, z = 15, points = [] }) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const w = Math.min(650, Math.max(1, Math.round(width)));
+  const h = Math.min(450, Math.max(1, Math.round(height)));
+  const zoom = Math.min(19, Math.max(3, Math.round(z)));
+  const pt = points.slice(0, 20).map((p) => `${p.lng},${p.lat},${p.style || 'pm2rdm'}`).join(';');
+  return `${API_BASE}/api/geo/staticmap?ll=${lng},${lat}&z=${zoom}&size=${w}x${h}${pt ? `&pt=${encodeURIComponent(pt)}` : ''}`;
 }
 
 // ── Safety ─────────────────────────────────────────────────────

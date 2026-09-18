@@ -1,9 +1,10 @@
 // «Точки» — screen 31. A map on top as an overview, the list below. The
 // entrance hint is named for what it is: the line a worker reads in the
 // pass. Adding a point: move the map under a fixed pin or search, the
-// address resolves from the pin (OpenStreetMap Nominatim), give the point a
-// short name and, optionally, the entrance hint, save.
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+// address resolves from the pin (through our /api/geo, which holds the map
+// keys), give the point a short name and, optionally, the entrance hint,
+// save.
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, FlatList, TextInput, Modal, Keyboard, Platform, KeyboardAvoidingView, Alert, ActivityIndicator, Image,
   StyleSheet, useWindowDimensions,
@@ -18,42 +19,31 @@ import { haptic } from '../../design/haptics';
 import { showActions } from '../../design/ActionSheet';
 import { plural, shiftEnd } from '../../design/format';
 import useStore from '../../store/useStore';
+import { geoConfig, geoGeocode, geoReverse, geoSuggest, staticMapUrl } from '../../services/backend';
 
 let WebView = null;
 if (Platform.OS !== 'web') WebView = require('react-native-webview').WebView;
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const ABBR = [[/^проспект\s/i, 'пр. '], [/^улица\s/i, 'ул. '], [/^переулок\s/i, 'пер. '], [/^площадь\s/i, 'пл. '], [/^бульвар\s/i, 'бул. '], [/\sпроспект$/i, ' пр.'], [/\sулица$/i, ' ул.']];
 const MAP_H = 170;
 
-function shortAddress(item) {
-  const a = item.address || {};
-  let road = a.road || a.pedestrian || a.neighbourhood || '';
-  ABBR.forEach(([re, rep]) => { road = road.replace(re, rep); });
-  if (/ пр\.$| ул\.$/.test(road)) road = road.replace(/(.+) (пр\.|ул\.)$/, '$2 $1');
-  const line = [road, a.house_number].filter(Boolean).join(', ');
-  return line || String(item.display_name || '').split(',').slice(0, 2).join(',');
-}
-
-async function search(q) {
-  try {
-    const r = await fetch(`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&viewbox=23.1,51.2,32.8,56.2&bounded=1&accept-language=ru`);
-    const data = await r.json();
-    return data.map((it) => ({ address: shortAddress(it), city: it.address?.city || it.address?.town || '', lat: +it.lat, lng: +it.lon }));
-  } catch { return []; }
-}
-
-async function reverse(lat, lng) {
-  try {
-    const r = await fetch(`${NOMINATIM}/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=ru`);
-    const it = await r.json();
-    return { address: shortAddress(it), city: it.address?.city || it.address?.town || '' };
-  } catch { return null; }
+/**
+ * The JS API key for the picker's map comes from the server, once per app
+ * run. `key: null` is a real answer: the map then loads unkeyed, as before.
+ */
+let apiKey = null;
+let apiKeyRequest = null;
+function loadApiKey() {
+  if (!apiKeyRequest) {
+    apiKeyRequest = geoConfig()
+      .then((r) => { apiKey = { key: r?.jsApiKey || null }; })
+      .catch(() => { apiKey = { key: null }; });
+  }
+  return apiKeyRequest;
 }
 
 // ── Overview map ───────────────────────────────────────────────
-// A Yandex static map (the same source as MiniMap) framed around every
-// point, with our pins placed by Mercator projection.
+// A static map from our server (the same source as MiniMap) framed around
+// every point, with our pins placed by Mercator projection.
 const TILE = 256;
 function project(lat, lng, z) {
   const size = TILE * 2 ** z;
@@ -86,7 +76,7 @@ function PointsMap({ points, kind, width }) {
         if (pins.every((p) => p.x >= 26 && p.x <= width - 26 && p.y >= 24 && p.y <= MAP_H - 24)) break;
       }
     }
-    return { pins, uri: `https://static-maps.yandex.ru/1.x/?ll=${lng},${lat}&z=${z}&size=${iw},${ih}&l=map&lang=ru_RU` };
+    return { pins, uri: staticMapUrl({ lat, lng, width: iw, height: ih, z }) };
   }, [points, width]);
   if (!frame) return null;
   return (
@@ -95,7 +85,7 @@ function PointsMap({ points, kind, width }) {
       accessibilityLabel={`Карта: ${points.length} ${plural(points.length, ['точка', 'точки', 'точек'])}`}
       style={[{ height: MAP_H, borderRadius: 20, overflow: 'hidden', backgroundColor: c.map }, t.dark && { borderWidth: 1, borderColor: c.line }]}
     >
-      {!failed ? (
+      {frame.uri && !failed ? (
         <Image source={{ uri: frame.uri }} onError={() => setFailed(true)} style={{ width: '100%', height: MAP_H }} resizeMode="cover" accessibilityIgnoresInvertColors />
       ) : (
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -123,9 +113,9 @@ function PointsMap({ points, kind, width }) {
 }
 
 // ── Add-a-point picker ─────────────────────────────────────────
-function pickerHtml({ brand, ground, ring, dark }) {
+function pickerHtml({ brand, ground, ring, dark, key }) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU${key ? `&apikey=${encodeURIComponent(key)}` : ''}"></script>
 <style>*{margin:0;padding:0}html,body,#map{width:100%;height:100%;background:${ground}}
 ${dark ? '[class*="ground-pane"]{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.9)}' : ''}
 .pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);z-index:999;pointer-events:none;display:flex;flex-direction:column;align-items:center}
@@ -147,13 +137,26 @@ function Picker({ visible, onClose, onSave }) {
   const insets = useSafeAreaInsets();
   const web = useRef(null);
   const timer = useRef(null);
+  const seq = useRef(0);
   const [q, setQ] = useState('');
   const [hits, setHits] = useState([]);
   const [place, setPlace] = useState(null); // { address, city, lat, lng }
   const [resolving, setResolving] = useState(false);
+  const [lost, setLost] = useState(false); // the last lookup came back empty
   const [name, setName] = useState('');
   const [hint, setHint] = useState('');
-  const html = useMemo(() => pickerHtml({ brand: c.brand, ground: c.map, ring: c.surface, dark }), [dark]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [key, setKey] = useState(apiKey);
+  const html = useMemo(() => pickerHtml({ brand: c.brand, ground: c.map, ring: c.surface, dark, key: key?.key }), [dark, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const located = Number.isFinite(place?.lat) && Number.isFinite(place?.lng);
+
+  // Wait for the key before building the map: a later rebuild would reload
+  // it and lose wherever the person had already dragged the pin.
+  useEffect(() => {
+    if (apiKey) return undefined;
+    let alive = true;
+    loadApiKey().then(() => { if (alive) setKey(apiKey); });
+    return () => { alive = false; };
+  }, []);
 
   const onMessage = async (e) => {
     const d = JSON.parse(e.nativeEvent.data);
@@ -161,9 +164,12 @@ function Picker({ visible, onClose, onSave }) {
     if (d.type === 'ready' || d.type === 'center') {
       const lat = d.lat ?? 53.9; const lng = d.lng ?? 27.5667;
       setResolving(true);
-      const r = await reverse(lat, lng);
+      const r = await geoReverse(lat, lng);
       setResolving(false);
-      if (r) setPlace({ ...r, lat, lng });
+      // Nothing under the pin, or nothing came back: leave the last address
+      // alone and say so. The search field is still a way to a point.
+      if (r?.address) { setPlace({ address: r.address, city: r.city || '', lat, lng }); setLost(false); }
+      else setLost(true);
     }
   };
 
@@ -171,25 +177,63 @@ function Picker({ visible, onClose, onSave }) {
     setQ(text);
     clearTimeout(timer.current);
     if (text.trim().length < 3) { setHits([]); return; }
-    timer.current = setTimeout(async () => setHits(await search(`${text}, Беларусь`)), 400);
+    timer.current = setTimeout(async () => {
+      // Answers can overtake each other; only the newest one may show.
+      const n = seq.current + 1;
+      seq.current = n;
+      const items = await geoSuggest(text.trim());
+      if (seq.current === n) setHits(items);
+    }, 400);
   };
 
-  const pick = (h) => {
-    setHits([]); setQ(h.address); Keyboard.dismiss();
-    setPlace(h);
-    web.current?.injectJavaScript(`moveTo(${h.lat},${h.lng});true;`);
+  /** A geocoder answer, or the address by itself when there wasn't one. */
+  const settle = (g, address, city) => {
+    const ok = Number.isFinite(g?.lat) && Number.isFinite(g?.lng);
+    setPlace({ address: g?.address || address, city: g?.city || city, lat: ok ? g.lat : null, lng: ok ? g.lng : null });
+    setLost(!ok);
+    if (ok) web.current?.injectJavaScript(`moveTo(${g.lat},${g.lng});true;`);
   };
 
-  const reset = () => { setQ(''); setHits([]); setPlace(null); setName(''); setHint(''); };
+  const pick = async (h) => {
+    const address = h.address || h.title || '';
+    setHits([]); setQ(h.title || address); Keyboard.dismiss();
+    if (Number.isFinite(h.lat) && Number.isFinite(h.lng)) {
+      setPlace({ address, city: h.city || '', lat: h.lat, lng: h.lng });
+      setLost(false);
+      web.current?.injectJavaScript(`moveTo(${h.lat},${h.lng});true;`);
+      return;
+    }
+    // A hint can arrive without coordinates; the geocoder gets them from
+    // the address. When it can't, the address alone still makes a point.
+    setResolving(true);
+    const g = await geoGeocode(address);
+    setResolving(false);
+    settle(g, address, h.city || '');
+  };
+
+  // Nothing to pick: take what the person typed and give the geocoder one
+  // chance at coordinates, so a hand-typed address still lands on the map.
+  const submit = async () => {
+    if (hits[0]) { pick(hits[0]); return; }
+    const text = q.trim();
+    if (text.length < 3) return;
+    Keyboard.dismiss();
+    setResolving(true);
+    const g = await geoGeocode(text);
+    setResolving(false);
+    settle(g, text, '');
+  };
+
+  const reset = () => { setQ(''); setHits([]); setPlace(null); setLost(false); setName(''); setHint(''); };
   const field = { height: 48, borderRadius: 14, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, paddingHorizontal: 14, fontSize: 16, color: c.ink };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'} onRequestClose={() => { reset(); onClose(); }}>
       <View style={{ flex: 1, backgroundColor: c.bg }}>
-        {WebView ? <WebView ref={web} source={{ html }} originWhitelist={['*']} onMessage={onMessage} style={{ flex: 1, backgroundColor: c.map }} javaScriptEnabled domStorageEnabled /> : <View style={{ flex: 1, backgroundColor: c.map }} />}
+        {WebView && key ? <WebView ref={web} source={{ html }} originWhitelist={['*']} onMessage={onMessage} style={{ flex: 1, backgroundColor: c.map }} javaScriptEnabled domStorageEnabled /> : <View style={{ flex: 1, backgroundColor: c.map }} />}
         <View style={{ position: 'absolute', top: Platform.OS === 'ios' ? 14 : insets.top + 10, left: 16, right: 16, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <SearchField value={q} onChangeText={onSearch} placeholder="Улица и дом" onSubmitEditing={() => hits[0] && pick(hits[0])} style={[{ flex: 1 }, t.sh.e1]} />
+            <SearchField value={q} onChangeText={onSearch} placeholder="Улица и дом" onSubmitEditing={submit} style={[{ flex: 1 }, t.sh.e1]} />
             <Press onPress={() => { reset(); onClose(); }} hitSlop={4} accessibilityLabel="Отмена" style={[{ height: 44, paddingHorizontal: 14, borderRadius: 14, backgroundColor: c.surface, justifyContent: 'center' }, t.sh.e1]}>
               <T v="bodyStrong" c="brand" style={{ fontSize: 15 }}>Отмена</T>
             </Press>
@@ -198,10 +242,10 @@ function Picker({ visible, onClose, onSave }) {
             <View style={[{ borderRadius: 16, backgroundColor: c.surface }, t.sh.e1]}>
               <View style={{ borderRadius: 16, overflow: 'hidden' }}>
                 {hits.map((h, i) => (
-                  <View key={`${h.lat}${h.lng}${i}`}>
+                  <View key={`${h.address || h.title || ''}${i}`}>
                     <Press feedback="highlight" onPress={() => pick(h)} style={{ paddingHorizontal: 14, paddingVertical: 11 }}>
-                      <T v="bodyStrong" style={{ fontSize: 15 }}>{h.address}</T>
-                      {h.city ? <T v="caption" c="ink2" style={{ marginTop: 1 }}>{h.city}</T> : null}
+                      <T v="bodyStrong" style={{ fontSize: 15 }}>{h.title || h.address}</T>
+                      {h.subtitle ? <T v="caption" c="ink2" style={{ marginTop: 1 }}>{h.subtitle}</T> : null}
                     </Press>
                     {i < hits.length - 1 ? <Divider inset={14} /> : null}
                   </View>
@@ -215,8 +259,12 @@ function Picker({ visible, onClose, onSave }) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
               <View style={{ flex: 1 }}>
                 <T v="caption" c="ink2" weight="600" style={{ fontSize: 12.5 }}>Адрес точки</T>
-                <T v="rowTitle" numberOfLines={2} style={{ marginTop: 2, fontSize: 16.5 }}>{place?.address || 'Передвинь карту под булавку'}</T>
-                {place?.city ? <T v="caption" c="ink2">{place.city}</T> : null}
+                <T v="rowTitle" numberOfLines={2} style={{ marginTop: 2, fontSize: 16.5 }}>
+                  {place?.address || (lost ? 'Адрес не определился — впиши его в поиске' : 'Передвинь карту под булавку')}
+                </T>
+                {place?.address && !located ? (
+                  <T v="caption" c="ink2">Точка сохранится без карты</T>
+                ) : place?.city ? <T v="caption" c="ink2">{place.city}</T> : null}
               </View>
               {resolving ? <ActivityIndicator color={c.ink2} /> : null}
             </View>

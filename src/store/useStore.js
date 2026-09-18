@@ -1,17 +1,32 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  MOCK_WORKERS, MOCK_COMPANIES, MOCK_SHIFTS, MOCK_APPLICATIONS,
-  MOCK_REVIEWS, MOCK_NOTIFICATIONS,
-} from '../data/mockData';
-import {
-  syncCreateShift, syncUpdateShift, syncCreateApplication, syncUpdateApplication,
-  syncCreateReview, syncCreateUser, syncUpdateUser, syncCreateNotification, syncSendMessage,
-  loadFromFirestore, setupRealtimeListeners,
-} from '../services/firestoreSync';
+import * as backend from '../services/backend';
+import { startSync, pullOnce, pullAll } from '../services/sync';
+import { ApiError, isOffline } from '../services/api';
 import { signOut as authSignOut, deleteAccount as authDeleteAccount } from '../services/auth';
+import { toast } from '../design/Toast';
 import { shortDate } from '../design/format';
+
+/**
+ * A write the person already sees on screen.
+ *
+ * Screens stay instant: the store updates first and the server catches up.
+ * If the server refuses, the change is rolled back and the person is told —
+ * silently keeping a row the server rejected is how two devices start
+ * disagreeing about who has the shift.
+ */
+function push(promise, { rollback, message } = {}) {
+  return promise.catch((e) => {
+    if (rollback) rollback();
+    if (isOffline(e)) toast.error('Нет связи. Изменение не сохранилось.');
+    else toast.error(message || (e instanceof ApiError ? e.message : 'Не удалось сохранить.'));
+    return null;
+  });
+}
+
+/** Temporary id for a row the server hasn't acknowledged yet. */
+const tmpId = () => 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 
 const useStore = create(
   persist(
@@ -20,150 +35,138 @@ const useStore = create(
   currentUser: null,   // worker or company object
   isAuthenticated: false,
 
-  // Initialize from Firestore (call on app startup)
-  initializeFromFirestore: async () => {
+  /**
+   * Start talking to the server: pull the world, then keep pulling.
+   * Returns a stop function (App.js calls it on unmount).
+   */
+  startSync: async () => {
     try {
-      await loadFromFirestore(set, get);
-      return setupRealtimeListeners(set, get);
+      return startSync(set, get);
     } catch (e) {
-      console.warn('[initializeFromFirestore]', e?.message);
+      console.warn('[sync start]', e?.message);
       return () => {};
     }
   },
 
-  // Update current user's lastSeen timestamp
+  /** Pull once, now — pull-to-refresh and «попробовать ещё раз» use this. */
+  refresh: () => pullOnce(set, get),
+
+  /**
+   * «в сети» comes from this stamp, so it has to reach the server — but not
+   * on every heartbeat: once every two minutes is enough for a presence dot
+   * and costs a fraction of the traffic.
+   */
   updateLastSeen: () => {
     const user = get().currentUser;
     if (!user) return;
     const now = new Date().toISOString();
-    if (user.role === 'worker') {
-      set(s => ({
-        currentUser: { ...s.currentUser, lastSeen: now },
-        workers: s.workers.map(w => w.id === user.id ? { ...w, lastSeen: now } : w),
-      }));
-    } else {
-      set(s => ({
-        currentUser: { ...s.currentUser, lastSeen: now },
-        companies: s.companies.map(c => c.id === user.id ? { ...c, lastSeen: now } : c),
-      }));
-    }
+    const key = user.role === 'worker' ? 'workers' : 'companies';
+    set(s => ({
+      currentUser: { ...s.currentUser, lastSeen: now },
+      [key]: s[key].map(u => (u.id === user.id ? { ...u, lastSeen: now } : u)),
+    }));
+    const last = get()._lastSeenSentAt || 0;
+    if (Date.now() - last < 120000) return;
+    set({ _lastSeenSentAt: Date.now() });
+    backend.updateProfile({ lastSeen: now }).catch(() => {});
+  },
+  _lastSeenSentAt: 0,
+
+  /**
+   * The one way into the app: a Firebase user (phone, Apple or Google)
+   * becomes a server profile. The profile's id IS the Firebase uid, so
+   * every device that signs in as this person sees the same account.
+   *
+   * `extraData` fills blanks on first creation (role, name, company) and is
+   * ignored for fields the profile already has.
+   */
+  signIn: async (firebaseUser, extraData = {}) => {
+    const profile = await backend.createProfile(firebaseUser, extraData);
+    if (!profile) throw new ApiError('no_profile', 'Сервер не вернул профиль. Попробуй ещё раз.', 500);
+    set({ currentUser: profile, isAuthenticated: true });
+    // Non-blocking: a slow pull must not hold up the screen behind it.
+    pullAll(set, get).catch(() => {});
+    return profile;
   },
 
-  login: (phone) => {
-    const now = new Date().toISOString();
-    const worker = get().workers.find(w => w.phone === phone);
-    if (worker) {
-      const updated = { ...worker, lastSeen: now };
-      set(s => ({
-        currentUser: updated,
-        isAuthenticated: true,
-        workers: s.workers.map(w => w.id === worker.id ? updated : w),
-      }));
-      return updated;
-    }
-    const company = get().companies.find(c => c.phone === phone);
-    if (company) {
-      const updated = { ...company, lastSeen: now };
-      set(s => ({
-        currentUser: updated,
-        isAuthenticated: true,
-        companies: s.companies.map(c => c.id === company.id ? updated : c),
-      }));
-      return updated;
-    }
-    return null;
+  /** True when the signed-in Firebase user has no profile yet. */
+  hasProfile: async () => {
+    const profile = await backend.getMyProfile();
+    if (profile) set({ currentUser: profile, isAuthenticated: true });
+    return !!(profile && profile.role);
   },
 
   /**
-   * Sign in an existing profile after a successful Google / Apple auth.
-   *
-   * Matches on the Firebase uid first (stable), then falls back to email
-   * for profiles created before the uid was persisted. Returns null when
-   * no profile exists yet, so the caller can send the user to registration
-   * instead of silently doing nothing.
+   * Development only: sign in as a demo phone through the real flow.
+   * Needs the number listed in Firebase Console → Authentication → Phone →
+   * numbers for testing, with the code in EXPO_PUBLIC_DEV_SMS_CODE.
    */
-  loginBySocial: ({ uid, email }) => {
-    const matches = (u) =>
-      (uid && u.authUid === uid) ||
-      (email && u.email && u.email.toLowerCase() === email.toLowerCase());
-
-    const now = new Date().toISOString();
-    const worker = get().workers.find(matches);
-    if (worker) {
-      const updated = { ...worker, authUid: uid || worker.authUid, lastSeen: now };
-      set(s => ({
-        currentUser: updated,
-        isAuthenticated: true,
-        workers: s.workers.map(w => (w.id === worker.id ? updated : w)),
-      }));
-      return updated;
+  login: async (phone) => {
+    if (!__DEV__) return null;
+    try {
+      const { sendVerificationCode, verifyCode } = require('../services/auth');
+      const verification = await sendVerificationCode(phone);
+      const code = process.env.EXPO_PUBLIC_DEV_SMS_CODE || '123456';
+      const res = await verifyCode(verification, code);
+      if (!res?.success) return null;
+      const { auth } = require('../services/firebase');
+      return await get().signIn(auth.currentUser, { phone, phoneVerified: true });
+    } catch (e) {
+      console.warn('[dev login]', e?.message);
+      return null;
     }
-
-    const company = get().companies.find(matches);
-    if (company) {
-      const updated = { ...company, authUid: uid || company.authUid, lastSeen: now };
-      set(s => ({
-        currentUser: updated,
-        isAuthenticated: true,
-        companies: s.companies.map(c => (c.id === company.id ? updated : c)),
-      }));
-      return updated;
-    }
-
-    return null;
   },
 
-  registerWorker: (data) => {
-    const newWorker = {
-      id: 'w_' + Date.now(),
+  /**
+   * After Google / Apple: the profile is found by uid on the server, so
+   * there is nothing to match locally. Returns null when this account has
+   * never registered, and the caller sends them to the name step.
+   */
+  loginBySocial: async ({ uid, email, displayName }) => {
+    const profile = await backend.getMyProfile();
+    if (!profile || !profile.role) return null;
+    set({ currentUser: profile, isAuthenticated: true });
+    pullAll(set, get).catch(() => {});
+    return profile;
+  },
+
+  registerWorker: async (data) => {
+    const { auth } = require('../services/firebase');
+    return await get().signIn(auth.currentUser, {
       role: 'worker',
-      rating: 0,
-      shiftsCompleted: 0,
-      badges: ['newbie'],
-      documents: { passport: false, medicalBook: false },
-      verified: false,
-      phoneVerified: false,
+      phoneVerified: true,
       phoneVisible: true,
-      registeredAt: new Date().toISOString().split('T')[0],
       ...data,
-    };
-    set(s => ({
-      workers: [...s.workers, newWorker],
-      currentUser: newWorker,
-      isAuthenticated: true,
-    }));
-    syncCreateUser(newWorker.id, newWorker);
-    return newWorker;
+    });
   },
 
-  registerEmployer: (data) => {
-    const newCompany = {
-      id: 'c_' + Date.now(),
+  registerEmployer: async (data) => {
+    const { auth } = require('../services/firebase');
+    return await get().signIn(auth.currentUser, {
       role: 'employer',
-      rating: 0,
-      reviewsCount: 0,
-      totalShiftsPublished: 0,
       plan: 'free',
-      planExpiresAt: null,
-      locations: [],
-      phoneVerified: false,
+      phoneVerified: true,
       phoneVisible: true,
-      registeredAt: new Date().toISOString().split('T')[0],
+      locations: [],
       ...data,
-    };
-    set(s => ({
-      companies: [...s.companies, newCompany],
-      currentUser: newCompany,
-      isAuthenticated: true,
-    }));
-    syncCreateUser(newCompany.id, newCompany);
-    return newCompany;
+    });
   },
 
   logout: () => {
-    set({ currentUser: null, isAuthenticated: false });
+    // Someone else may pick up this phone next. Personal collections go;
+    // the public feed stays so the app still has something to show.
+    set(s => ({
+      currentUser: null,
+      isAuthenticated: false,
+      applications: [],
+      conversations: [],
+      notifications: [],
+      blockedUsers: [],
+      lastSyncAt: null,
+    }));
     // Best-effort sign out from Firebase + Google so the next login is clean.
     authSignOut().catch(() => {});
+    pullOnce(set, get);
   },
   // Note: favorites are not cleared on logout — they persist per-user
 
@@ -180,34 +183,31 @@ const useStore = create(
     const user = get().currentUser;
     if (!user) return { success: false, message: 'Вы не авторизованы' };
 
+    // The server goes first: it erases the account and everything attached
+    // to it, then the Firebase credential. Wiping the phone first would
+    // leave someone signed out of data that still exists for everyone else.
+    try {
+      await backend.deleteMyAccount();
+    } catch (e) {
+      if (isOffline(e)) return { success: false, message: 'Нет связи с сервером. Попробуй позже.' };
+      return { success: false, message: e?.message || 'Не удалось удалить аккаунт.' };
+    }
+
+    // The credential may refuse to go without a recent sign-in; the account
+    // data is already gone, so tell the caller what happened.
     const result = await authDeleteAccount();
-    if (!result.success) return result;
 
     const uid = user.id;
-    const isWorker = user.role === 'worker';
-
-    // Shifts published by this employer, needed to cascade applications.
-    const ownShiftIds = isWorker
-      ? []
-      : get().shifts.filter(s => s.companyId === uid).map(s => s.id);
-
     set(state => ({
       currentUser: null,
       isAuthenticated: false,
-      workers: isWorker ? state.workers.filter(w => w.id !== uid) : state.workers,
-      companies: isWorker ? state.companies : state.companies.filter(c => c.id !== uid),
-      shifts: isWorker ? state.shifts : state.shifts.filter(s => s.companyId !== uid),
-      applications: state.applications.filter(
-        a => a.workerId !== uid && !ownShiftIds.includes(a.shiftId)
-      ),
-      // Drop reviews written by the user and reviews about the user.
+      workers: state.workers.filter(w => w.id !== uid),
+      companies: state.companies.filter(c => c.id !== uid),
+      shifts: state.shifts.filter(s => s.companyId !== uid),
+      applications: [],
       reviews: state.reviews.filter(r => r.authorId !== uid && r.targetId !== uid),
-      conversations: state.conversations.filter(
-        c => c.workerId !== uid && c.companyId !== uid
-      ),
-      notifications: state.notifications.filter(n => n.userId !== uid),
-      // favorites and savedShifts are keyed by user id. Drop this user's
-      // own entry, and remove them from everyone else's favourites.
+      conversations: [],
+      notifications: [],
       favorites: Object.fromEntries(
         Object.entries(state.favorites)
           .filter(([ownerId]) => ownerId !== uid)
@@ -219,6 +219,9 @@ const useStore = create(
       blockedUsers: [],
     }));
 
+    if (!result.success && result.requiresRecentLogin) {
+      return { success: true, message: 'Аккаунт удалён.' };
+    }
     return { success: true };
   },
 
@@ -253,26 +256,36 @@ const useStore = create(
 
   blockUser: (userId) => {
     if (!userId || userId === get().currentUser?.id) return;
-    set(state => (
-      state.blockedUsers.includes(userId)
-        ? {}
-        : { blockedUsers: [...state.blockedUsers, userId] }
-    ));
+    if (get().blockedUsers.includes(userId)) return;
+    set(state => ({ blockedUsers: [...state.blockedUsers, userId] }));
+    // Blocking has to follow the person to their other devices, so it lives
+    // on the server too. It stays in effect locally either way.
+    push(backend.blockUser(userId), {
+      rollback: () => set(state => ({ blockedUsers: state.blockedUsers.filter(id => id !== userId) })),
+      message: 'Не удалось заблокировать. Попробуй ещё раз.',
+    });
   },
 
   unblockUser: (userId) => {
+    const had = get().blockedUsers.includes(userId);
     set(state => ({ blockedUsers: state.blockedUsers.filter(id => id !== userId) }));
+    if (!had) return;
+    push(backend.unblockUser(userId), {
+      rollback: () => set(state => ({ blockedUsers: [...state.blockedUsers, userId] })),
+    });
   },
 
   /**
-   * Record a report of objectionable content or behaviour.
+   * Report objectionable content or behaviour.
    * `targetType` is one of 'user' | 'shift' | 'message' | 'review'.
+   *
+   * The report goes to the server, where a human can act on it — a report
+   * that never leaves the phone is not moderation.
    */
-  reportContent: ({ targetType, targetId, reason, details = '' }) => {
-    const reporterId = get().currentUser?.id || null;
+  reportContent: ({ targetType, targetId, reason, details = '', shiftId, conversationId }) => {
     const report = {
-      id: 'r_' + Date.now(),
-      reporterId,
+      id: tmpId(),
+      reporterId: get().currentUser?.id || null,
       targetType,
       targetId,
       reason,
@@ -280,33 +293,44 @@ const useStore = create(
       createdAt: new Date().toISOString(),
     };
     set(state => ({ reports: [...state.reports, report] }));
+    push(backend.reportContent({ targetType, targetId, reason, details, shiftId, conversationId }), {
+      rollback: () => set(state => ({ reports: state.reports.filter(r => r.id !== report.id) })),
+      message: 'Жалоба не отправилась. Попробуй ещё раз.',
+    });
     return report;
   },
 
   updateProfile: (updates) => {
     const user = get().currentUser;
+    if (!user) return;
+    const before = user;
     const updated = { ...user, ...updates };
-    if (user.role === 'worker') {
-      set(s => ({
-        currentUser: updated,
-        workers: s.workers.map(w => w.id === user.id ? updated : w),
-      }));
-    } else {
-      set(s => ({
-        currentUser: updated,
-        companies: s.companies.map(c => c.id === user.id ? updated : c),
-      }));
-    }
-    syncUpdateUser(user.id, updates);
+    const key = user.role === 'worker' ? 'workers' : 'companies';
+    set(s => ({
+      currentUser: updated,
+      [key]: s[key].map(u => (u.id === user.id ? { ...u, ...updates } : u)),
+    }));
+    push(backend.updateProfile(updates), {
+      rollback: () => set(s => ({
+        currentUser: before,
+        [key]: s[key].map(u => (u.id === user.id ? before : u)),
+      })),
+      message: 'Изменения не сохранились.',
+    });
   },
 
   // ===== DATA =====
-  workers: [...MOCK_WORKERS],
-  companies: [...MOCK_COMPANIES],
-  shifts: [...MOCK_SHIFTS],
-  applications: [...MOCK_APPLICATIONS],
-  reviews: [...MOCK_REVIEWS],
-  notifications: [...MOCK_NOTIFICATIONS],
+  // Everything below comes from the server (services/sync.js). It is
+  // persisted so the app opens with what it last saw instead of a blank
+  // screen, then refreshes.
+  workers: [],
+  companies: [],
+  shifts: [],
+  applications: [],
+  reviews: [],
+  notifications: [],
+  lastSyncAt: null,
+  syncError: null,
 
   // ===== SHIFTS =====
   getActiveShifts: (city) => {
@@ -338,55 +362,68 @@ const useStore = create(
     return null;
   },
 
-  createShift: (data) => {
+  /**
+   * Publish one shift per chosen date. The server assigns the id, stamps
+   * createdAt and forces companyId to the caller, so we wait for it: a
+   * shift with a made-up id can't be opened by anyone else.
+   */
+  createShift: async (data) => {
     const user = get().currentUser;
-    if (user && !user.phoneVerified) return { error: 'phone_not_verified' };
-    // Check plan limits
+    if (!user) return { error: 'not_authenticated' };
+    if (!user.phoneVerified) return { error: 'phone_not_verified' };
+
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const monthShifts = get().shifts.filter(
       s => s.companyId === user.id && s.createdAt >= monthStart && s.status !== 'cancelled'
     ).length;
     const limits = { free: 3, business: 30, premium: Infinity };
-    if (monthShifts >= (limits[user.plan] || 3)) {
-      return { error: 'limit' };
-    }
+    if (monthShifts >= (limits[user.plan] || 3)) return { error: 'limit' };
 
     const dates = Array.isArray(data.date) ? data.date : [data.date];
-    const newShifts = dates.map(date => ({
-      id: 's_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      companyId: user.id,
-      status: 'active',
-      spotsTaken: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      ...data,
-      date,
-      durationHours: calcDuration(data.timeStart, data.timeEnd),
-      payPerHour: +(data.pay / calcDuration(data.timeStart, data.timeEnd)).toFixed(2),
-    }));
+    const hours = calcDuration(data.timeStart, data.timeEnd);
+    const created = [];
+    try {
+      for (const date of dates) {
+        const shift = await backend.createShift({
+          ...data,
+          date,
+          status: 'active',
+          durationHours: hours,
+          payPerHour: +(data.pay / hours).toFixed(2),
+        });
+        if (shift) created.push(shift);
+      }
+    } catch (e) {
+      if (created.length === 0) {
+        return { error: isOffline(e) ? 'Нет связи с сервером. Смена не опубликована.' : (e?.message || 'Не удалось опубликовать смену.') };
+      }
+      // Some dates went through: keep them and say what happened.
+      toast.error('Опубликованы не все даты. Проверь список смен.');
+    }
+    if (!created.length) return { error: 'Не удалось опубликовать смену.' };
 
     set(s => ({
-      shifts: [...s.shifts, ...newShifts],
+      shifts: [...s.shifts, ...created],
       companies: s.companies.map(c =>
         c.id === user.id
-          ? { ...c, totalShiftsPublished: c.totalShiftsPublished + newShifts.length }
+          ? { ...c, totalShiftsPublished: (c.totalShiftsPublished || 0) + created.length }
           : c
       ),
       currentUser: {
         ...s.currentUser,
-        totalShiftsPublished: s.currentUser.totalShiftsPublished + newShifts.length,
+        totalShiftsPublished: (s.currentUser.totalShiftsPublished || 0) + created.length,
       },
     }));
-    return { success: true, shifts: newShifts };
+    return { success: true, shifts: created };
   },
 
   cancelShift: (shiftId) => {
-    // Capture affected workers (pending/approved) before updating statuses
     const affectedApps = get().applications.filter(
       a => a.shiftId === shiftId && (a.status === 'pending' || a.status === 'approved')
     );
-    const affectedWorkerIds = affectedApps.map(a => a.workerId);
     const shift = get().getShiftById(shiftId);
+    const before = { shifts: get().shifts, applications: get().applications };
 
     set(s => ({
       shifts: s.shifts.map(sh =>
@@ -399,30 +436,42 @@ const useStore = create(
       ),
     }));
 
-    // Notify only affected workers
-    affectedWorkerIds.forEach(workerId => {
-      get().addNotification(workerId, 'shift_cancelled',
-        'Смена отменена', `Смена «${shift?.title}» отменена заказчиком`, shiftId);
+    push(backend.updateShift(shiftId, { status: 'cancelled' }), {
+      rollback: () => set(before),
+      message: 'Смена не отменилась. Попробуй ещё раз.',
+    }).then((ok) => {
+      if (ok === null) return;
+      // Each application is its own document; the shift status alone would
+      // leave workers with a «подтверждена» pass for a shift that is gone.
+      affectedApps.forEach(a => {
+        backend.updateApplication(a.id, { status: 'rejected', respondedAt: new Date().toISOString() }).catch(() => {});
+      });
+      affectedApps.forEach(a => {
+        get().addNotification(a.workerId, 'shift_cancelled',
+          'Смена отменена', `Смена «${shift?.title}» отменена заказчиком`, shiftId);
+      });
     });
   },
 
   completeShift: (shiftId) => {
-    const shift = get().getShiftById(shiftId);
-    const approvedApps = get().applications.filter(
-      a => a.shiftId === shiftId && a.status === 'approved'
-    );
-    const approvedWorkerIds = approvedApps.map(a => a.workerId);
+    const approvedWorkerIds = get().applications
+      .filter(a => a.shiftId === shiftId && a.status === 'approved')
+      .map(a => a.workerId);
+    const before = { shifts: get().shifts, workers: get().workers };
 
     set(s => ({
       shifts: s.shifts.map(sh =>
         sh.id === shiftId ? { ...sh, status: 'completed' } : sh
       ),
+      // The count the worker sees; the server recomputes its own.
       workers: s.workers.map(w =>
         approvedWorkerIds.includes(w.id)
-          ? { ...w, shiftsCompleted: w.shiftsCompleted + 1 }
+          ? { ...w, shiftsCompleted: (w.shiftsCompleted || 0) + 1 }
           : w
       ),
     }));
+
+    push(backend.updateShift(shiftId, { status: 'completed' }), { rollback: () => set(before) });
   },
 
   duplicateShift: (shiftId) => {
@@ -433,56 +482,71 @@ const useStore = create(
   },
 
   editShift: (shiftId, updates) => {
+    const before = get().shifts;
     set(s => ({
-      shifts: s.shifts.map(sh =>
-        sh.id === shiftId ? { ...sh, ...updates } : sh
-      ),
+      shifts: s.shifts.map(sh => (sh.id === shiftId ? { ...sh, ...updates } : sh)),
     }));
+    push(backend.updateShift(shiftId, updates), {
+      rollback: () => set({ shifts: before }),
+      message: 'Изменения смены не сохранились.',
+    });
   },
 
   // ===== APPLICATIONS =====
-  applyToShift: (shiftId) => {
+  /**
+   * Apply. The server is the referee here: it re-checks that the shift is
+   * live, has a seat and that this worker hasn't already applied, because
+   * two phones can tap the last seat at the same moment.
+   */
+  applyToShift: async (shiftId) => {
     const user = get().currentUser;
-    if (user && !user.phoneVerified) return { error: 'phone_not_verified' };
+    if (!user) return { error: 'not_authenticated' };
+    if (!user.phoneVerified) return { error: 'phone_not_verified' };
 
+    // Cheap local checks first — no point in a round-trip to be told what
+    // the screen already knows.
     const shiftCheck = get().getShiftById(shiftId);
     if (shiftCheck && shiftCheck.status !== 'active') return { error: 'shift_not_active' };
     if (shiftCheck && shiftCheck.spotsTaken >= shiftCheck.spotsTotal) return { error: 'shift_full' };
-
     const existing = get().applications.find(
       a => a.shiftId === shiftId && a.workerId === user.id && a.status !== 'cancelled_by_worker'
     );
     if (existing) return { error: 'already_applied' };
 
-    const app = {
-      id: 'a_' + Date.now(),
-      shiftId,
-      workerId: user.id,
-      status: 'pending',
-      // Full timestamp: «Ждут ответа» shows how long ago the application went out.
-      appliedAt: new Date().toISOString(),
-      respondedAt: null,
-    };
+    let app;
+    try {
+      app = await backend.createApplication(shiftId);
+    } catch (e) {
+      // These codes are what the UI already knows how to say.
+      if (e?.code === 'shift_full' || e?.code === 'already_applied' || e?.code === 'shift_not_active') {
+        pullOnce(set, get);
+        return { error: e.code };
+      }
+      return { error: isOffline(e) ? 'Нет связи. Отклик не отправлен.' : (e?.message || 'Не удалось отправить отклик.') };
+    }
+    if (!app?.id) return { error: 'Не удалось отправить отклик.' };
+
     set(s => ({ applications: [...s.applications, app] }));
 
-    // Notify employer
     const shift = get().getShiftById(shiftId);
     if (shift) {
       get().addNotification(shift.companyId, 'new_application',
         'Новый отклик', `Новый отклик на «${shift.title}» от ${user.firstName}${user.lastName ? ` ${user.lastName[0]}.` : ''}`,
         shiftId);
     }
-    return { success: true };
+    return { success: true, application: app };
   },
 
   cancelApplication: (appId) => {
     const app = get().applications.find(a => a.id === appId);
     if (!app) return;
     const wasApproved = app.status === 'approved';
+    const before = { applications: get().applications, shifts: get().shifts, workers: get().workers, currentUser: get().currentUser };
+    const respondedAt = new Date().toISOString();
 
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'cancelled_by_worker', respondedAt: new Date().toISOString() } : a
+        a.id === appId ? { ...a, status: 'cancelled_by_worker', respondedAt } : a
       ),
       // A confirmed worker pulling out frees the seat they were holding;
       // otherwise the shift stays «full» with nobody coming.
@@ -493,16 +557,24 @@ const useStore = create(
         : s.shifts,
     }));
 
-    if (wasApproved) {
+    push(backend.updateApplication(appId, { status: 'cancelled_by_worker', respondedAt }), {
+      rollback: () => set(before),
+      message: 'Отмена не сохранилась. Попробуй ещё раз.',
+    }).then((ok) => {
+      if (ok === null || !wasApproved) return;
+      const shift = get().getShiftById(app.shiftId);
+      // The seat is the server's number; it recounts on the next pull.
+      pullOnce(set, get);
+
       // «Без отмен» means exactly that — it goes with the first cancellation.
       const drop = (w) => (w.id === app.workerId && w.badges?.includes('no_cancels'))
         ? { ...w, badges: w.badges.filter(b => b !== 'no_cancels') } : w;
-      set(s => ({
-        workers: s.workers.map(drop),
-        currentUser: s.currentUser ? drop(s.currentUser) : s.currentUser,
-      }));
+      const me = get().currentUser;
+      if (me?.id === app.workerId && me.badges?.includes('no_cancels')) {
+        get().updateProfile({ badges: me.badges.filter(b => b !== 'no_cancels') });
+      }
+      set(s => ({ workers: s.workers.map(drop) }));
 
-      const shift = get().getShiftById(app.shiftId);
       const worker = get().workers.find(w => w.id === app.workerId);
       if (shift) {
         get().addNotification(shift.companyId, 'shift_cancelled',
@@ -510,72 +582,102 @@ const useStore = create(
           `${worker?.firstName || 'Исполнитель'} не выйдет на «${shift.title}» ${shortDate(shift.date)}, ${shift.timeStart}. Место снова открыто.`,
           shift.id);
       }
-    }
+    });
   },
 
-  approveApplication: (appId) => {
+  /**
+   * Confirm a person for a seat. Runs as one transaction on the server, so
+   * two employers (or two taps) can never oversell the same shift; the
+   * screen updates first and rolls back if the server says the seat is gone.
+   */
+  approveApplication: async (appId) => {
     const app = get().applications.find(a => a.id === appId);
-    if (!app) return;
+    if (!app) return { error: 'app_not_found' };
+    const shift = get().getShiftById(app.shiftId);
+    if (!shift) return { error: 'shift_not_found' };
+    const respondedAt = new Date().toISOString();
 
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'approved', respondedAt: new Date().toISOString() } : a
+        a.id === appId ? { ...a, status: 'approved', respondedAt } : a
       ),
       shifts: s.shifts.map(sh =>
         sh.id === app.shiftId ? { ...sh, spotsTaken: sh.spotsTaken + 1 } : sh
       ),
     }));
 
-    // Notify worker
-    const shift = get().getShiftById(app.shiftId);
-    get().addNotification(app.workerId, 'application_approved',
-      'Отклик подтверждён', `Ваш отклик на «${shift?.title}» подтверждён!`, app.shiftId);
-
-    // Auto-create chat conversation with system message
-    if (shift) {
-      const conv = get().getOrCreateConversation(app.shiftId, app.workerId, shift.companyId);
-      get().sendSystemMessage(conv.id, `Заявка подтверждена! Смена «${shift.title}» — ${shortDate(shift.date)}, ${shift.timeStart}–${shift.timeEnd}`);
+    let result;
+    try {
+      result = await backend.approveApplication(appId, app.shiftId);
+    } catch (e) {
+      set(s => ({
+        applications: s.applications.map(a =>
+          a.id === appId ? { ...a, status: 'pending', respondedAt: null } : a
+        ),
+        shifts: s.shifts.map(sh =>
+          sh.id === app.shiftId ? { ...sh, spotsTaken: Math.max(0, sh.spotsTaken - 1) } : sh
+        ),
+      }));
+      if (e?.code === 'shift_full') { pullOnce(set, get); return { error: 'shift_full' }; }
+      if (e?.code === 'application_not_pending') { pullOnce(set, get); return { error: 'already_processed' }; }
+      toast.error(isOffline(e) ? 'Нет связи. Отклик не подтверждён.' : (e?.message || 'Не удалось подтвердить.'));
+      return { error: e?.code || 'unknown' };
     }
 
-    // Check if shift is now filled
-    const updatedShift = get().getShiftById(app.shiftId);
-    if (updatedShift && updatedShift.spotsTaken >= updatedShift.spotsTotal) {
-      // Capture pending applications before rejecting them
+    get().addNotification(app.workerId, 'application_approved',
+      'Отклик подтверждён', `Ваш отклик на «${shift.title}» подтверждён!`, app.shiftId);
+
+    // Best-effort: the approval already happened, so a chat hiccup must not
+    // read as a failed confirmation.
+    try {
+      const conv = await get().getOrCreateConversation(app.shiftId, app.workerId, shift.companyId);
+      if (conv?.id) {
+        await get().sendSystemMessage(conv.id,
+          `Заявка подтверждена! Смена «${shift.title}» — ${shortDate(shift.date)}, ${shift.timeStart}–${shift.timeEnd}`);
+      }
+    } catch (e) {
+      console.warn('[approve] chat setup failed', e?.message);
+    }
+
+    if (result?.filled) {
       const pendingApps = get().applications.filter(
         a => a.shiftId === app.shiftId && a.status === 'pending'
       );
-
       set(s => ({
-        shifts: s.shifts.map(sh =>
-          sh.id === app.shiftId ? { ...sh, status: 'filled' } : sh
-        ),
+        shifts: s.shifts.map(sh => (sh.id === app.shiftId ? { ...sh, status: 'filled' } : sh)),
         applications: s.applications.map(a =>
           a.shiftId === app.shiftId && a.status === 'pending'
-            ? { ...a, status: 'rejected', respondedAt: new Date().toISOString() }
+            ? { ...a, status: 'rejected', respondedAt }
             : a
         ),
       }));
-
-      // Notify each auto-rejected worker
       pendingApps.forEach(a => {
+        backend.updateApplication(a.id, { status: 'rejected', respondedAt }).catch(() => {});
         get().addNotification(a.workerId, 'application_rejected',
-          'Отклик отклонён', `Смена "${updatedShift.title}" уже заполнена`, app.shiftId);
+          'Отклик отклонён', `Смена «${shift.title}» уже заполнена`, app.shiftId);
       });
     }
+    return { success: true, filled: !!result?.filled };
   },
 
   rejectApplication: (appId) => {
     const app = get().applications.find(a => a.id === appId);
+    if (!app) return;
+    const before = get().applications;
+    const respondedAt = new Date().toISOString();
     set(s => ({
       applications: s.applications.map(a =>
-        a.id === appId ? { ...a, status: 'rejected', respondedAt: new Date().toISOString() } : a
+        a.id === appId ? { ...a, status: 'rejected', respondedAt } : a
       ),
     }));
-    if (app) {
+    push(backend.updateApplication(appId, { status: 'rejected', respondedAt }), {
+      rollback: () => set({ applications: before }),
+    }).then((ok) => {
+      if (ok === null) return;
       const shift = get().getShiftById(app.shiftId);
       get().addNotification(app.workerId, 'application_rejected',
         'Отклик отклонён', `К сожалению, ваш отклик на «${shift?.title}» отклонён`, app.shiftId);
-    }
+    });
   },
 
   getApplicationsForShift: (shiftId) =>
@@ -607,12 +709,21 @@ const useStore = create(
     if (duplicate) return;
 
     const newReview = {
-      id: 'r_' + Date.now(),
-      createdAt: new Date().toISOString().split('T')[0],
+      id: tmpId(),
+      createdAt: new Date().toISOString(),
       ...review,
     };
     set(s => ({ reviews: [...s.reviews, newReview] }));
-    syncCreateReview(newReview);
+    push(backend.createReview(review), {
+      rollback: () => set(s => ({ reviews: s.reviews.filter(r => r.id !== newReview.id) })),
+      message: 'Оценка не отправилась. Попробуй ещё раз.',
+    }).then((saved) => {
+      // Swap the placeholder for the real row, so a later poll doesn't
+      // leave the review on screen twice.
+      if (saved?.id) {
+        set(s => ({ reviews: s.reviews.map(r => (r.id === newReview.id ? saved : r)) }));
+      }
+    });
 
     // Update target rating
     const allReviews = get().getReviewsFor(review.targetId);
@@ -662,6 +773,9 @@ const useStore = create(
         n.id === notifId ? { ...n, read: true } : n
       ),
     }));
+    // Read state has to stick: without the server write the next poll
+    // brings the unread dot straight back.
+    if (!String(notifId).startsWith('tmp_')) backend.markNotificationRead(notifId).catch(() => {});
   },
 
   markAllRead: () => {
@@ -671,40 +785,60 @@ const useStore = create(
         n.userId === userId ? { ...n, read: true } : n
       ),
     }));
+    backend.markAllNotificationsRead().catch(() => {});
   },
 
+  /**
+   * Notifications are addressed to the other side as often as to ourselves
+   * («новый отклик» goes to the employer), so they are written on the
+   * server and appear on that person's next pull — and as a push.
+   */
   addNotification: (userId, type, title, body, relatedShiftId = null) => {
     const notif = {
-      id: 'n_' + Date.now() + Math.random().toString(36).slice(2, 4),
+      id: tmpId(),
       userId,
       type,
       title,
       body,
       relatedShiftId,
       read: false,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
     };
-    set(s => ({ notifications: [...s.notifications, notif] }));
-    syncCreateNotification(notif);
+    // Only show it here when it is addressed to us.
+    if (userId === get().currentUser?.id) {
+      set(s => ({ notifications: [...s.notifications, notif] }));
+    }
+    backend.createNotification({ userId, type, title, body, relatedShiftId })
+      .then((saved) => {
+        if (saved?.id && userId === get().currentUser?.id) {
+          set(s => ({ notifications: s.notifications.map(n => (n.id === notif.id ? saved : n)) }));
+        }
+      })
+      .catch(() => {
+        if (userId === get().currentUser?.id) {
+          set(s => ({ notifications: s.notifications.filter(n => n.id !== notif.id) }));
+        }
+      });
   },
 
   // ===== LOCATIONS =====
   addLocation: (location) => {
     const user = get().currentUser;
-    const newLoc = {
-      id: 'loc_' + Date.now(),
-      companyId: user.id,
-      ...location,
-    };
+    if (!user) return null;
+    const newLoc = { id: 'loc_' + Date.now(), companyId: user.id, ...location };
+    const next = [...(user.locations || []), newLoc];
     set(s => ({
-      companies: s.companies.map(c =>
-        c.id === user.id ? { ...c, locations: [...c.locations, newLoc] } : c
-      ),
-      currentUser: {
-        ...s.currentUser,
-        locations: [...s.currentUser.locations, newLoc],
-      },
+      companies: s.companies.map(c => (c.id === user.id ? { ...c, locations: next } : c)),
+      currentUser: { ...s.currentUser, locations: next },
     }));
+    // Points are part of the company profile, so they save with it.
+    push(backend.updateProfile({ locations: next }), {
+      rollback: () => set(s => ({
+        companies: s.companies.map(c => (c.id === user.id ? { ...c, locations: user.locations || [] } : c)),
+        currentUser: { ...s.currentUser, locations: user.locations || [] },
+      })),
+      message: 'Точка не сохранилась.',
+    });
     return newLoc;
   },
 
@@ -715,15 +849,20 @@ const useStore = create(
     if (activeShifts.length > 0) return { error: 'has_active_shifts' };
 
     const user = get().currentUser;
+    if (!user) return { error: 'not_authenticated' };
+    const before = user.locations || [];
+    const next = before.filter(l => l.id !== locId);
     set(s => ({
-      companies: s.companies.map(c =>
-        c.id === user.id ? { ...c, locations: c.locations.filter(l => l.id !== locId) } : c
-      ),
-      currentUser: {
-        ...s.currentUser,
-        locations: s.currentUser.locations.filter(l => l.id !== locId),
-      },
+      companies: s.companies.map(c => (c.id === user.id ? { ...c, locations: next } : c)),
+      currentUser: { ...s.currentUser, locations: next },
     }));
+    push(backend.updateProfile({ locations: next }), {
+      rollback: () => set(s => ({
+        companies: s.companies.map(c => (c.id === user.id ? { ...c, locations: before } : c)),
+        currentUser: { ...s.currentUser, locations: before },
+      })),
+      message: 'Точка не удалилась.',
+    });
     return { success: true };
   },
 
@@ -732,16 +871,14 @@ const useStore = create(
   toggleFavorite: (workerId) => {
     const userId = get().currentUser?.id;
     if (!userId) return;
-    set(s => {
-      const userFavs = s.favorites[userId] || [];
-      return {
-        favorites: {
-          ...s.favorites,
-          [userId]: userFavs.includes(workerId)
-            ? userFavs.filter(id => id !== workerId)
-            : [...userFavs, workerId],
-        },
-      };
+    const current = get().favorites[userId] || [];
+    const next = current.includes(workerId)
+      ? current.filter(id => id !== workerId)
+      : [...current, workerId];
+    set(s => ({ favorites: { ...s.favorites, [userId]: next } }));
+    // «Свои люди» follow the account to any device the employer signs in on.
+    push(backend.updateProfile({ favorites: next }), {
+      rollback: () => set(s => ({ favorites: { ...s.favorites, [userId]: current } })),
     });
   },
   isFavorite: (workerId) => {
@@ -754,16 +891,13 @@ const useStore = create(
   toggleSavedShift: (shiftId) => {
     const userId = get().currentUser?.id;
     if (!userId) return;
-    set(s => {
-      const saved = s.savedShifts[userId] || [];
-      return {
-        savedShifts: {
-          ...s.savedShifts,
-          [userId]: saved.includes(shiftId)
-            ? saved.filter(id => id !== shiftId)
-            : [...saved, shiftId],
-        },
-      };
+    const current = get().savedShifts[userId] || [];
+    const next = current.includes(shiftId)
+      ? current.filter(id => id !== shiftId)
+      : [...current, shiftId];
+    set(s => ({ savedShifts: { ...s.savedShifts, [userId]: next } }));
+    push(backend.updateProfile({ savedShifts: next }), {
+      rollback: () => set(s => ({ savedShifts: { ...s.savedShifts, [userId]: current } })),
     });
   },
   isSavedShift: (shiftId) => {
@@ -798,59 +932,7 @@ const useStore = create(
   },
 
   // ===== CONVERSATIONS (chat) =====
-  conversations: (() => {
-    // Seed conversations from approved applications
-    const convs = [];
-    const approvedApps = MOCK_APPLICATIONS.filter(a => a.status === 'approved');
-    const seen = new Set();
-    approvedApps.forEach(a => {
-      const shift = MOCK_SHIFTS.find(s => s.id === a.shiftId);
-      if (!shift) return;
-      const key = `${a.shiftId}_${a.workerId}_${shift.companyId}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      const worker = MOCK_WORKERS.find(w => w.id === a.workerId);
-      const company = MOCK_COMPANIES.find(c => c.id === shift.companyId);
-      const msgs = [];
-      // System message
-      msgs.push({
-        id: 'msg_seed_' + convs.length + '_0',
-        senderId: 'system',
-        text: `Заявка подтверждена! Смена «${shift.title}» — ${shortDate(shift.date)}, ${shift.timeStart}–${shift.timeEnd}`,
-        createdAt: new Date(Date.now() - (convs.length + 1) * 3600000 - 60000).toISOString(),
-        read: true,
-        isSystem: true,
-      });
-      // Welcome message from company
-      msgs.push({
-        id: 'msg_seed_' + convs.length + '_1',
-        senderId: shift.companyId,
-        text: `Здравствуйте, ${worker?.firstName}! Ждём вас на смену. Вход с торца здания.`,
-        createdAt: new Date(Date.now() - (convs.length + 1) * 3600000).toISOString(),
-        read: true,
-      });
-      // Some conversations have replies
-      if (convs.length < 3) {
-        msgs.push({
-          id: 'msg_seed_' + convs.length + '_2',
-          senderId: a.workerId,
-          text: 'Спасибо! Буду вовремя 👍',
-          createdAt: new Date(Date.now() - convs.length * 3600000).toISOString(),
-          read: true,
-        });
-      }
-      convs.push({
-        id: 'conv_seed_' + convs.length,
-        shiftId: a.shiftId,
-        workerId: a.workerId,
-        companyId: shift.companyId,
-        messages: msgs,
-        createdAt: new Date(Date.now() - (convs.length + 2) * 3600000).toISOString(),
-        lastMessageAt: msgs[msgs.length - 1].createdAt,
-      });
-    });
-    return convs;
-  })(),
+  conversations: [],
 
   getConversationsForUser: () => {
     const userId = get().currentUser?.id;
@@ -860,31 +942,33 @@ const useStore = create(
       .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt));
   },
 
-  getOrCreateConversation: (shiftId, workerId, companyId) => {
+  /**
+   * A conversation has to exist for both sides, so the server creates it
+   * and hands back the id both phones will use.
+   */
+  getOrCreateConversation: async (shiftId, workerId, companyId) => {
     const existing = get().conversations.find(
       c => c.shiftId === shiftId && c.workerId === workerId && c.companyId === companyId
     );
-    if (existing) return existing;
+    if (existing && !String(existing.id).startsWith('tmp_')) return existing;
 
-    const conv = {
-      id: 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-      shiftId,
-      workerId,
-      companyId,
-      messages: [],
-      createdAt: new Date().toISOString(),
-      lastMessageAt: null,
-    };
-    set(s => ({ conversations: [...s.conversations, conv] }));
+    const conv = await backend.getOrCreateConversation(shiftId, workerId, companyId);
+    if (!conv?.id) throw new ApiError('no_conversation', 'Не удалось открыть чат.', 500);
+    set(s => ({
+      conversations: s.conversations.some(c => c.id === conv.id)
+        ? s.conversations.map(c => (c.id === conv.id ? { ...c, ...conv } : c))
+        : [...s.conversations, { messages: [], ...conv }],
+    }));
     return conv;
   },
 
   sendMessage: (conversationId, text, imageUri) => {
     const userId = get().currentUser?.id;
-    if (!userId || (!text?.trim() && !imageUri)) return;
+    if (!userId || (!text?.trim() && !imageUri)) return null;
 
+    // Shown at once, with a temporary id; the server's row replaces it.
     const msg = {
-      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      id: tmpId(),
       senderId: userId,
       text: text?.trim() || '',
       createdAt: new Date().toISOString(),
@@ -892,20 +976,33 @@ const useStore = create(
       ...(imageUri ? { imageUri } : {}),
     };
 
-    set(s => ({
+    const put = (m) => set(s => ({
       conversations: s.conversations.map(c =>
         c.id === conversationId
-          ? { ...c, messages: [...c.messages, msg], lastMessageAt: msg.createdAt }
+          ? { ...c, messages: [...c.messages.filter(x => x.id !== msg.id), m], lastMessageAt: m.createdAt }
           : c
       ),
     }));
-    syncSendMessage(conversationId, userId, text?.trim() || '', imageUri);
+    put(msg);
+
+    backend.sendMessage(conversationId, msg.text, imageUri || null)
+      .then((saved) => { if (saved?.id) put(saved); })
+      .catch((e) => {
+        set(s => ({
+          conversations: s.conversations.map(c =>
+            c.id === conversationId
+              ? { ...c, messages: c.messages.map(x => (x.id === msg.id ? { ...x, failed: true } : x)) }
+              : c
+          ),
+        }));
+        toast.error(isOffline(e) ? 'Нет связи. Сообщение не отправлено.' : 'Сообщение не отправлено.');
+      });
     return msg;
   },
 
-  sendSystemMessage: (conversationId, text) => {
+  sendSystemMessage: async (conversationId, text) => {
     const msg = {
-      id: 'msg_sys_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      id: tmpId(),
       senderId: 'system',
       text,
       createdAt: new Date().toISOString(),
@@ -919,6 +1016,21 @@ const useStore = create(
           : c
       ),
     }));
+    try {
+      const saved = await backend.sendMessage(conversationId, text, null, true);
+      if (saved?.id) {
+        set(s => ({
+          conversations: s.conversations.map(c =>
+            c.id === conversationId
+              ? { ...c, messages: c.messages.map(x => (x.id === msg.id ? saved : x)) }
+              : c
+          ),
+        }));
+      }
+    } catch (e) {
+      console.warn('[system message]', e?.message);
+    }
+    return msg;
   },
 
   // Counts what the chat list shows as unread: people's messages, not
@@ -937,6 +1049,10 @@ const useStore = create(
 
   markConversationRead: (conversationId) => {
     const userId = get().currentUser?.id;
+    // Server-side too: otherwise the next poll restores the unread badge.
+    if (conversationId && !String(conversationId).startsWith('tmp_')) {
+      backend.markConversationRead(conversationId).catch(() => {});
+    }
     set(s => ({
       conversations: s.conversations.map(c =>
         c.id === conversationId

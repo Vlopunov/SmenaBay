@@ -9,14 +9,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
 import {
-  Press, LargeTitle, SectionTitle, SearchField, Segmented, Chip, CircleButton, EmptyState, SkeletonCard,
+  Press, LargeTitle, SectionTitle, SearchField, Segmented, Chip, CircleButton, EmptyState, SkeletonCard, OfflineBanner,
 } from '../../design/ui';
 import { FeedCard, MapPreviewCard } from '../../design/ShiftCard';
 import { useTheme } from '../../design/theme';
 import { useTabBarSpace } from '../../design/TabBar';
 import { haptic } from '../../design/haptics';
 import { toast } from '../../design/Toast';
-import { plural, daySection, isoDay } from '../../design/format';
+import { plural, daySection, isoDay, clock } from '../../design/format';
 import FiltersSheet from '../../components/FiltersSheet';
 import ShiftsMap from '../../components/ShiftsMap';
 import { openReportMenu } from '../../components/ReportMenu';
@@ -42,7 +42,9 @@ export default function FeedScreen({ navigation }) {
   const blockedUsers = useStore((s) => s.blockedUsers);
   const unread = useStore((s) => (s.currentUser ? s.getUnreadCount() : 0));
   const getLocationById = useStore((s) => s.getLocationById);
-  const refresh = useStore((s) => s.initializeFromFirestore);
+  const refresh = useStore((s) => s.refresh);
+  const syncError = useStore((s) => s.syncError);
+  const lastSyncAt = useStore((s) => s.lastSyncAt);
   const toggleSavedShift = useStore((s) => s.toggleSavedShift);
   const isSavedShift = useStore((s) => s.isSavedShift);
 
@@ -189,6 +191,14 @@ export default function FeedScreen({ navigation }) {
           </>
         )}
       />
+      {syncError === 'offline' ? (
+        <OfflineBanner
+          style={{ marginTop: 12 }}
+          text={lastSyncAt ? `Нет связи. Смены на ${clock(lastSyncAt)}` : 'Нет связи с сервером'}
+          action="Обновить"
+          onAction={onRefresh}
+        />
+      ) : null}
       <SearchField value={query} onChangeText={setQuery} placeholder="Должность или компания" style={{ marginTop: 14 }} />
       <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Chip label="Все" selected={tab === 'all'} onPress={() => setTab('all')} />

@@ -4,11 +4,15 @@
 // the shift's state: typing on the move is awkward.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, FlatList, TextInput, KeyboardAvoidingView, Keyboard, Platform, Image, Modal, Pressable, Alert,
+  View, FlatList, TextInput, KeyboardAvoidingView, Keyboard, Platform, Image, Modal, Pressable,
+  Alert, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';
+import { toast } from '../../design/Toast';
+import { uploadImage } from '../../services/backend';
+import { isOffline } from '../../services/api';
 import * as ImageManipulator from 'expo-image-manipulator';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
@@ -214,8 +218,19 @@ export default function ChatScreen({ route, navigation }) {
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
     if (r.canceled || !r.assets?.[0]) return;
     const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 1200 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
-    sendMessage(conversationId, '', m.uri);
     haptic.light();
+    // The photo has to be on the server before the other side can open it,
+    // so it is uploaded first and only then sent as a message.
+    setSendingPhoto(true);
+    try {
+      const url = await uploadImage(m.uri, 'chat');
+      if (!url) throw new Error('no_url');
+      sendMessage(conversationId, '', url);
+    } catch (e) {
+      toast.error(isOffline(e) ? 'Нет связи. Фото не отправилось.' : 'Фото не отправилось');
+    } finally {
+      setSendingPhoto(false);
+    }
   };
 
   const openProfile = () => (isWorker
@@ -329,8 +344,9 @@ export default function ChatScreen({ route, navigation }) {
 
         <Material style={{ paddingTop: 9, paddingHorizontal: 16, paddingBottom: keyboard ? 9 : Math.max(insets.bottom, 9) }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-            <Press feedback="none" onPress={attach} hitSlop={8} accessibilityLabel="Прикрепить фото" style={{ width: 28, height: 38, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="camera" size={23} c="ink2" />
+            <Press feedback="none" onPress={attach} disabled={sendingPhoto} hitSlop={8} accessibilityLabel="Прикрепить фото" style={{ width: 28, height: 38, alignItems: 'center', justifyContent: 'center' }}>
+              {/* The photo is uploading; the camera comes back when it lands. */}
+              {sendingPhoto ? <ActivityIndicator color={c.ink2} /> : <Icon name="camera" size={23} c="ink2" />}
             </Press>
             <View style={{ flex: 1, minHeight: 38, borderRadius: 19, backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, paddingHorizontal: 14, justifyContent: 'center' }}>
               <TextInput

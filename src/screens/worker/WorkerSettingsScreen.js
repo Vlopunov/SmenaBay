@@ -5,6 +5,9 @@ import React, { useState } from 'react';
 import { View, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { toast } from '../../design/Toast';
+import { uploadImage } from '../../services/backend';
+import { isOffline } from '../../services/api';
 import * as ImageManipulator from 'expo-image-manipulator';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
@@ -106,7 +109,17 @@ export default function WorkerSettingsScreen({ navigation }) {
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [1, 1] });
     if (r.canceled || !r.assets?.[0]) return;
     const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG });
+    // Show it immediately, then swap in the uploaded copy: a file:// path
+    // exists only on this phone, so заказчик would see an empty circle.
     set('avatar', m.uri);
+    try {
+      const url = await uploadImage(m.uri, 'avatar');
+      if (url) set('avatar', url);
+      else toast.error('Фото не загрузилось');
+    } catch (e) {
+      set('avatar', null);
+      toast.error(isOffline(e) ? 'Нет связи. Фото не загрузилось.' : 'Фото не загрузилось');
+    }
   };
 
   const pickCity = () => showActions({

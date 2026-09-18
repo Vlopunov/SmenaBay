@@ -10,27 +10,59 @@ import { ThemeProvider, useTheme } from './src/design/theme';
 import { ActionSheetHost } from './src/design/ActionSheet';
 import { ToastHost } from './src/design/Toast';
 import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
+import { registerForPush, unregisterPush, attachNotificationTaps, setBadge } from './src/services/push';
 
 function Heartbeat() {
   const isAuthenticated = useStore(s => s.isAuthenticated);
   const updateLastSeen = useStore(s => s.updateLastSeen);
-  const initializeFromFirestore = useStore(s => s.initializeFromFirestore);
+  const startSync = useStore(s => s.startSync);
   const cleanupRef = useRef(null);
 
+  // Pull from the server whether or not anyone is signed in: a guest is
+  // looking at the same feed, just without a token.
   useEffect(() => {
-    if (!isAuthenticated) return;
-    updateLastSeen();
-    const interval = setInterval(updateLastSeen, 30000);
-
-    initializeFromFirestore()
-      .then(cleanup => { cleanupRef.current = cleanup; })
-      .catch(err => { console.warn('[Heartbeat init]', err?.message); });
-
+    let stopped = false;
+    startSync().then((stop) => {
+      if (stopped) stop?.();
+      else cleanupRef.current = stop;
+    }).catch(err => console.warn('[sync]', err?.message));
     return () => {
-      clearInterval(interval);
+      stopped = true;
       if (cleanupRef.current) cleanupRef.current();
+      cleanupRef.current = null;
     };
   }, [isAuthenticated]);
+
+  // «в сети» for the person on the other end of the chat.
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  return null;
+}
+
+/**
+ * Push notifications: ask once someone is signed in (asking a guest to
+ * allow notifications before they have anything to be notified about is
+ * how permission prompts get denied), hand the token to the server, and
+ * send a tapped notification to the screen it belongs to.
+ */
+function PushBridge() {
+  const isAuthenticated = useStore(s => s.isAuthenticated);
+  const unread = useStore(s => (s.currentUser ? s.getUnreadCount() + s.getUnreadChatCount() : 0));
+
+  useEffect(() => {
+    if (!isAuthenticated) { unregisterPush(); return undefined; }
+    registerForPush();
+    return attachNotificationTaps((route) => {
+      Linking.openURL(`com.smenabay.app://${route}`).catch(() => {});
+    });
+  }, [isAuthenticated]);
+
+  useEffect(() => { setBadge(unread); }, [unread]);
 
   return null;
 }
@@ -111,24 +143,34 @@ function DevUser() {
   useEffect(() => {
     const who = devArg('devUser');
     const approve = devArg('devApprove');
-    if (!who && !approve && !devArg('devApply')) return;
-    const apply = () => {
+    const applyTo = devArg('devApply');
+    if (!who && !approve && !applyTo) return undefined;
+    // Everything here is a server round-trip now, so it runs in order.
+    const run = async () => {
       const s = useStore.getState();
       if (who === 'guest') s.logout();
-      else if (who && s.currentUser?.phone !== who) s.login(who);
-      const app = approve && s.applications.find((a) => a.id === approve);
-      if (app && app.status === 'pending') s.approveApplication(approve);
+      else if (who && s.currentUser?.phone !== who) await s.login(who);
+
+      if (approve) {
+        const app = useStore.getState().applications.find((a) => a.id === approve);
+        if (app && app.status === 'pending') await useStore.getState().approveApplication(approve);
+      }
+
       // -devApply <shiftId>: apply as the dev user and get confirmed (pass state).
-      const applyTo = devArg('devApply');
       if (applyTo && useStore.getState().currentUser?.role === 'worker') {
-        useStore.getState().applyToShift(applyTo);
-        const mine = useStore.getState().applications.find((a) => a.shiftId === applyTo && a.workerId === useStore.getState().currentUser.id && a.status === 'pending');
-        if (mine) useStore.getState().approveApplication(mine.id);
+        await useStore.getState().applyToShift(applyTo);
+        const me = useStore.getState().currentUser;
+        const mine = useStore.getState().applications.find(
+          (a) => a.shiftId === applyTo && a.workerId === me.id && a.status === 'pending'
+        );
+        if (mine) await useStore.getState().approveApplication(mine.id);
       }
     };
-    if (useStore.persist.hasHydrated()) apply();
-    else return useStore.persist.onFinishHydration(apply);
+    if (useStore.persist.hasHydrated()) run();
+    else return useStore.persist.onFinishHydration(run);
+    return undefined;
   }, []);
+
   return null;
 }
 
@@ -155,6 +197,7 @@ function Root() {
         <NavigationContainer theme={navTheme} linking={linking}>
           <StatusBar style={dark ? 'light' : 'dark'} />
           <Heartbeat />
+          <PushBridge />
           {__DEV__ ? <DevUser /> : null}
           <AppNavigator />
           <ToastHost />

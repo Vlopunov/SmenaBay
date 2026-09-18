@@ -74,9 +74,16 @@ export default function NameScreen({ navigation }) {
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  const submit = () => {
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
     if (!first.trim()) { setError('Без имени заказчик не поймёт, кто откликнулся'); haptic.error(); return; }
-    finishWorkerRegistration({ firstName: first, lastName: last }, navigation);
+    if (busy) return;
+    setBusy(true);
+    try {
+      await finishWorkerRegistration({ firstName: first, lastName: last }, navigation);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -141,7 +148,7 @@ export default function NameScreen({ navigation }) {
         </ScrollView>
         {/* Pinned above the keyboard, so the next step is always in reach. */}
         <View style={{ paddingHorizontal: G, paddingTop: 8, paddingBottom: kb ? 10 : insets.bottom + 10 }}>
-          <Button title={applying ? 'Отправить отклик' : 'Продолжить'} onPress={submit} />
+          <Button title={applying ? 'Отправить отклик' : 'Продолжить'} onPress={submit} loading={busy} />
         </View>
       </KeyboardAvoidingView>
     </View>

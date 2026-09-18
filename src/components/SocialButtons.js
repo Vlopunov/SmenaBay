@@ -38,7 +38,10 @@ export default function SocialButtons({ navigation, intent, onSignedIn, onError,
     try {
       const result = provider === 'apple' ? await signInWithApple() : await signInWithGoogle();
       if (result.cancelled) return;
-      const user = loginBySocial({ uid: result.uid, email: result.email });
+      // The profile is looked up on the server: without the await the
+      // promise itself reads as «signed in» and a new person never reaches
+      // the name step.
+      const user = await loginBySocial({ uid: result.uid, email: result.email });
       if (user) { haptic.success(); onSignedIn?.(user); return; }
       setSocial({ provider, uid: result.uid, email: result.email, displayName: result.displayName });
       start('', null, intent || { type: 'signin' });

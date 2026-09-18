@@ -23,6 +23,7 @@ import { rublesLabel } from '../../design/Money';
 import { useTheme, displayFont } from '../../design/theme';
 import { haptic } from '../../design/haptics';
 import { showActions } from '../../design/ActionSheet';
+import { toast } from '../../design/Toast';
 import {
   money, plural, isoDay, dayLabel, shortDate, longDate,
 } from '../../design/format';
@@ -167,6 +168,7 @@ export default function CreateShiftScreen({ navigation, route }) {
   const [sheet, setSheet] = useState(null); // 'title' | 'category' | 'date' | 'time' | 'address' | 'other'
   const [errors, setErrors] = useState({});
   const [verify, setVerify] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [panelH, setPanelH] = useState(130 + insets.bottom);
 
   const duration = hoursBetween(timeStart, timeEnd);
@@ -220,7 +222,8 @@ export default function CreateShiftScreen({ navigation, route }) {
     options: recent.map((x) => ({ label: x.label, onPress: () => fillFrom(x.id) })),
   });
 
-  const submit = () => {
+  const submit = async () => {
+    if (publishing) return;
     const e = {};
     if (!title.trim()) e.title = 'Какая работа';
     if (!locationId) e.address = 'Где смена';
@@ -245,12 +248,23 @@ export default function CreateShiftScreen({ navigation, route }) {
       navigation.goBack();
       return;
     }
-    const r = createShift({ ...data, date: dates });
-    if (r?.error === 'phone_not_verified') { setVerify(true); return; }
+    // The server assigns the ids, so the screen waits for it. A failure
+    // keeps the filled-in form on screen — the only thing to retry is the tap.
+    let r;
+    setPublishing(true);
+    try {
+      r = await createShift({ ...data, date: dates });
+    } catch (err) {
+      r = { error: 'Не удалось опубликовать смену.' };
+    } finally {
+      setPublishing(false);
+    }
+    if (r?.error === 'phone_not_verified' || r?.error === 'not_authenticated') { setVerify(true); return; }
     if (r?.error === 'limit') {
       Alert.alert('Лимит на этот месяц исчерпан', 'Лимит текущего тарифа обновится первого числа следующего месяца.', [{ text: 'Понятно' }]);
       return;
     }
+    if (r?.error) { toast.error(r.error); return; }
     haptic.success();
     navigation.goBack();
   };
@@ -455,6 +469,8 @@ export default function CreateShiftScreen({ navigation, route }) {
           </View>
           <Button
             title={cta}
+            loading={publishing}
+            loadingTitle="Публикуем…"
             onPress={submit}
             style={compact ? { minHeight: 50, borderRadius: 16 } : null}
             textStyle={compact ? { fontSize: 16.5 } : null}

@@ -99,7 +99,9 @@ export default function CodeScreen({ navigation }) {
       try {
         await verifyCode(verification, v);
         haptic.success();
-        completeSignIn(navigation);
+        // Still busy: the profile has to come back from the server before
+        // the next screen can know who this is.
+        await completeSignIn(navigation);
       } catch (e) {
         fail(e.message);
       } finally {

@@ -21,7 +21,7 @@ export const useAuthFlow = create((set) => ({
 }));
 
 /** Run what the person was doing before we asked for their number. */
-export function runIntent(intent, navigation) {
+export async function runIntent(intent, navigation) {
   const store = useStore.getState();
   const user = store.currentUser;
   if (intent?.type === 'apply' || intent?.then?.type === 'apply') {
@@ -31,7 +31,7 @@ export function runIntent(intent, navigation) {
       navigation.popToTop();
       return;
     }
-    const result = store.applyToShift(shiftId);
+    const result = await store.applyToShift(shiftId);
     navigation.navigate('ShiftDetail', { shiftId, applyResult: result?.error || 'sent', t: Date.now() });
     return;
   }
@@ -46,29 +46,43 @@ export function runIntent(intent, navigation) {
  * is known, finishes a phone verification for someone already signed in, or
  * sends a new worker to the one-field name step.
  */
-export function completeSignIn(navigation) {
+export async function completeSignIn(navigation) {
   const { phone, intent } = useAuthFlow.getState();
   const store = useStore.getState();
 
   if (intent?.type === 'verify-phone' && store.currentUser) {
     store.updateProfile({ phone, phoneVerified: true });
-    runIntent(intent, navigation);
+    await runIntent(intent, navigation);
     useAuthFlow.getState().reset();
     return;
   }
 
   if (intent?.type === 'employer') {
-    const existing = store.login(phone);
-    if (!existing) store.registerEmployer({ ...intent.form, phone, phoneVerified: true });
+    // The account is the Firebase user; the server either has a profile for
+    // it already or this call creates the company.
+    const existing = await store.hasProfile().catch(() => false);
+    if (!existing) {
+      await store.registerEmployer({ ...intent.form, phone, phoneVerified: true });
+    }
     useAuthFlow.getState().reset();
     navigation.popToTop();
     return;
   }
 
-  const user = store.login(phone);
-  if (user) {
-    if (!user.phoneVerified) store.updateProfile({ phoneVerified: true });
-    runIntent(intent, navigation);
+  // Signed in. If the server knows this number, we are done; if not, this
+  // is a new worker and the name step finishes registration.
+  let known = false;
+  try {
+    known = await store.hasProfile();
+  } catch (e) {
+    Alert.alert('Не получилось войти', e?.message || 'Проверь интернет и попробуй ещё раз.');
+    return;
+  }
+
+  if (known) {
+    const user = store.currentUser;
+    if (user && !user.phoneVerified) store.updateProfile({ phoneVerified: true });
+    await runIntent(intent, navigation);
     useAuthFlow.getState().reset();
     return;
   }
@@ -76,20 +90,25 @@ export function completeSignIn(navigation) {
 }
 
 /** New worker: the name step finishes registration, then resumes the intent. */
-export function finishWorkerRegistration({ firstName, lastName }, navigation) {
+export async function finishWorkerRegistration({ firstName, lastName }, navigation) {
   const { phone, intent, social } = useAuthFlow.getState();
   const store = useStore.getState();
-  store.registerWorker({
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
-    phone: phone || '',
-    phoneVerified: !!phone,
-    city: 'Минск',
-    categories: [],
-    authMethod: social ? social.provider : 'phone',
-    authUid: social?.uid || null,
-    email: social?.email || null,
-  });
-  runIntent(intent, navigation);
+  try {
+    await store.registerWorker({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone || '',
+      phoneVerified: !!phone,
+      city: 'Минск',
+      categories: [],
+      authMethod: social ? social.provider : 'phone',
+      authUid: social?.uid || null,
+      email: social?.email || null,
+    });
+  } catch (e) {
+    Alert.alert('Не получилось создать профиль', e?.message || 'Проверь интернет и попробуй ещё раз.');
+    return;
+  }
+  await runIntent(intent, navigation);
   useAuthFlow.getState().reset();
 }

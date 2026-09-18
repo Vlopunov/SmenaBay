@@ -5,7 +5,7 @@
 // сотрудников» is a separate entry for employers, not a twin button.
 import React, { useState } from 'react';
 import {
-  View, ScrollView, KeyboardAvoidingView, Platform, Keyboard, StyleSheet, useWindowDimensions,
+  View, ScrollView, KeyboardAvoidingView, Platform, Keyboard, StyleSheet, Alert, ActivityIndicator, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import T from '../../design/Text';
@@ -69,8 +69,29 @@ export default function SignInScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [socialError, setSocialError] = useState('');
+  // The demo row that is waiting for the SMS round-trip (dev builds only).
+  const [demoBusy, setDemoBusy] = useState(null);
   const start = useAuthFlow((s) => s.start);
   const login = useStore((s) => s.login);
+
+  // The demo login goes through the real Firebase flow now, so it takes a
+  // second and can fail like any other sign-in.
+  const demoLogin = async (phone) => {
+    if (demoBusy) return;
+    setDemoBusy(phone);
+    try {
+      const profile = await login(phone);
+      if (!profile) {
+        Alert.alert('Не удалось войти', 'Проверь, что номер добавлен в Firebase Console → Authentication → Phone, а код совпадает с EXPO_PUBLIC_DEV_SMS_CODE.');
+        return;
+      }
+      if (!inTab) navigation.goBack();
+    } catch (e) {
+      Alert.alert('Не удалось войти', e?.message || 'Попробуй ещё раз.');
+    } finally {
+      setDemoBusy(null);
+    }
+  };
 
   const submit = async () => {
     if (!isComplete(digits)) { setError('Нужно 9 цифр после +375'); haptic.error(); return; }
@@ -159,7 +180,8 @@ export default function SignInScreen({ navigation, route }) {
                       title={label}
                       sub={phone}
                       last={i === DEMO.length - 1}
-                      onPress={() => { login(phone); if (!inTab) navigation.goBack(); }}
+                      right={demoBusy === phone ? <ActivityIndicator size="small" color={c.ink2} /> : undefined}
+                      onPress={() => demoLogin(phone)}
                     />
                   ))}
                 </Group>

@@ -4,7 +4,7 @@
 // The market reference offers an action («Поднять»), not just a number, and
 // at the bottom the shift is shown exactly as workers see it in the feed.
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, Alert, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Alert, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path } from 'react-native-svg';
@@ -25,6 +25,7 @@ import {
   dayLabel, timeRange, countdown, plural, hours, dative, shiftStart,
 } from '../../design/format';
 import { showActions } from '../../design/ActionSheet';
+import { toast } from '../../design/Toast';
 import useStore from '../../store/useStore';
 
 const IN_CITY = {
@@ -67,7 +68,7 @@ function HeroTile({ sky, label, children, compact }) {
   );
 }
 
-function PersonRow({ worker, cancels, onOpen, onChat, onRate }) {
+function PersonRow({ worker, cancels, onOpen, onChat, onRate, chatBusy }) {
   const { c } = useTheme();
   const n = worker.shiftsCompleted || 0;
   const stats = [
@@ -93,8 +94,10 @@ function PersonRow({ worker, cancels, onOpen, onChat, onRate }) {
       {onRate ? (
         <Button title="Оценить" size="sm" variant="secondary" onPress={onRate} />
       ) : (
-        <Press onPress={onChat} hitSlop={4} accessibilityLabel={`Написать ${dative(worker.firstName)}`} style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: c.brandTint, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="bubble.left" size={19} c="brand" weight="semibold" />
+        <Press onPress={onChat} disabled={chatBusy} hitSlop={4} accessibilityLabel={`Написать ${dative(worker.firstName)}`} style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: c.brandTint, alignItems: 'center', justifyContent: 'center' }}>
+          {chatBusy
+            ? <ActivityIndicator size="small" color={c.brand} />
+            : <Icon name="bubble.left" size={19} c="brand" weight="semibold" />}
         </Press>
       )}
     </Card>
@@ -147,6 +150,8 @@ export default function ShiftManageScreen({ route, navigation }) {
 
   const [raise, setRaise] = useState(false);
   const [newPay, setNewPay] = useState(shift?.pay || 65);
+  // The worker whose chat the server is still opening.
+  const [chatFor, setChatFor] = useState(null);
 
   const cityByLoc = useMemo(() => {
     const m = {};
@@ -193,9 +198,17 @@ export default function ShiftManageScreen({ route, navigation }) {
   const sky = t.sky(live ? skyKey(shift, { now, ignoreClosed: true }) : 'closed');
   const within24 = cd.phase === 'before' && shiftStart(shift) - now < 24 * 3600 * 1000;
 
-  const chatWith = (workerId) => {
-    const conv = getOrCreateConversation(shift.id, workerId, shift.companyId);
-    navigation.navigate('ChatConversation', { conversationId: conv.id });
+  const chatWith = async (workerId) => {
+    if (chatFor) return;
+    setChatFor(workerId);
+    try {
+      const conv = await getOrCreateConversation(shift.id, workerId, shift.companyId);
+      navigation.navigate('ChatConversation', { conversationId: conv.id });
+    } catch (e) {
+      toast.error('Не удалось открыть чат');
+    } finally {
+      setChatFor(null);
+    }
   };
   const edit = () => navigation.navigate('CreateShift', { editShiftId: shift.id });
   const invite = () => navigation.navigate('Favorites', { inviteShiftId: shift.id });
@@ -300,6 +313,7 @@ export default function ShiftManageScreen({ route, navigation }) {
                       cancels={allApplications.filter((a) => a.workerId === w.id && a.status === 'cancelled_by_worker').length}
                       onOpen={() => navigation.navigate('PublicWorkerProfile', { workerId: w.id })}
                       onChat={() => chatWith(w.id)}
+                      chatBusy={chatFor === w.id}
                       onRate={over && !reviewed ? () => navigation.navigate('RateShift', { shiftId: shift.id, workerId: w.id }) : undefined}
                     />
                   );

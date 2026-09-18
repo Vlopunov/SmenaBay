@@ -6,6 +6,9 @@ import React, { useState } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, Alert, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { toast } from '../../design/Toast';
+import { uploadImage } from '../../services/backend';
+import { isOffline } from '../../services/api';
 import * as ImageManipulator from 'expo-image-manipulator';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
@@ -90,7 +93,16 @@ export default function EmployerSettingsScreen({ navigation }) {
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [1, 1] });
     if (r.canceled || !r.assets?.[0]) return;
     const m = await ImageManipulator.manipulateAsync(r.assets[0].uri, [{ resize: { width: 400 } }], { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG });
+    // Shown at once; the uploaded copy is what исполнители will see.
     set('logo', m.uri);
+    try {
+      const url = await uploadImage(m.uri, 'logo');
+      if (url) set('logo', url);
+      else toast.error('Логотип не загрузился');
+    } catch (e) {
+      set('logo', null);
+      toast.error(isOffline(e) ? 'Нет связи. Логотип не загрузился.' : 'Логотип не загрузился');
+    }
   };
 
   const pickCity = () => showActions({

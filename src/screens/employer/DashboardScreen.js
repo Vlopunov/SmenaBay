@@ -2,7 +2,7 @@
 // sky of that shift; numbers in support; then the shifts at a point and the
 // people who show up most.
 import React, { useMemo, useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import T from '../../design/Text';
 import Icon from '../../design/Icon';
@@ -47,6 +47,8 @@ export default function DashboardScreen({ navigation }) {
   const invite = useStore((s) => s.inviteWorkerToShift);
   const getOrCreateConversation = useStore((s) => s.getOrCreateConversation);
   const [point, setPoint] = useState(null);
+  // True while the server is handing back the conversation for the hero shift.
+  const [openingChat, setOpeningChat] = useState(false);
 
   const snap = useMemo(() => employerSnapshot({ me, shifts, applications, workers, now }), [me, shifts, applications, workers, now]);
   if (!me) return null;
@@ -91,11 +93,19 @@ export default function DashboardScreen({ navigation }) {
     const d = dayLabel(heroShift.date, now);
     const dayWord = d === 'Сегодня' || d === 'Завтра' ? d : shortDate(heroShift.date);
     const title = soon ? `${dayWord} в ${heroShift.timeStart} не хватает ${people(soon.free)}` : `${dayWord} в ${heroShift.timeStart} люди придут`;
-    const chat = () => {
+    const chat = async () => {
+      if (openingChat) return;
       const a = applications.find((x) => x.shiftId === heroShift.id && x.status === 'approved');
       if (!a) { navigation.navigate('ShiftManage', { shiftId: heroShift.id }); return; }
-      const conv = getOrCreateConversation(heroShift.id, a.workerId, heroShift.companyId);
-      navigation.navigate('ChatConversation', { conversationId: conv.id });
+      setOpeningChat(true);
+      try {
+        const conv = await getOrCreateConversation(heroShift.id, a.workerId, heroShift.companyId);
+        navigation.navigate('ChatConversation', { conversationId: conv.id });
+      } catch (e) {
+        toast.error('Не удалось открыть чат');
+      } finally {
+        setOpeningChat(false);
+      }
     };
     hero = (
       <View style={[{ marginTop: 16, borderRadius: 24, backgroundColor: c.surface }, t.sh.e2]}>
@@ -118,8 +128,10 @@ export default function DashboardScreen({ navigation }) {
             ) : (
               <Button style={{ flex: 1, minHeight: 48, borderRadius: 15 }} variant="onSky" color={s.ink} title="Смена и состав" onPress={() => navigation.navigate('ShiftManage', { shiftId: heroShift.id })} />
             )}
-            <Press onPress={chat} accessibilityLabel="Написать исполнителю" style={{ width: 48, height: 48, borderRadius: 15, backgroundColor: c.onSky, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="bubble.left" size={21} c="brand" weight="semibold" />
+            <Press onPress={chat} disabled={openingChat} accessibilityLabel="Написать исполнителю" style={{ width: 48, height: 48, borderRadius: 15, backgroundColor: c.onSky, alignItems: 'center', justifyContent: 'center' }}>
+              {openingChat
+                ? <ActivityIndicator size="small" color={c.brand} />
+                : <Icon name="bubble.left" size={21} c="brand" weight="semibold" />}
             </Press>
           </View>
         </SkyView>

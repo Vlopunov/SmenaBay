@@ -4,7 +4,7 @@
 // dim to 55 % but stay tappable. Closing the last seat is the one
 // celebration in the app.
 import React, { useMemo, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, ActivityIndicator } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import T from '../../design/Text';
@@ -58,6 +58,10 @@ export default function ManageApplicationsScreen({ route, navigation }) {
   const getOrCreateConversation = useStore((s) => s.getOrCreateConversation);
   const [celebrate, setCelebrate] = useState(false);
   const [justFilled, setJustFilled] = useState(false);
+  // The candidate whose confirmation is with the server, and the one whose
+  // chat is being opened: only their own row's controls go quiet.
+  const [approvingId, setApprovingId] = useState(null);
+  const [chatFor, setChatFor] = useState(null);
 
   const apps = useMemo(() => allApps.filter((a) => a.shiftId === shiftId), [allApps, shiftId]);
   const pending = apps.filter((a) => a.status === 'pending');
@@ -87,15 +91,43 @@ export default function ManageApplicationsScreen({ route, navigation }) {
   const when = `${d === 'Сегодня' || d === 'Завтра' ? d.toLowerCase() : shortDate(shift.date)} ${timeRange(shift)}`;
   const favCount = (me && favMap[me.id]?.length) || 0;
 
-  const chat = (workerId) => {
-    const conv = getOrCreateConversation(shift.id, workerId, shift.companyId);
-    navigation.navigate('ChatConversation', { conversationId: conv.id });
+  const chat = async (workerId) => {
+    if (chatFor) return;
+    setChatFor(workerId);
+    try {
+      const conv = await getOrCreateConversation(shift.id, workerId, shift.companyId);
+      navigation.navigate('ChatConversation', { conversationId: conv.id });
+    } catch (e) {
+      toast.error('Не удалось открыть чат');
+    } finally {
+      setChatFor(null);
+    }
   };
 
-  const doApprove = (x) => {
+  // The seat is the server's to give: the celebration waits for its answer,
+  // because someone else may have taken the last one a second ago.
+  const doApprove = async (x) => {
+    if (approvingId) return;
     if (!free) { haptic.error(); toast.error('Мест больше нет'); return; }
-    approve(x.app.id);
-    const closes = approved.length + 1 >= shift.spotsTotal;
+    let res;
+    setApprovingId(x.app.id);
+    try {
+      res = await approve(x.app.id);
+    } catch (e) {
+      // The store says its own piece about the errors it returns; only a
+      // throw gets past it without a word.
+      toast.error('Не удалось подтвердить');
+      res = { error: 'unknown' };
+    } finally {
+      setApprovingId(null);
+    }
+    if (res?.error === 'shift_full') { haptic.error(); toast.error('Место уже занято'); return; }
+    // The store has already rolled the row back and pulled the real state;
+    // «already_processed» needs no second word about it.
+    if (res?.error) return;
+    // Whether that was the last seat is the server's word, not the count
+    // this screen was rendered with.
+    const closes = !!res?.filled;
     setJustFilled(true);
     if (closes) setCelebrate(true);
     else { haptic.success(); toast.success(`${x.worker.firstName} подтверждён(а) · ${approved.length + 1} из ${shift.spotsTotal}`); }
@@ -149,11 +181,13 @@ export default function ManageApplicationsScreen({ route, navigation }) {
                   </View>
                 </Press>
                 <View style={{ marginTop: 12, flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                  <Button title={free ? 'Подтвердить' : 'Мест нет'} icon={free ? 'checkmark' : undefined} size="md" style={{ flex: 1, minHeight: 44, borderRadius: 14 }} disabled={!free} onPress={() => doApprove(top)} />
-                  <Press onPress={() => chat(top.worker.id)} accessibilityLabel={`Написать ${top.worker.firstName}`} style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="bubble.left" size={19} c="ink3" weight="semibold" />
+                  <Button title={free ? 'Подтвердить' : 'Мест нет'} icon={free ? 'checkmark' : undefined} size="md" style={{ flex: 1, minHeight: 44, borderRadius: 14 }} loading={approvingId === top.app.id} disabled={!free || (!!approvingId && approvingId !== top.app.id)} onPress={() => doApprove(top)} />
+                  <Press disabled={approvingId === top.app.id || !!chatFor} onPress={() => chat(top.worker.id)} accessibilityLabel={`Написать ${top.worker.firstName}`} style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
+                    {chatFor === top.worker.id
+                      ? <ActivityIndicator size="small" color={c.ink3} />
+                      : <Icon name="bubble.left" size={19} c="ink3" weight="semibold" />}
                   </Press>
-                  <Press onPress={() => doReject(top)} accessibilityLabel={`Отклонить ${top.worker.firstName}`} style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
+                  <Press disabled={approvingId === top.app.id} onPress={() => doReject(top)} accessibilityLabel={`Отклонить ${top.worker.firstName}`} style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name="xmark" size={17} c="ink2" weight="bold" />
                   </Press>
                 </View>
@@ -162,7 +196,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
 
             <Animated.View style={[{ marginTop: 8, gap: 8 }, dim]}>
               {rest.map((x) => (
-                <Card key={x.app.id} flat radius={18} onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: x.worker.id })} onLongPress={() => doReject(x)} style={{ paddingVertical: 11, paddingLeft: 14, paddingRight: 12, flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+                <Card key={x.app.id} flat radius={18} onPress={() => navigation.navigate('PublicWorkerProfile', { workerId: x.worker.id })} onLongPress={approvingId === x.app.id ? undefined : () => doReject(x)} style={{ paddingVertical: 11, paddingLeft: 14, paddingRight: 12, flexDirection: 'row', alignItems: 'center', gap: 11 }}>
                   <PersonMono first={x.worker.firstName} last={x.worker.lastName} uri={x.worker.avatar} size={40} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -171,7 +205,7 @@ export default function ManageApplicationsScreen({ route, navigation }) {
                     </View>
                     <StatsLine worker={x.worker} {...x.stats} />
                   </View>
-                  <Button title={free ? 'Подтвердить' : 'Мест нет'} size="sm" variant="secondary" disabled={!free} onPress={() => doApprove(x)} />
+                  <Button title={free ? 'Подтвердить' : 'Мест нет'} size="sm" variant="secondary" loading={approvingId === x.app.id} disabled={!free || (!!approvingId && approvingId !== x.app.id)} onPress={() => doApprove(x)} />
                 </Card>
               ))}
             </Animated.View>

@@ -78,6 +78,14 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0F5673",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "СменаБел запрашивает доступ к фото, чтобы вы могли установить фото профиля и отправлять изображения в чат.",

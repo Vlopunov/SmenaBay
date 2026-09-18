@@ -77,6 +77,8 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const [phoneSheet, setPhoneSheet] = useState(false);
   const [cancelSheet, setCancelSheet] = useState(false);
   const [error, setError] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
   const [shownState, setShownState] = useState(null);
 
   const isOwner = currentUser?.role === 'employer' && shift?.companyId === currentUser.id;
@@ -84,7 +86,9 @@ export default function ShiftDetailScreen({ route, navigation }) {
 
   const full = shift ? (shift.status === 'filled' || shift.spotsTaken >= shift.spotsTotal) : false;
   const status = application?.status;
-  const derived = error ? 'error' : status === 'pending' ? 'sent' : full ? 'full' : 'idle';
+  // The round-trip owns the button while it lasts: «Отправляем…» first, the
+  // morph (or the shake) only once the server has answered.
+  const derived = sending ? 'sending' : error ? 'error' : status === 'pending' ? 'sent' : full ? 'full' : 'idle';
   // The morph and its haptic happen in front of the person — committed only
   // while this screen is on top, not behind the SMS-code screen.
   useFocusEffect(useCallback(() => { setShownState(derived); }, [derived]));
@@ -104,22 +108,43 @@ export default function ShiftDetailScreen({ route, navigation }) {
   const worked = over && (status === 'approved' || status === 'completed');
   const sky = t.sky(skyKey(shift, { now, ignoreClosed: confirmed }));
 
-  const openChat = () => {
-    if (!currentUser) return;
-    const conv = getOrCreateConversation(shift.id, currentUser.id, shift.companyId);
-    navigation.navigate('ChatConversation', { conversationId: conv.id });
+  // The server hands back the conversation id both sides will use, so the
+  // chat opens only after it answers — a second tap meanwhile does nothing.
+  const openChat = async () => {
+    if (!currentUser || openingChat) return;
+    setOpeningChat(true);
+    try {
+      const conv = await getOrCreateConversation(shift.id, currentUser.id, shift.companyId);
+      navigation.navigate('ChatConversation', { conversationId: conv.id });
+    } catch (e) {
+      toast.error('Не удалось открыть чат');
+    } finally {
+      setOpeningChat(false);
+    }
   };
 
-  const apply = () => {
+  const apply = async () => {
+    if (sending) return;
     if (full) { refuse('Места только что закончились'); return; }
     if (!currentUser) { setPhoneSheet(true); return; }
     if (currentUser.role !== 'worker') return;
     if (!currentUser.phoneVerified) { setPhoneSheet(true); return; }
-    const res = applyToShift(shift.id);
+    let res;
+    setSending(true);
+    try {
+      res = await applyToShift(shift.id);
+    } catch (e) {
+      res = { error: 'Не удалось отправить отклик.' };
+    } finally {
+      setSending(false);
+    }
     if (res?.error === 'shift_full') { refuse('Места только что закончились'); return; }
     if (res?.error === 'shift_not_active') { refuse('Смена больше не принимает отклики'); return; }
-    if (res?.error === 'phone_not_verified') { setPhoneSheet(true); return; }
-    if (!res?.error) toast.success(`Отклик отправлен · ${shift.pay} BYN`);
+    if (res?.error === 'already_applied') { toast.show({ text: 'Ты уже откликнулся', kind: 'info' }); return; }
+    // Both mean the same thing here: the number has to be confirmed first.
+    if (res?.error === 'phone_not_verified' || res?.error === 'not_authenticated') { setPhoneSheet(true); return; }
+    if (res?.error) { toast.error(res.error); return; }
+    toast.success(`Отклик отправлен · ${shift.pay} BYN`);
   };
 
   const share = () => Share.share({
@@ -206,7 +231,7 @@ export default function ShiftDetailScreen({ route, navigation }) {
                       <T v="caption" c="ink2" weight="600" style={{ fontSize: 12.5 }}>На входе спросить</T>
                       <T v="rowTitle" style={{ marginTop: 4, fontSize: 15.5 }}>{accusative(contact)}</T>
                     </View>
-                    <Button title="Написать" size="sm" variant="secondary" onPress={openChat} style={{ borderRadius: 13 }} />
+                    <Button title="Написать" size="sm" variant="secondary" loading={openingChat} onPress={openChat} style={{ borderRadius: 13 }} />
                   </View>
                 </>
               ) : null}

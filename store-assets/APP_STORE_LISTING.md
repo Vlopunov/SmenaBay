@@ -85,7 +85,9 @@ Productivity
 | **Phone Number** | App Functionality + Identity Verification | ✓ |
 | **Photos** (профиль + чат) | App Functionality | ✓ |
 | **User Content / Messages** | App Functionality | ✓ |
-| **User ID** (Firebase UID) | App Functionality | ✓ |
+| **User ID** (Firebase UID) | App Functionality, Analytics | ✓ |
+| **Product Interaction** (открыл смену, откликнулся, опубликовал) | Analytics | ✓ |
+| **Device ID** (Firebase Analytics) | Analytics | ✓ |
 | **Coarse Location** | НЕ собирается (geo permissions заблокированы) | — |
 | **Sensitive Info** (паспорт, медкнижка, кредитки) | НЕ собирается | — |
 
@@ -93,7 +95,12 @@ Productivity
 **No** — отслеживания между сторонними приложениями нет.
 
 ### Data Not Linked to You
-- **Crash Data** (через Firebase Crashlytics, если включишь) — но сейчас НЕ собираем
+- **Crash Data** — Firebase Crashlytics, включён с 18.09.2026.
+- **Performance Data** — не собираем (Firebase Performance не подключён).
+
+Пуш-токен устройства хранится в профиле пользователя (`users/{uid}.pushTokens`)
+и используется только для уведомлений о смене — в анкете это часть
+**App Functionality**, отдельного типа данных у Apple для него нет.
 
 ---
 

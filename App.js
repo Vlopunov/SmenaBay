@@ -11,6 +11,7 @@ import { ActionSheetHost } from './src/design/ActionSheet';
 import { ToastHost } from './src/design/Toast';
 import { useFonts, Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold, Nunito_900Black } from '@expo-google-fonts/nunito';
 import { registerForPush, unregisterPush, attachNotificationTaps, setBadge } from './src/services/push';
+import { screen as trackScreen } from './src/services/telemetry';
 
 function Heartbeat() {
   const isAuthenticated = useStore(s => s.isAuthenticated);
@@ -194,7 +195,16 @@ function Root() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.ledger }}>
       <SafeAreaProvider>
-        <NavigationContainer theme={navTheme} linking={linking}>
+        <NavigationContainer
+          theme={navTheme}
+          linking={linking}
+          // Which screens people actually reach, so the funnel has context.
+          onStateChange={(state) => {
+            const route = state?.routes?.[state.index];
+            const nested = route?.state?.routes?.[route.state.index];
+            trackScreen(nested?.name || route?.name || 'unknown');
+          }}
+        >
           <StatusBar style={dark ? 'light' : 'dark'} />
           <Heartbeat />
           <PushBridge />

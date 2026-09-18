@@ -27,6 +27,14 @@ const POST_INSTALL_HOOK = `
 
 const MARKER = 'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES';
 
+// The same static-framework setup breaks differently in Crashlytics: its
+// module header pulls in React-Core before RNFBApp's module is available,
+// and the compiler refuses («must be imported from module
+// RNFBApp.RNFBAppModule before it is required»). react-native-firebase's
+// own answer to that is to build its pods as static frameworks, which this
+// global switch does. It has to sit at the very top of the Podfile.
+const STATIC_FRAMEWORK_FLAG = '$RNFirebaseAsStaticFramework = true';
+
 module.exports = function withNonModularIncludes(config) {
   return withDangerousMod(config, [
     'ios',
@@ -38,6 +46,10 @@ module.exports = function withNonModularIncludes(config) {
         return cfg;
       }
       let body = fs.readFileSync(podfile, 'utf8');
+      if (!body.includes(STATIC_FRAMEWORK_FLAG)) {
+        body = `${STATIC_FRAMEWORK_FLAG}\n${body}`;
+        fs.writeFileSync(podfile, body);
+      }
       if (body.includes(MARKER)) return cfg; // already patched
 
       // Inject into existing post_install block, or append a new one.

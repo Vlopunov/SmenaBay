@@ -356,7 +356,7 @@ const useStore = create(
 
   getLocationById: (id) => {
     for (const c of get().companies) {
-      const loc = c.locations.find(l => l.id === id);
+      const loc = (c.locations || []).find(l => l.id === id);
       if (loc) return loc;
     }
     return null;
@@ -568,10 +568,10 @@ const useStore = create(
 
       // «Без отмен» means exactly that — it goes with the first cancellation.
       const drop = (w) => (w.id === app.workerId && w.badges?.includes('no_cancels'))
-        ? { ...w, badges: w.badges.filter(b => b !== 'no_cancels') } : w;
+        ? { ...w, badges: (w.badges || []).filter(b => b !== 'no_cancels') } : w;
       const me = get().currentUser;
       if (me?.id === app.workerId && me.badges?.includes('no_cancels')) {
-        get().updateProfile({ badges: me.badges.filter(b => b !== 'no_cancels') });
+        get().updateProfile({ badges: (me.badges || []).filter(b => b !== 'no_cancels') });
       }
       set(s => ({ workers: s.workers.map(drop) }));
 
@@ -979,7 +979,7 @@ const useStore = create(
     const put = (m) => set(s => ({
       conversations: s.conversations.map(c =>
         c.id === conversationId
-          ? { ...c, messages: [...c.messages.filter(x => x.id !== msg.id), m], lastMessageAt: m.createdAt }
+          ? { ...c, messages: [...(c.messages || []).filter(x => x.id !== msg.id), m], lastMessageAt: m.createdAt }
           : c
       ),
     }));
@@ -991,7 +991,7 @@ const useStore = create(
         set(s => ({
           conversations: s.conversations.map(c =>
             c.id === conversationId
-              ? { ...c, messages: c.messages.map(x => (x.id === msg.id ? { ...x, failed: true } : x)) }
+              ? { ...c, messages: (c.messages || []).map(x => (x.id === msg.id ? { ...x, failed: true } : x)) }
               : c
           ),
         }));
@@ -1012,7 +1012,7 @@ const useStore = create(
     set(s => ({
       conversations: s.conversations.map(c =>
         c.id === conversationId
-          ? { ...c, messages: [...c.messages, msg], lastMessageAt: msg.createdAt }
+          ? { ...c, messages: [...(c.messages || []), msg], lastMessageAt: msg.createdAt }
           : c
       ),
     }));
@@ -1022,7 +1022,7 @@ const useStore = create(
         set(s => ({
           conversations: s.conversations.map(c =>
             c.id === conversationId
-              ? { ...c, messages: c.messages.map(x => (x.id === msg.id ? saved : x)) }
+              ? { ...c, messages: (c.messages || []).map(x => (x.id === msg.id ? saved : x)) }
               : c
           ),
         }));
@@ -1043,7 +1043,7 @@ const useStore = create(
       .filter(c => c.workerId === userId || c.companyId === userId)
       .filter(c => !blocked.includes(c.workerId === userId ? c.companyId : c.workerId))
       .reduce((total, c) => {
-        return total + c.messages.filter(m => m.senderId !== userId && m.senderId !== 'system' && !m.isSystem && !m.read).length;
+        return total + (c.messages || []).filter(m => m.senderId !== userId && m.senderId !== 'system' && !m.isSystem && !m.read).length;
       }, 0);
   },
 
@@ -1058,7 +1058,7 @@ const useStore = create(
         c.id === conversationId
           ? {
               ...c,
-              messages: c.messages.map(m =>
+              messages: (c.messages || []).map(m =>
                 m.senderId !== userId && !m.read ? { ...m, read: true } : m
               ),
             }

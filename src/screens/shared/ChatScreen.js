@@ -173,7 +173,7 @@ export default function ChatScreen({ route, navigation }) {
     if (!conv) return [];
     const out = [];
     let lastDay = null;
-    conv.messages.forEach((m) => {
+    (conv.messages || []).forEach((m) => {
       const day = new Date(m.createdAt).toDateString();
       if (day !== lastDay) { out.push({ id: `day-${day}`, day: m.createdAt }); lastDay = day; }
       out.push(m);

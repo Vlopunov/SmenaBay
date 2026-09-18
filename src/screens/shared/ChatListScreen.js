@@ -161,8 +161,9 @@ export default function ChatListScreen({ navigation }) {
         const shift = shifts.find((s) => s.id === cv.shiftId);
         const company = companies.find((co) => co.id === cv.companyId);
         const worker = workers.find((w) => w.id === cv.workerId);
-        const lastMsg = cv.messages[cv.messages.length - 1];
-        const unread = cv.messages.filter((m) => m.senderId !== me.id && m.senderId !== 'system' && !m.read).length;
+        const msgs = cv.messages || [];
+        const lastMsg = msgs[msgs.length - 1];
+        const unread = msgs.filter((m) => m.senderId !== me.id && m.senderId !== 'system' && !m.read).length;
         return { cv, shift, company, partner: partnerOf(isWorker, company, worker), lastMsg, unread };
       })
       .sort((a, b) => String(b.cv.lastMessageAt || b.cv.createdAt).localeCompare(String(a.cv.lastMessageAt || a.cv.createdAt)));

@@ -15,15 +15,29 @@ import * as Device from 'expo-device';
 import * as backend from './backend';
 
 let registeredToken = null;
+let handlerSet = false;
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+/**
+ * A build without the notifications module (or without the push
+ * entitlement) must still run: nothing here is allowed to take the app
+ * down on launch.
+ */
+function setHandler() {
+  if (handlerSet) return;
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+    handlerSet = true;
+  } catch (e) {
+    console.warn('[push] no notifications module', e?.message);
+  }
+}
 
 /** Android needs a channel before anything shows up at all. */
 async function ensureChannel() {
@@ -44,6 +58,7 @@ async function ensureChannel() {
 export async function registerForPush() {
   if (!Device.isDevice) return null;
   try {
+    setHandler();
     await ensureChannel();
     const existing = await Notifications.getPermissionsAsync();
     let status = existing.status;
@@ -101,16 +116,28 @@ export function routeForNotification(data) {
  * open and a cold start from a notification.
  */
 export function attachNotificationTaps(open) {
-  const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-    const route = routeForNotification(response?.notification?.request?.content?.data);
-    if (route) open(route);
-  });
-  Notifications.getLastNotificationResponseAsync().then((response) => {
-    const route = routeForNotification(response?.notification?.request?.content?.data);
-    if (route) open(route);
-  }).catch(() => {});
-  return () => sub.remove();
+  setHandler();
+  let sub;
+  try {
+    sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const route = routeForNotification(response?.notification?.request?.content?.data);
+      if (route) open(route);
+    });
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      const route = routeForNotification(response?.notification?.request?.content?.data);
+      if (route) open(route);
+    }).catch(() => {});
+  } catch (e) {
+    console.warn('[push] taps unavailable', e?.message);
+  }
+  return () => { try { sub?.remove(); } catch (e) { /* already gone */ } };
 }
 
 /** Clear the red dot when the person has read everything. */
-export const setBadge = (n) => Notifications.setBadgeCountAsync(Math.max(0, n || 0)).catch(() => {});
+export const setBadge = (n) => {
+  try {
+    Notifications.setBadgeCountAsync(Math.max(0, n || 0)).catch(() => {});
+  } catch (e) {
+    // No notifications module in this build.
+  }
+};

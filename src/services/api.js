@@ -89,6 +89,12 @@ export async function api(path, { method = 'GET', body, auth: needsAuth = true, 
   }
 
   if (!res.ok) {
+    // Vercel's DDoS mitigation answers with an HTML challenge page that only
+    // a browser can pass. Nothing is wrong with the request — the server is
+    // simply not letting anyone through right now.
+    if (res.headers?.get?.('x-vercel-mitigated')) {
+      throw new ApiError('mitigated', 'Сервер сейчас не отвечает. Попробуй через минуту.', res.status);
+    }
     let payload = null;
     try { payload = await res.json(); } catch (e) { /* HTML error page */ }
     const code = payload?.error || `http_${res.status}`;

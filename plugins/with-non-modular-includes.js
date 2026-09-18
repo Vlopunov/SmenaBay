@@ -21,10 +21,12 @@ const POST_INSTALL_HOOK = `
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        # Crashlytics' own headers reach React-Core before RNFBApp's module
-        # exists; with modules off for that pod the include is just an
-        # include again and it compiles.
-        if target.name.start_with?('RNFBCrashlytics')
+        # Crashlytics and Analytics reach React-Core headers before
+        # RNFBApp's module exists, and the compiler refuses. With modules off
+        # for those pods the include is an ordinary include again. Auth and
+        # App compile as they are; any new RNFB module that doesn't will
+        # need its name here too.
+        if ['RNFBCrashlytics', 'RNFBAnalytics'].any? { |name| target.name.start_with?(name) }
           config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
         end
       end

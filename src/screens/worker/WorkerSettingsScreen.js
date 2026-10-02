@@ -102,7 +102,9 @@ export default function WorkerSettingsScreen({ navigation }) {
   });
 
   const pick = async (source) => {
-    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // The library opens the system photo picker, which needs no permission
+    // (Android 13+, iOS 14+); only the camera asks.
+    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : { granted: true };
     if (!perm.granted) { Alert.alert('Нет доступа', 'Разреши доступ в Настройках, чтобы поставить фото.'); return; }
     const r = source === 'camera'
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [1, 1] })

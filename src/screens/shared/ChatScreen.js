@@ -208,7 +208,9 @@ export default function ChatScreen({ route, navigation }) {
   });
 
   const pick = async (source) => {
-    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // The library opens the system photo picker, which needs no permission
+    // (Android 13+, iOS 14+); only the camera asks.
+    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : { granted: true };
     if (!perm.granted) {
       Alert.alert(source === 'camera' ? 'Нет доступа к камере' : 'Нет доступа к фото', 'Разреши доступ в Настройках, чтобы отправлять фото в чат.');
       return;

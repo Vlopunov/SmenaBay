@@ -10,7 +10,7 @@
     "description": "СменаБел — платформа подработок и посменной работы в Беларуси. Для соискателей — быстрый поиск смен рядом. Для работодателей — публикация вакансий и отбор кандидатов.",
     "primaryColor": "#0F5673",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.smenabay.app",
       "buildNumber": "4",
       "usesAppleSignIn": true,
@@ -38,14 +38,17 @@
       "versionCode": 15,
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.ACCESS_NETWORK_STATE"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "com.google.android.gms.permission.AD_ID"
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {

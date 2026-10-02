@@ -30,7 +30,7 @@ Release-сборка прошла успешно; в её бандле пров�
 | Добавить тестовые номера | Firebase Console → Authentication → Sign-in method → Phone → Phone numbers for testing | Без этого ревьюер не сможет войти — демо-кнопок в релизе больше нет. Пары в `APP_STORE_LISTING.md` §4 |
 | `eas login` | терминал | Сейчас не авторизован, без этого не собрать и не отправить билд |
 | Решить по iPad | `app.json` → `ios.supportsTablet` | Сейчас `true`, значит Apple потребует iPad-скриншоты. Либо снять их, либо поставить `false` |
-| Поднять `smenabel.by/support` | сайт | Сейчас 404. Пока Support URL указывает на главную |
+| ~~Поднять `smenabel.by/support`~~ ✅ 02.10.2026 | сайт | Support URL — `https://smenabel.by/support`, удаление аккаунта — `#delete-account` |
 
 ---
 

@@ -228,12 +228,12 @@ Phone Auth uses Firebase Auth (APNs silent verification on iOS).
 
 ### Support URL
 ```
-https://smenabel.by
+https://smenabel.by/support
 ```
-> ⚠️ Проверено 09.09.2026: `https://smenabel.by/support` отдаёт **404**.
-> Apple открывает этот URL при ревью, битая ссылка = metadata rejection.
-> Пока страницы поддержки нет — ставим главную (отвечает 200).
-> В приложении та же ссылка берётся из `src/constants/links.js`.
+> Страница поднята 02.10.2026: контакты, ссылка на FAQ и как удалить аккаунт.
+> Тот же адрес берётся в приложении из `src/constants/links.js`.
+> Для Google Play («Ссылка на удаление аккаунта»):
+> `https://smenabel.by/support#delete-account`.
 
 ### Marketing URL (не обязательно)
 ```

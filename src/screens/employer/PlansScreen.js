@@ -2,7 +2,8 @@
 // left this month and when the limit resets. On iOS this is information
 // only — no prices, no purchase or switch control, and no pointer to paying
 // elsewhere: selling a digital subscription in-app would require In-App
-// Purchase (Guideline 3.1.1). Android keeps the plan selector.
+// Purchase (Guideline 3.1.1). During the free launch Android shows the same:
+// there is nothing to buy, and the server ignores a plan sent by a client.
 import React, { useMemo } from 'react';
 import { View, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ import { plural, longDate } from '../../design/format';
 import { PLAN_NAMES, PLAN_LIMITS } from './employerData';
 import useStore from '../../store/useStore';
 
-const PURCHASABLE_IN_APP = Platform.OS !== 'ios';
+const PURCHASABLE_IN_APP = false;
 const MONO = Platform.select({ ios: 'ui-monospace', default: 'monospace' });
 const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 

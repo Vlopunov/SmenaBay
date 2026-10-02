@@ -1,6 +1,8 @@
 // «Нужен номер» (screen 5): asked at the moment of applying, not at launch.
-// The sheet says why and who sees the number; Apple and Google are offered
-// at equal weight below.
+// A guest signs in here — Apple and Google first, the SMS code below them:
+// the free Firebase plan sends 10 SMS a day for everyone. Someone already
+// signed in only leaves a contact number: no SMS, and the apply or publish
+// that opened the sheet carries on.
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import Sheet from '../design/Sheet';
@@ -11,14 +13,29 @@ import { Button, Press } from '../design/ui';
 import { haptic } from '../design/haptics';
 import { LINKS, openLink } from '../constants/links';
 import { sendVerificationCode } from '../services/auth';
-import { useAuthFlow } from '../services/authFlow';
+import { useAuthFlow, runIntent } from '../services/authFlow';
+import useStore from '../store/useStore';
 import SocialButtons, { OrDivider } from './SocialButtons';
 
-export default function PhoneSheet({ visible, onClose, navigation, intent, title = 'Нужен номер', text, social = true }) {
+export default function PhoneSheet({ visible, onClose, navigation, intent, title = 'Нужен номер', text, social = true, onSaved }) {
   const [digits, setDigits] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const start = useAuthFlow((s) => s.start);
+  const signedIn = useStore((s) => !!s.currentUser);
+  const updateProfile = useStore((s) => s.updateProfile);
+
+  // Signed in: the number is a contact, saved as typed. Confirming it by SMS
+  // would sign the phone in as a second Firebase account.
+  const save = async () => {
+    if (!isComplete(digits)) { setError('Номер неполный — нужно 9 цифр после +375'); haptic.error(); return; }
+    setError('');
+    updateProfile({ phone: toE164(digits) });
+    haptic.success();
+    onClose();
+    if (onSaved) onSaved();
+    else if (intent?.then) await runIntent(intent.then, navigation);
+  };
 
   const submit = async () => {
     if (!isComplete(digits)) { setError('Номер неполный — нужно 9 цифр после +375'); haptic.error(); return; }
@@ -42,10 +59,20 @@ export default function PhoneSheet({ visible, onClose, navigation, intent, title
     <Sheet visible={visible} onClose={onClose} title={title}>
       <View style={{ paddingHorizontal: 20 }}>
         <T v="body" c="ink2" style={{ marginTop: 7, fontSize: 14.5, lineHeight: 21 }}>
-          {text || 'Чтобы откликнуться на смену, подтверди номер. Заказчик увидит его только после подтверждения смены.'}
+          {text || (signedIn
+            ? 'Номер для связи по смене. Заказчик увидит его только после подтверждения смены.'
+            : 'Чтобы откликнуться на смену, войди. Заказчик увидит твой номер только после подтверждения смены.')}
         </T>
+        {social && !signedIn ? (
+          <>
+            <View style={{ marginTop: 16 }}>
+              <SocialButtons navigation={navigation} intent={intent} onSignedIn={onClose} onLeave={onClose} onError={setError} />
+            </View>
+            <OrDivider style={{ marginTop: 14 }} />
+          </>
+        ) : null}
         <View style={{ marginTop: 16 }}>
-          <PhoneField value={digits} onChange={(v) => { setDigits(v); if (error) setError(''); }} autoFocus onSubmit={submit} error={!!error} />
+          <PhoneField value={digits} onChange={(v) => { setDigits(v); if (error) setError(''); }} autoFocus={signedIn || !social} onSubmit={signedIn ? save : submit} error={!!error} />
         </View>
         {error ? (
           <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -53,15 +80,11 @@ export default function PhoneSheet({ visible, onClose, navigation, intent, title
             <T v="caption" c="error" style={{ fontSize: 12.5 }}>{error}</T>
           </View>
         ) : null}
-        <Button title="Получить код" loadingTitle="Отправляем код…" onPress={submit} loading={loading} style={{ marginTop: 10 }} />
-        {social ? (
-          <>
-            <OrDivider style={{ marginTop: 14 }} />
-            <View style={{ marginTop: 14 }}>
-              <SocialButtons navigation={navigation} intent={intent} onSignedIn={onClose} onLeave={onClose} onError={setError} />
-            </View>
-          </>
-        ) : null}
+        {signedIn ? (
+          <Button title="Сохранить номер" onPress={save} style={{ marginTop: 10 }} />
+        ) : (
+          <Button title="Получить код" loadingTitle="Отправляем код…" onPress={submit} loading={loading} variant={social ? 'secondary' : 'primary'} style={{ marginTop: 10 }} />
+        )}
         <View style={{ marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
           <T v="caption" c="ink2" style={{ fontSize: 12 }}>Продолжая, ты принимаешь </T>
           <Press feedback="none" onPress={() => openLink(LINKS.terms)} accessibilityRole="link"><T v="caption" c="brand" style={{ fontSize: 12 }}>условия</T></Press>

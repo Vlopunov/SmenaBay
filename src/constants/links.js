@@ -11,10 +11,9 @@ export const LINKS = {
   site: 'https://smenabel.by',
   privacy: 'https://smenabel.by/privacy',
   terms: 'https://smenabel.by/terms',
-  // NOTE: https://smenabel.by/support currently returns 404. Until that page
-  // exists, both the app and the App Store Connect "Support URL" field point
-  // at the homepage, which does resolve.
-  support: 'https://smenabel.by',
+  // Also the App Store «Support URL» and Google Play's account-deletion URL
+  // (https://smenabel.by/support#delete-account).
+  support: 'https://smenabel.by/support',
   supportEmail: 'mailto:support@smenabel.by',
 };
 

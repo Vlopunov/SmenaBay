@@ -131,7 +131,7 @@ export default function ShiftDetailScreen({ route, navigation }) {
     if (full) { refuse('Места только что закончились'); return; }
     if (!currentUser) { setPhoneSheet(true); return; }
     if (currentUser.role !== 'worker') return;
-    if (!currentUser.phoneVerified) { setPhoneSheet(true); return; }
+    if (!currentUser.phone) { setPhoneSheet(true); return; }
     let res;
     setSending(true);
     try {
@@ -144,8 +144,8 @@ export default function ShiftDetailScreen({ route, navigation }) {
     if (res?.error === 'shift_full') { refuse('Места только что закончились'); return; }
     if (res?.error === 'shift_not_active') { refuse('Смена больше не принимает отклики'); return; }
     if (res?.error === 'already_applied') { toast.show({ text: 'Ты уже откликнулся', kind: 'info' }); return; }
-    // Both mean the same thing here: the number has to be confirmed first.
-    if (res?.error === 'phone_not_verified' || res?.error === 'not_authenticated') { setPhoneSheet(true); return; }
+    // Both mean the same thing here: the sheet asks for what is missing.
+    if (res?.error === 'phone_missing' || res?.error === 'not_authenticated') { setPhoneSheet(true); return; }
     if (res?.error) { toast.error(res.error); return; }
     toast.success(`Отклик отправлен · ${shift.pay} BYN`);
   };

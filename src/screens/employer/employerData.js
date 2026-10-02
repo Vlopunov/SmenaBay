@@ -53,4 +53,5 @@ export function employerSnapshot({ me, shifts, applications, workers, now = new 
 }
 
 export const PLAN_NAMES = { free: 'Бесплатный', business: 'Бизнес', premium: 'Премиум' };
-export const PLAN_LIMITS = { free: 3, business: 30, premium: Infinity };
+// The free launch: 100 a month for everyone (the server holds the same numbers).
+export const PLAN_LIMITS = { free: 100, business: 100, premium: Infinity };

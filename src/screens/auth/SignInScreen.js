@@ -1,8 +1,10 @@
 // «Вход» (screen 6). For a guest this is the «Войти» tab; it is also pushed
 // from anywhere that needs an account. A morning sky with the emblem, then
-// the phone (no passwords), then Apple and Google at equal size — Sign in
-// with Apple is never less prominent than Google (Guideline 4.8). «Ищу
-// сотрудников» is a separate entry for employers, not a twin button.
+// Apple and Google at equal size — Sign in with Apple is never less
+// prominent than Google (Guideline 4.8) — and the phone below them: the free
+// Firebase plan sends 10 SMS a day for everyone, so the providers are the way
+// in and the code is the fallback. «Ищу сотрудников» is a separate entry for
+// employers, not a twin button.
 import React, { useState } from 'react';
 import {
   View, ScrollView, KeyboardAvoidingView, Platform, Keyboard, StyleSheet, Alert, ActivityIndicator, useWindowDimensions,
@@ -136,13 +138,7 @@ export default function SignInScreen({ navigation, route }) {
               Войди, чтобы откликаться и видеть свои смены. Смотреть ленту можно и без входа.
             </T>
 
-            <T v="caption" c="ink2" weight="600" style={{ marginTop: 22, marginBottom: 8 }}>Номер телефона</T>
-            <PhoneField value={digits} onChange={(v) => { setDigits(v); if (error) setError(''); }} onSubmit={submit} error={!!error} />
-            {error ? <ErrorLine text={error} /> : null}
-            <Button title="Получить код" loadingTitle="Отправляем код…" onPress={submit} loading={loading} style={{ marginTop: 10 }} />
-
-            <OrDivider style={{ marginTop: 16 }} />
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: 22 }}>
               <SocialButtons
                 navigation={navigation}
                 intent={route?.params?.intent}
@@ -151,6 +147,12 @@ export default function SignInScreen({ navigation, route }) {
               />
               {socialError ? <ErrorLine text={socialError} /> : null}
             </View>
+
+            <OrDivider style={{ marginTop: 16 }} />
+            <T v="caption" c="ink2" weight="600" style={{ marginTop: 14, marginBottom: 8 }}>Номер телефона</T>
+            <PhoneField value={digits} onChange={(v) => { setDigits(v); if (error) setError(''); }} onSubmit={submit} error={!!error} />
+            {error ? <ErrorLine text={error} /> : null}
+            <Button title="Получить код" loadingTitle="Отправляем код…" onPress={submit} loading={loading} variant="secondary" style={{ marginTop: 10 }} />
 
             <Press
               onPress={() => navigation.navigate('RegisterEmployer')}

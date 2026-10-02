@@ -259,9 +259,9 @@ export default function CreateShiftScreen({ navigation, route }) {
     } finally {
       setPublishing(false);
     }
-    if (r?.error === 'phone_not_verified' || r?.error === 'not_authenticated') { setVerify(true); return; }
+    if (r?.error === 'phone_missing' || r?.error === 'not_authenticated') { setVerify(true); return; }
     if (r?.error === 'limit') {
-      Alert.alert('Лимит на этот месяц исчерпан', 'Лимит текущего тарифа обновится первого числа следующего месяца.', [{ text: 'Понятно' }]);
+      Alert.alert('В этом месяце уже 100 смен', 'Это максимум на старте, он обновится первого числа. Если нужно больше — напиши на support@smenabel.by.', [{ text: 'Понятно' }]);
       return;
     }
     if (r?.error) { toast.error(r.error); return; }
@@ -613,10 +613,11 @@ export default function CreateShiftScreen({ navigation, route }) {
         visible={verify}
         onClose={() => setVerify(false)}
         navigation={navigation}
-        title="Подтверди номер"
-        text="Смены публикуются только с подтверждённым номером — так исполнители знают, что за сменой стоит живой человек."
+        title="Номер для связи"
+        text="Он нужен, чтобы исполнители могли связаться с тобой по смене. Сохрани — и смена опубликуется."
         social={false}
         intent={{ type: 'verify-phone' }}
+        onSaved={submit}
       />
     </View>
   );

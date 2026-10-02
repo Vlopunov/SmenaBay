@@ -374,15 +374,17 @@ const useStore = create(
   createShift: async (data) => {
     const user = get().currentUser;
     if (!user) return { error: 'not_authenticated' };
-    if (!user.phoneVerified) return { error: 'phone_not_verified' };
+    // A number to be reached by; confirming it by SMS is not required.
+    if (!user.phone) return { error: 'phone_missing' };
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
     const monthShifts = get().shifts.filter(
       s => s.companyId === user.id && s.createdAt >= monthStart && s.status !== 'cancelled'
     ).length;
-    const limits = { free: 3, business: 30, premium: Infinity };
-    if (monthShifts >= (limits[user.plan] || 3)) return { error: 'limit' };
+    // Same numbers as the server's PLAN_LIMITS (src/app/api/shifts/route.ts).
+    const limits = { free: 100, business: 100, premium: Infinity };
+    if (monthShifts >= (limits[user.plan] || limits.free)) return { error: 'limit' };
 
     const dates = Array.isArray(data.date) ? data.date : [data.date];
     const hours = calcDuration(data.timeStart, data.timeEnd);
@@ -506,7 +508,7 @@ const useStore = create(
   applyToShift: async (shiftId) => {
     const user = get().currentUser;
     if (!user) return { error: 'not_authenticated' };
-    if (!user.phoneVerified) return { error: 'phone_not_verified' };
+    if (!user.phone) return { error: 'phone_missing' };
 
     // Cheap local checks first — no point in a round-trip to be told what
     // the screen already knows.
